@@ -375,6 +375,16 @@ export default function PlayersPage() {
                     <input type="file" accept="image/*" onChange={e => handleFileChange(e, 'photo')} />
                     {form.photo && <img src={form.photo} alt="Preview" style={{ marginTop: 8, width: 40, height: 40, objectFit: 'cover', borderRadius: '4px' }} />}
                   </div>
+                  <div className="admin-form-field">
+                    <label>Address Proof</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={e => handleFileChange(e, 'address_proof')} />
+                    {form.address_proof && (
+                      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <img src={form.address_proof} alt="Proof" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--adm-border-focus)' }} />
+                        <a href={form.address_proof} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: 'var(--adm-gold)' }}>View current</a>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* 2. Cricket Profile */}
