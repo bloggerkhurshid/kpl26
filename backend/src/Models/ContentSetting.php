@@ -33,8 +33,10 @@ class ContentSetting {
         'fee_player' => '500',
         'fee_foreign_player' => '1000',
         'fee_team' => '5000',
-        'active_gateway' => 'razorpay',
-        'gateway_mode' => 'sandbox'
+        'active_gateway' => 'upi_direct',
+        'gateway_mode' => 'sandbox',
+        'upi_id' => '8638479115@ybl',
+        'upi_payee_name' => 'Khoraghat Premier League'
     ];
 
     private static function getDb(): PDO {
@@ -68,11 +70,14 @@ class ContentSetting {
             'fee_player' => (float)($settings['fee_player'] ?? 500),
             'fee_foreign_player' => (float)($settings['fee_foreign_player'] ?? 1000),
             'fee_team' => (float)($settings['fee_team'] ?? 5000),
-            'active_gateway' => $settings['active_gateway'] ?? 'razorpay',
+            'active_gateway' => $settings['active_gateway'] ?? 'upi_direct',
             'gateway_mode' => $settings['gateway_mode'] ?? 'sandbox',
+            'upi_id' => $settings['upi_id'] ?? '8638479115@ybl',
+            'upi_payee_name' => $settings['upi_payee_name'] ?? 'Khoraghat Premier League',
             'raw_settings' => $settings
         ];
     }
+
 
     public static function saveMultiple(array $data): bool {
         if (empty($data)) return false;

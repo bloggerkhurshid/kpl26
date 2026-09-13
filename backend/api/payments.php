@@ -16,6 +16,8 @@ if ($method === 'GET') {
     $controller->index();
 } elseif ($method === 'POST') {
     $controller->store();
+} elseif ($method === 'PUT') {
+    $controller->updateStatus();
 } else {
     Response::error("Method not allowed", 405);
 }

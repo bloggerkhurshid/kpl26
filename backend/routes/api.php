@@ -114,7 +114,9 @@ class Router {
                 $controller = new PaymentController();
                 if ($method === 'GET') $controller->index();
                 elseif ($method === 'POST') $controller->store();
+                elseif ($method === 'PUT') $controller->updateStatus();
                 break;
+
 
             case 'dashboard':
             case 'dashboard.php':

@@ -18,6 +18,8 @@ interface GatewaySettings {
   fee_foreign_player: string;
   fee_team: string;
   active_gateway: string;
+  upi_id?: string;
+  upi_payee_name?: string;
 }
 
 const DEFAULT: GatewaySettings = {
@@ -29,8 +31,11 @@ const DEFAULT: GatewaySettings = {
   fee_player: '500',
   fee_foreign_player: '1000',
   fee_team: '5000',
-  active_gateway: 'razorpay',
+  active_gateway: 'upi_direct',
+  upi_id: '8638479115@ybl',
+  upi_payee_name: 'Khoraghat Premier League',
 };
+
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<GatewaySettings>(DEFAULT);
@@ -197,7 +202,7 @@ export default function SettingsPage() {
                 <h3>Active Payment Gateway</h3>
               </div>
               <div className="settings-mode-toggle">
-                {(['razorpay', 'cashfree'] as const).map(gateway => (
+                {(['upi_direct', 'razorpay', 'cashfree'] as const).map(gateway => (
                   <label key={gateway} className={`settings-mode-option ${settings.active_gateway === gateway ? 'settings-mode-active' : ''}`}>
                     <input
                       type="radio"
@@ -208,16 +213,60 @@ export default function SettingsPage() {
                     />
                     <span className="settings-mode-dot" />
                     <div>
-                      <strong>{gateway === 'razorpay' ? 'Razorpay' : 'Cashfree'}</strong>
-                      <span>{gateway === 'razorpay' ? 'Use Razorpay for all registrations' : 'Use Cashfree for all registrations'}</span>
+                      <strong>
+                        {gateway === 'upi_direct'
+                          ? '⚡ Free Direct UPI QR (0% Fees)'
+                          : gateway === 'razorpay'
+                          ? 'Razorpay'
+                          : 'Cashfree'}
+                      </strong>
+                      <span>
+                        {gateway === 'upi_direct'
+                          ? 'Zero transaction charges. Direct UPI QR scan & 12-digit UTR verification.'
+                          : gateway === 'razorpay'
+                          ? 'Use Razorpay for all registrations'
+                          : 'Use Cashfree for all registrations'}
+                      </span>
                     </div>
                   </label>
                 ))}
               </div>
               <div className="settings-hint">
-                This enforces the selected gateway for all users. The frontend selection options will be hidden.
+                This enforces the selected gateway for all users.
               </div>
             </div>
+
+            {/* Direct UPI Configuration */}
+            <div className="settings-section">
+              <div className="settings-section-header">
+                <ShieldCheck size={16} />
+                <h3>Direct UPI Configuration (0% Fees)</h3>
+              </div>
+              <div className="settings-grid">
+                <div className="admin-form-field">
+                  <label>UPI VPA ID (UPI Handle)</label>
+                  <input
+                    type="text"
+                    value={settings.upi_id || '8638479115@ybl'}
+                    onChange={e => update('upi_id', e.target.value)}
+                    placeholder="e.g. 8638479115@ybl or kpl@upi"
+                  />
+                </div>
+                <div className="admin-form-field">
+                  <label>Payee Name</label>
+                  <input
+                    type="text"
+                    value={settings.upi_payee_name || 'Khoraghat Premier League'}
+                    onChange={e => update('upi_payee_name', e.target.value)}
+                    placeholder="Khoraghat Premier League"
+                  />
+                </div>
+              </div>
+              <div className="settings-hint">
+                This UPI VPA ID is used to generate the dynamic QR Code for zero-fee payments.
+              </div>
+            </div>
+
 
             {/* Razorpay */}
             <div className="settings-section">

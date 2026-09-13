@@ -166,7 +166,26 @@ export const kplApi = {
     });
   },
 
-  // 6. Content Settings API
+  // 6. Payments API
+  async getPayments(limit: number = 500) {
+    return fetchFromPhpApi(`api/payments.php?limit=${limit}`);
+  },
+
+  async createPayment(paymentData: any) {
+    return fetchFromPhpApi('api/payments.php', {
+      method: 'POST',
+      body: JSON.stringify(paymentData),
+    });
+  },
+
+  async updatePaymentStatus(id: string, status: string) {
+    return fetchFromPhpApi(`api/payments.php?id=${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  // 7. Content Settings API
   async getContentSettings() {
     return fetchFromPhpApi('api/content.php');
   },
@@ -178,12 +197,24 @@ export const kplApi = {
     });
   },
 
-  // 7. Dashboard API
+  // 8. Fee Settings API
+  async getFeeSettings() {
+    return fetchFromPhpApi('api/settings.php');
+  },
+
+  async saveFeeSettings(settings: Record<string, any>) {
+    return fetchFromPhpApi('api/settings.php', {
+      method: 'POST',
+      body: JSON.stringify(settings),
+    });
+  },
+
+  // 9. Dashboard API
   async getDashboardMetrics() {
     return fetchFromPhpApi('api/dashboard.php');
   },
 
-  // 8. Auth API
+  // 10. Auth API
   async adminLogin(credentials: { username: string; password: string }) {
     return fetchFromPhpApi('api/auth.php', {
       method: 'POST',
@@ -191,4 +222,5 @@ export const kplApi = {
     });
   }
 };
+
 

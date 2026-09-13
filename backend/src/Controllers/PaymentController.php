@@ -35,4 +35,25 @@ class PaymentController {
             "id" => $id
         ], 201);
     }
+
+    public function updateStatus(): void {
+        $input = Validator::getJsonInput();
+        $id = $_GET['id'] ?? ($input['id'] ?? null);
+        $status = $input['status'] ?? null;
+
+        if (empty($id) || empty($status)) {
+            Response::error("Payment ID and status are required", 400);
+        }
+
+        $success = Payment::updateStatus($id, $status);
+        if (!$success) {
+            Response::error("Failed to update payment status", 400);
+        }
+
+        Response::json([
+            "status" => "success",
+            "message" => "Payment status updated to {$status}"
+        ]);
+    }
 }
+

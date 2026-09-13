@@ -4,28 +4,35 @@ import { useEffect, useState, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import { supabase } from '@/lib/supabase';
+import { kplApi } from '@/lib/api';
 import {
   CreditCard, Plus, X, Loader2, CheckCircle2,
-  AlertCircle, Download, RefreshCw,
+  AlertCircle, Download, RefreshCw, Check, Ban
 } from 'lucide-react';
+
 
 interface Payment {
   id: string;
-  order_id: string;
-  payment_id: string;
-  gateway: string;
+  order_id?: string;
+  payment_id?: string;
+  gateway?: string;
+  payment_gateway?: string;
   amount: number;
-  currency: string;
+  currency?: string;
   status: string;
-  payer_name: string;
-  payer_email: string;
-  payer_phone: string;
-  purpose: string;
+  payer_name?: string;
+  name?: string;
+  payer_email?: string;
+  payer_phone?: string;
+  phone?: string;
+  purpose?: string;
+  registration_type?: string;
+  registration_id?: string;
   created_at: string;
 }
 
 const EMPTY_FORM = {
-  gateway: 'razorpay', amount: '', currency: 'INR', status: 'success',
+  gateway: 'upi_direct', amount: '', currency: 'INR', status: 'completed',
   payer_name: '', payer_email: '', payer_phone: '', purpose: 'team_registration',
   order_id: '', payment_id: '',
 };
@@ -47,39 +54,64 @@ export default function PaymentsPage() {
 
   const loadPayments = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from('payments').select('*').order('created_at', { ascending: false });
-    setPayments(data || []);
-    setLoading(false);
+    try {
+      const data = await kplApi.getPayments(500);
+      if (Array.isArray(data)) {
+        setPayments(data);
+      } else {
+        const { data: supaData } = await supabase.from('payments').select('*').order('created_at', { ascending: false });
+        setPayments(supaData || []);
+      }
+    } catch {
+      const { data: supaData } = await supabase.from('payments').select('*').order('created_at', { ascending: false });
+      setPayments(supaData || []);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { loadPayments(); }, [loadPayments]);
 
+  const handleVerifyPayment = async (id: string, newStatus: 'completed' | 'rejected') => {
+    try {
+      await kplApi.updatePaymentStatus(id, newStatus);
+      showToast(newStatus === 'completed' ? 'Payment Approved & Registration Activated!' : 'Payment Rejected');
+      loadPayments();
+    } catch (err: any) {
+      showToast(err.message || 'Operation failed', 'error');
+    }
+  };
+
   async function savePayment(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const { error } = await supabase.from('payments').insert({
-      gateway: form.gateway,
-      amount: parseFloat(form.amount),
-      currency: form.currency,
-      status: form.status,
-      payer_name: form.payer_name || null,
-      payer_email: form.payer_email || null,
-      payer_phone: form.payer_phone || null,
-      purpose: form.purpose || null,
-      order_id: form.order_id || `manual_${Date.now()}`,
-      payment_id: form.payment_id || null,
-    });
-    setSaving(false);
-    if (error) showToast(error.message, 'error');
-    else { showToast('Payment recorded!'); setModal(null); setForm(EMPTY_FORM); loadPayments(); }
+    try {
+      await kplApi.createPayment({
+        name: form.payer_name || 'Manual Payment',
+        phone: form.payer_phone || '',
+        amount: parseFloat(form.amount),
+        payment_gateway: form.gateway,
+        payment_id: form.payment_id || `MANUAL-${Date.now()}`,
+        status: form.status,
+        registration_type: form.purpose === 'team_registration' ? 'team' : 'player',
+      });
+      showToast('Payment recorded successfully!');
+      setModal(null);
+      setForm(EMPTY_FORM);
+      loadPayments();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to record payment', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   function exportCSV() {
     const rows = [
-      ['Order ID', 'Payment ID', 'Gateway', 'Amount', 'Currency', 'Status', 'Payer', 'Email', 'Phone', 'Purpose', 'Date'],
+      ['ID / Ref', 'UTR / Payment ID', 'Gateway', 'Amount', 'Status', 'Payer', 'Phone', 'Type', 'Date'],
       ...payments.map(p => [
-        p.order_id, p.payment_id, p.gateway, p.amount, p.currency, p.status,
-        p.payer_name, p.payer_email, p.payer_phone, p.purpose,
+        p.id, p.payment_id || p.order_id, p.payment_gateway || p.gateway, p.amount, p.status,
+        p.name || p.payer_name, p.phone || p.payer_phone, p.registration_type || p.purpose,
         new Date(p.created_at).toLocaleString('en-IN'),
       ]),
     ];
@@ -92,25 +124,31 @@ export default function PaymentsPage() {
   }
 
   const filtered = payments.filter(p => {
-    if (filterGateway && p.gateway !== filterGateway) return false;
+    const gw = p.payment_gateway || p.gateway || '';
+    if (filterGateway && gw !== filterGateway) return false;
     if (filterStatus && p.status !== filterStatus) return false;
     return true;
   });
 
-  const totalCollected = payments.filter(p => p.status === 'success').reduce((s, p) => s + Number(p.amount), 0);
+  const totalCollected = payments
+    .filter(p => p.status === 'completed' || p.status === 'success')
+    .reduce((s, p) => s + Number(p.amount), 0);
 
   const columns: Column<Payment>[] = [
     {
-      key: 'order_id', label: 'Order ID',
-      render: p => <span className="dt-mono">{p.order_id?.slice(0, 16) || '—'}</span>,
+      key: 'payment_id', label: 'UTR / Payment Ref',
+      render: p => <span className="dt-mono" style={{ fontWeight: 700, color: '#10b981' }}>{p.payment_id || p.order_id || '—'}</span>,
     },
     {
-      key: 'gateway', label: 'Gateway',
-      render: p => (
-        <span className={`admin-gateway-badge admin-gateway-${p.gateway}`}>
-          {p.gateway === 'cashfree' ? '💳 Cashfree' : '🔵 Razorpay'}
-        </span>
-      ),
+      key: 'payment_gateway', label: 'Gateway',
+      render: p => {
+        const gw = p.payment_gateway || p.gateway;
+        return (
+          <span className={`admin-gateway-badge admin-gateway-${gw}`}>
+            {gw === 'upi_direct' ? '⚡ Free Direct UPI' : gw === 'cashfree' ? '💳 Cashfree' : '🔵 Razorpay'}
+          </span>
+        );
+      },
     },
     {
       key: 'amount', label: 'Amount', sortable: true,
@@ -118,23 +156,65 @@ export default function PaymentsPage() {
     },
     {
       key: 'status', label: 'Status',
-      render: p => <span className={`admin-status-badge admin-status-${p.status}`}>{p.status}</span>,
+      render: p => (
+        <span className={`admin-status-badge admin-status-${p.status === 'pending_verification' ? 'pending' : p.status}`}>
+          {p.status === 'pending_verification' ? '⏳ Pending UTR Review' : p.status}
+        </span>
+      ),
     },
     {
-      key: 'payer_name', label: 'Payer',
+      key: 'payer_name', label: 'Payer Details',
       render: p => (
         <div>
-          <div>{p.payer_name || '—'}</div>
-          <div className="dt-player-meta">{p.payer_phone || ''}</div>
+          <div style={{ fontWeight: 600 }}>{p.name || p.payer_name || '—'}</div>
+          <div className="dt-player-meta">{p.phone || p.payer_phone || ''}</div>
         </div>
       ),
     },
-    { key: 'purpose', label: 'Purpose', render: p => p.purpose?.replace('_', ' ') || '—' },
+    {
+      key: 'registration_type', label: 'Type & Reg ID',
+      render: p => (
+        <div>
+          <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{p.registration_type || p.purpose || '—'}</span>
+          {p.registration_id && <div style={{ fontSize: 11, color: '#94a3b8' }}>{p.registration_id}</div>}
+        </div>
+      ),
+    },
     {
       key: 'created_at', label: 'Date', sortable: true,
       render: p => new Date(p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
     },
+    {
+      key: 'id', label: 'Actions',
+      render: p => (
+        <div style={{ display: 'flex', gap: 6 }}>
+          {p.status === 'pending_verification' || p.status === 'pending' ? (
+            <>
+              <button
+                onClick={() => handleVerifyPayment(p.id, 'completed')}
+                className="admin-btn admin-btn-primary"
+                style={{ padding: '4px 8px', fontSize: 12 }}
+                title="Approve Payment & Activate Registration"
+              >
+                <Check size={13} /> Approve
+              </button>
+              <button
+                onClick={() => handleVerifyPayment(p.id, 'rejected')}
+                className="admin-btn admin-btn-danger"
+                style={{ padding: '4px 8px', fontSize: 12 }}
+                title="Reject"
+              >
+                <Ban size={13} /> Reject
+              </button>
+            </>
+          ) : (
+            <span style={{ color: '#64748b', fontSize: 12 }}>—</span>
+          )}
+        </div>
+      ),
+    },
   ];
+
 
   return (
     <AdminLayout>

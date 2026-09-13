@@ -24,6 +24,8 @@ import { supabase } from '@/lib/supabase';
 import { load } from '@cashfreepayments/cashfree-js';
 import { ManagementSection } from '@/components/ManagementSection';
 import { GallerySection } from '@/components/GallerySection';
+import { UpiPaymentModal } from '@/components/UpiPaymentModal';
+
 
 type Team = {
   id: string;
@@ -166,7 +168,23 @@ export default function Home() {
   });
 
   const [registeredId, setRegisteredId] = useState('');
-  const [fees, setFees] = useState({ fee_player: 500, fee_foreign_player: 1000, fee_team: 5000, active_gateway: 'razorpay' });
+  const [fees, setFees] = useState({ fee_player: 500, fee_foreign_player: 1000, fee_team: 5000, active_gateway: 'upi_direct', upi_id: '8638479115@ybl', upi_payee_name: 'Khoraghat Premier League' });
+  const [upiModalData, setUpiModalData] = useState<{
+    isOpen: boolean;
+    type: 'player' | 'team';
+    regId: string;
+    name: string;
+    phone: string;
+    amount: number;
+  }>({
+    isOpen: false,
+    type: 'player',
+    regId: '',
+    name: '',
+    phone: '',
+    amount: 500,
+  });
+
   const [content, setContent] = useState<Record<string, string>>({});
   const [loadingContent, setLoadingContent] = useState(true);
   const [scrolled, setScrolled] = useState(false);
@@ -287,6 +305,18 @@ export default function Home() {
     // Handle Payment Gateway for Team
     try {
       const newRegNum = `KPL-TEAM-${Date.now().toString().slice(-6)}`;
+      if (fees.active_gateway === 'upi_direct' || !fees.active_gateway) {
+        setUpiModalData({
+          isOpen: true,
+          type: 'team',
+          regId: newRegNum,
+          name: teamForm.owner_name,
+          phone: teamForm.contact_number,
+          amount: Number(fees.fee_team) || 5000,
+        });
+        return;
+      }
+
       if (fees.active_gateway === 'razorpay') {
         const res = await fetch('/api/payments/razorpay/create-order', {
           method: 'POST',
@@ -352,6 +382,7 @@ export default function Home() {
           }
         });
       }
+
     } catch (err: any) {
       setStatus('error');
       setErrorMsg(err.message || 'Payment failed to initiate.');
@@ -405,9 +436,22 @@ export default function Home() {
 
     // Handle Payment Gateway
     try {
-      const paymentAmount = playerForm.player_category === 'Foreign' ? fees.fee_foreign_player : fees.fee_player;
+      const paymentAmount = playerForm.player_category === 'Foreign' ? Number(fees.fee_foreign_player) : Number(fees.fee_player);
+
+      if (fees.active_gateway === 'upi_direct' || !fees.active_gateway) {
+        setUpiModalData({
+          isOpen: true,
+          type: 'player',
+          regId: newRegNum,
+          name: playerForm.player_name,
+          phone: playerForm.contact_number,
+          amount: paymentAmount || 500,
+        });
+        return;
+      }
 
       if (fees.active_gateway === 'razorpay') {
+
         const res = await fetch('/api/payments/razorpay/create-order', {
           method: 'POST',
           body: JSON.stringify({ amount: paymentAmount, receipt: newRegNum, notes: { playerId: player.id } })
@@ -911,8 +955,32 @@ export default function Home() {
           </div>
         </div>
       )}
+      {/* Free Direct UPI Payment Modal */}
+      <UpiPaymentModal
+        isOpen={upiModalData.isOpen}
+        onClose={() => setUpiModalData(prev => ({ ...prev, isOpen: false }))}
+        registrationType={upiModalData.type}
+        registrationId={upiModalData.regId}
+        payerName={upiModalData.name}
+        payerPhone={upiModalData.phone}
+        amount={upiModalData.amount}
+        upiId={fees.upi_id || '8638479115@ybl'}
+        payeeName={fees.upi_payee_name || 'Khoraghat Premier League'}
+        onSuccess={(utr) => {
+          setUpiModalData(prev => ({ ...prev, isOpen: false }));
+          setRegisteredId(upiModalData.regId);
+          setStatus('success');
+          if (upiModalData.type === 'team') {
+            setTeamForm({ team_name: '', owner_name: '', captain_name: '', contact_number: '', email: '', home_location: '', message: '' });
+          } else {
+            setPlayerForm({ player_name: '', father_name: '', age_input: '', contact_number: '', present_address: '', address_proof: '', photo: '', batsman: false, batting_hand: '', wicket_keeper: false, previously_played: false, player_category: 'local', bowler: false, bowling_arm: '', bowling_style: '' });
+          }
+        }}
+      />
+
       {/* WhatsApp Support Float */}
       <WhatsAppFloat />
+
     </main>
   );
 }

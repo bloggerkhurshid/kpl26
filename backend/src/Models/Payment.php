@@ -56,11 +56,39 @@ class Payment {
             ':name' => $data['name'],
             ':phone' => $data['phone'],
             ':amount' => (float)$data['amount'],
-            ':payment_gateway' => $data['payment_gateway'] ?? 'razorpay',
+            ':payment_gateway' => $data['payment_gateway'] ?? 'upi_direct',
             ':payment_id' => $data['payment_id'] ?? null,
             ':status' => $data['status'] ?? 'completed'
         ]);
 
         return $id;
     }
+
+    public static function updateStatus(string $id, string $status): bool {
+        $db = self::getDb();
+        $stmt = $db->prepare("UPDATE payments SET status = :status WHERE id = :id");
+        $success = $stmt->execute([':status' => $status, ':id' => $id]);
+
+        if ($success && $status === 'completed') {
+            // Find payment record to activate matching registration
+            $payStmt = $db->prepare("SELECT * FROM payments WHERE id = :id LIMIT 1");
+            $payStmt->execute([':id' => $id]);
+            $payment = $payStmt->fetch();
+
+            if ($payment && !empty($payment['registration_id'])) {
+                $type = $payment['registration_type'] ?? 'player';
+                $regId = $payment['registration_id'];
+
+                if ($type === 'player') {
+                    $db->prepare("UPDATE players SET status = 'active' WHERE id = :id OR registration_number = :regId")->execute([':id' => $regId, ':regId' => $regId]);
+                } elseif ($type === 'team') {
+                    $db->prepare("UPDATE teams SET status = 'active' WHERE id = :id OR name = :regId")->execute([':id' => $regId, ':regId' => $regId]);
+                    $db->prepare("UPDATE team_registrations SET status = 'active' WHERE id = :id OR team_name = :regId")->execute([':id' => $regId, ':regId' => $regId]);
+                }
+            }
+        }
+
+        return $success;
+    }
 }
+
