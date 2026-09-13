@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Shield, Phone, UserCheck, Loader2 } from 'lucide-react';
+import { Shield, Phone, UserCheck, Loader2, Award } from 'lucide-react';
 import { kplApi, ManagementMember } from '@/lib/api';
 
 export function ManagementSection() {
@@ -43,17 +43,23 @@ export function ManagementSection() {
   return (
     <section id="management" className="section-pad" style={{ background: 'var(--navy-light)' }}>
       <div className="page-width">
-        {/* Symmetrical Section Header */}
-        <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
-          <span className="section-label" style={{ justifyContent: 'center' }}>Leadership & Guidance</span>
+        {/* Section Header */}
+        <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 60px' }}>
+          <span className="section-label" style={{ justifyContent: 'center' }}>Leadership & Committee</span>
           <h2 className="sport-heading">League <em>Management</em></h2>
           <p className="lead" style={{ margin: '16px auto 0' }}>
-            The visionary leaders and organizers driving Khoraghat Premier League forward.
+            The visionary team and executive committee members driving Khoraghat Premier League forward.
           </p>
         </div>
 
-        {/* Symmetrical Committee Grid */}
-        <div className="teams-grid">
+        {/* Management Personnel Grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '32px',
+          }}
+        >
           {members.map((member) => (
             <div
               key={member.id}
@@ -63,90 +69,146 @@ export function ManagementSection() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 textAlign: 'center',
-                padding: '36px 28px',
-                borderRadius: '16px',
-                background: 'var(--navy)',
+                padding: '40px 24px 32px',
+                borderRadius: '20px',
+                background: 'linear-gradient(180deg, var(--navy) 0%, var(--navy-light) 100%)',
                 border: '1px solid var(--border)',
-                transition: 'all 0.3s ease',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
               }}
             >
-              {/* Photo Avatar */}
+              {/* Avatar Frame with Gold Glow */}
               <div
                 style={{
-                  width: '110px',
-                  height: '110px',
-                  borderRadius: '50%',
-                  padding: '3px',
-                  background: 'linear-gradient(135deg, var(--gold), var(--electric))',
-                  marginBottom: '20px',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+                  position: 'relative',
+                  width: '120px',
+                  height: '120px',
+                  marginBottom: '24px',
                   flexShrink: 0,
                 }}
               >
                 <div
                   style={{
+                    position: 'absolute',
+                    inset: '-4px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, var(--gold), var(--electric))',
+                    opacity: 0.85,
+                    filter: 'blur(4px)',
+                  }}
+                />
+                <div
+                  style={{
+                    position: 'relative',
                     width: '100%',
                     height: '100%',
                     borderRadius: '50%',
-                    overflow: 'hidden',
-                    background: '#040d1a',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    padding: '3px',
+                    background: 'linear-gradient(135deg, #FFDF00, #D4AF37)',
+                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
                   }}
                 >
-                  {member.photo_url ? (
-                    <img
-                      src={member.photo_url}
-                      alt={member.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <UserCheck style={{ width: '40px', height: '40px', color: 'var(--gold)', opacity: 0.8 }} />
-                  )}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      background: '#040d1a',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {member.photo_url ? (
+                      <img
+                        src={member.photo_url}
+                        alt={member.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <UserCheck style={{ width: '48px', height: '48px', color: 'var(--gold)', opacity: 0.8 }} />
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Details */}
-              <h3 className="sport-heading" style={{ fontSize: '20px', color: 'var(--text)', marginBottom: '8px' }}>
+              {/* Personnel Name */}
+              <h3
+                className="sport-heading"
+                style={{
+                  fontSize: '22px',
+                  color: 'var(--text)',
+                  marginBottom: '10px',
+                  lineHeight: 1.2,
+                }}
+              >
                 {member.name}
               </h3>
-              
+
+              {/* Designation Pill */}
               <span
                 style={{
                   fontSize: '11px',
                   fontWeight: 800,
                   textTransform: 'uppercase',
-                  letterSpacing: '1px',
+                  letterSpacing: '1.2px',
                   color: 'var(--gold)',
-                  background: 'rgba(212, 175, 55, 0.1)',
-                  border: '1px solid rgba(212, 175, 55, 0.25)',
-                  padding: '4px 14px',
+                  background: 'rgba(212, 175, 55, 0.08)',
+                  border: '1px solid rgba(212, 175, 55, 0.3)',
+                  padding: '6px 16px',
                   borderRadius: '100px',
-                  marginBottom: '16px',
+                  marginBottom: '20px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
+                <Award size={13} style={{ color: 'var(--gold)' }} />
                 {member.designation}
               </span>
 
+              {/* Contact Information */}
               {member.contact && (
                 <div
                   style={{
                     marginTop: 'auto',
-                    paddingTop: '16px',
+                    paddingTop: '18px',
                     borderTop: '1px solid var(--border)',
                     width: '100%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px',
-                    color: 'var(--muted)',
-                    fontSize: '13px',
-                    fontWeight: 600,
                   }}
                 >
-                  <Phone size={14} style={{ color: 'var(--gold)' }} />
-                  <span>{member.contact}</span>
+                  <a
+                    href={`tel:${member.contact.replace(/\s+/g, '')}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      color: 'var(--text)',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid var(--border)',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--gold)';
+                      e.currentTarget.style.color = 'var(--gold)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border)';
+                      e.currentTarget.style.color = 'var(--text)';
+                    }}
+                  >
+                    <Phone size={14} style={{ color: 'var(--gold)' }} />
+                    <span>{member.contact}</span>
+                  </a>
                 </div>
               )}
             </div>
