@@ -579,7 +579,7 @@ export default function Home() {
       )}
 
       {content.show_stats === 'true' && (
-        <section className="section-pad" id="prizes" style={{ background: 'linear-gradient(180deg, var(--navy-light) 0%, var(--navy) 100%)' }}>
+        <section className="section-pad" id="prizes" style={{ background: '#f8fafc' }}>
           <div className="page-width">
             <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
               <span className="section-label" style={{ justifyContent: 'center' }}>Ultimate Glory</span>
@@ -587,20 +587,20 @@ export default function Home() {
               <p className="lead" style={{ margin: '16px auto 0' }}>Compete for major cash prizes and prestigious trophies in KPL Season 3.</p>
             </div>
             <div className="format-grid" style={{ alignItems: 'center' }}>
-              <div className="format-card" style={{ borderColor: 'var(--gold)', boxShadow: '0 12px 36px var(--gold-glow)', background: 'linear-gradient(180deg, var(--navy) 0%, var(--navy-light) 100%)' }}>
-                <span className="format-icon" style={{ color: 'rgba(212,175,55,0.15)' }}>🏆</span>
-                <h3 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '28px' }}>Champions</h3>
-                <p style={{ fontSize: '54px', fontWeight: '900', color: 'var(--text)', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹27,000</p>
+              <div className="format-card" style={{ borderColor: 'var(--gold)', boxShadow: '0 12px 30px rgba(212, 175, 55, 0.25)', background: '#ffffff' }}>
+                <span className="format-icon" style={{ color: 'rgba(212,175,55,0.12)' }}>🏆</span>
+                <h3 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '28px' }}>Champions</h3>
+                <p style={{ fontSize: '52px', fontWeight: '900', color: '#0f172a', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹27,000</p>
               </div>
-              <div className="format-card">
+              <div className="format-card" style={{ background: '#ffffff' }}>
                 <span className="format-icon">🥈</span>
-                <h3 className="sport-heading" style={{ fontSize: '24px' }}>Runners Up</h3>
-                <p style={{ fontSize: '42px', fontWeight: '900', color: 'var(--text)', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹17,000</p>
+                <h3 className="sport-heading" style={{ fontSize: '24px', color: '#0f172a' }}>Runners Up</h3>
+                <p style={{ fontSize: '42px', fontWeight: '900', color: '#0f172a', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹17,000</p>
               </div>
-              <div className="format-card">
+              <div className="format-card" style={{ background: '#ffffff' }}>
                 <span className="format-icon">⭐</span>
-                <h3 className="sport-heading" style={{ fontSize: '24px' }}>Player of Series</h3>
-                <p style={{ fontSize: '42px', fontWeight: '900', color: 'var(--text)', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹500</p>
+                <h3 className="sport-heading" style={{ fontSize: '24px', color: '#0f172a' }}>Player of Series</h3>
+                <p style={{ fontSize: '42px', fontWeight: '900', color: '#0f172a', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹500</p>
               </div>
             </div>
           </div>
@@ -608,7 +608,7 @@ export default function Home() {
       )}
 
       {content.show_about === 'true' && (
-        <section className="section-pad" id="league" style={{ background: 'var(--navy)' }}>
+        <section className="section-pad" id="league" style={{ background: '#ffffff' }}>
           <div className="page-width split-layout" style={{ alignItems: 'flex-start' }}>
             <div>
               <span className="section-label">The League</span>
@@ -619,25 +619,25 @@ export default function Home() {
               )}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div className="format-card" style={{ padding: '24px', borderRadius: '16px' }}>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: '#f8fafc' }}>
                 <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>🏏</span>
-                <h4 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '18px', marginBottom: '6px' }}>Hard Tennis</h4>
-                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5 }}>High-voltage hard tennis cricket with professional gear.</p>
+                <h4 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '18px', marginBottom: '6px' }}>Hard Tennis</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: '#475569' }}>High-voltage hard tennis cricket with professional gear.</p>
               </div>
-              <div className="format-card" style={{ padding: '24px', borderRadius: '16px' }}>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: '#f8fafc' }}>
                 <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>🛡️</span>
-                <h4 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '18px', marginBottom: '6px' }}>8 Franchises</h4>
-                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5 }}>Top team owners competing in an official auction draft.</p>
+                <h4 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '18px', marginBottom: '6px' }}>8 Franchises</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: '#475569' }}>Top team owners competing in an official auction draft.</p>
               </div>
-              <div className="format-card" style={{ padding: '24px', borderRadius: '16px' }}>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: '#f8fafc' }}>
                 <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>📺</span>
-                <h4 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '18px', marginBottom: '6px' }}>Live Coverage</h4>
-                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5 }}>HD YouTube & Facebook live streaming with commentary.</p>
+                <h4 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '18px', marginBottom: '6px' }}>Live Coverage</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: '#475569' }}>HD YouTube & Facebook live streaming with commentary.</p>
               </div>
-              <div className="format-card" style={{ padding: '24px', borderRadius: '16px' }}>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: '#f8fafc' }}>
                 <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>🏆</span>
-                <h4 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '18px', marginBottom: '6px' }}>Grand Finale</h4>
-                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5 }}>Cash rewards, player trophies, and championship glory.</p>
+                <h4 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '18px', marginBottom: '6px' }}>Grand Finale</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: '#475569' }}>Cash rewards, player trophies, and championship glory.</p>
               </div>
             </div>
           </div>
@@ -645,7 +645,7 @@ export default function Home() {
       )}
 
       {content.show_format === 'true' && (
-        <section className="section-pad" id="format" style={{ background: 'var(--navy-light)' }}>
+        <section className="section-pad" id="format" style={{ background: '#f8fafc' }}>
           <div className="page-width">
             <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
               <span className="section-label" style={{ justifyContent: 'center' }}>Built for the bold</span>
@@ -656,17 +656,17 @@ export default function Home() {
             <div className="format-grid">
               <div className="format-card">
                 <span className="format-icon">01</span>
-                <h3 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '22px' }}>Match format</h3>
+                <h3 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '22px' }}>Match format</h3>
                 <p style={{ marginTop: '8px', lineHeight: 1.6 }}>15 overs of high intensity hard tennis ball cricket.</p>
               </div>
               <div className="format-card">
                 <span className="format-icon">02</span>
-                <h3 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '22px' }}>League structure</h3>
+                <h3 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '22px' }}>League structure</h3>
                 <p style={{ marginTop: '8px', lineHeight: 1.6 }}>8 franchise teams playing round robin matches followed by a knockout stage.</p>
               </div>
               <div className="format-card">
                 <span className="format-icon">03</span>
-                <h3 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '22px' }}>Season duration</h3>
+                <h3 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '22px' }}>Season duration</h3>
                 <p style={{ marginTop: '8px', lineHeight: 1.6 }}>A multi-week tournament featuring competitive fixtures.</p>
               </div>
             </div>
@@ -675,7 +675,7 @@ export default function Home() {
       )}
 
       {content.show_teams === 'true' && (
-        <section className="section-pad" id="teams" style={{ background: 'var(--navy)' }}>
+        <section className="section-pad" id="teams" style={{ background: '#ffffff' }}>
           <div className="page-width">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px', flexWrap: 'wrap', gap: '16px' }}>
               <div>
@@ -695,7 +695,7 @@ export default function Home() {
                       {team.logo_url ? (
                         <img src={getImageUrl(team.logo_url)} alt={team.name} className="team-logo-avatar" />
                       ) : (
-                        <span className="sport-heading" style={{ fontSize: '20px', color: 'var(--gold)' }}>0{i + 1}</span>
+                        <span className="sport-heading" style={{ fontSize: '20px', color: 'var(--gold-dark)' }}>0{i + 1}</span>
                       )}
                       <span className="team-short">{team.short_code}</span>
                     </div>
@@ -720,7 +720,7 @@ export default function Home() {
       )}
 
       {content.show_players === 'true' && (
-        <section className="section-pad" id="players" style={{ background: 'var(--navy-light)' }}>
+        <section className="section-pad" id="players" style={{ background: '#f1f5f9' }}>
           <div className="page-width">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px', flexWrap: 'wrap', gap: '16px' }}>
               <div>
@@ -739,8 +739,8 @@ export default function Home() {
                     {player.photo ? (
                       <img src={getImageUrl(player.photo)} alt={player.player_name} className="player-photo" />
                     ) : (
-                      <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: '#040d1a' }}>
-                        <Users size={48} color="#D4AF37" />
+                      <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: '#f8fafc' }}>
+                        <Users size={48} color="#d4af37" />
                       </div>
                     )}
                     <div className="player-info">
@@ -761,7 +761,7 @@ export default function Home() {
       )}
 
       {content.show_register === 'true' && (
-        <section className="section-pad" id="register" style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%)' }}>
+        <section className="section-pad" id="register" style={{ position: 'relative', overflow: 'hidden', background: '#ffffff' }}>
           <div className="page-width split-layout">
             <div>
               <span className="section-label">Your moment is here</span>
@@ -774,13 +774,13 @@ export default function Home() {
             </div>
             <div className="register-deadline">
               <span className="section-label">Registration Deadline</span>
-              <strong className="sport-heading" style={{ fontSize: 'clamp(64px, 10vw, 96px)', color: 'var(--gold)', letterSpacing: '-0.05em', lineHeight: 1 }}>
+              <strong className="sport-heading" style={{ fontSize: 'clamp(64px, 10vw, 96px)', color: 'var(--gold-dark)', letterSpacing: '-0.05em', lineHeight: 1 }}>
                 {(() => {
                   const target = content.deadline_date ? new Date(content.deadline_date) : null;
                   if (!target) return '—';
                   const diff = Math.max(0, target.getTime() - Date.now());
                   const days = Math.floor(diff / 86400000);
-                  return <>{days} <span style={{ fontSize: 'clamp(18px, 4vw, 24px)', color: 'var(--text)', fontStyle: 'normal', fontFamily: 'Inter', letterSpacing: 'normal', marginLeft: '8px' }}>Days left</span></>;
+                  return <>{days} <span style={{ fontSize: 'clamp(18px, 4vw, 24px)', color: '#0f172a', fontStyle: 'normal', fontFamily: 'Inter', letterSpacing: 'normal', marginLeft: '8px' }}>Days left</span></>;
                 })()}
               </strong>
               <p className="lead" style={{ marginTop: '16px' }}>{content.deadline_text || 'Secure your spot before the registration closes.'}</p>
@@ -790,7 +790,7 @@ export default function Home() {
       )}
 
       {content.show_highlights === 'true' && gallery.length > 0 && (
-        <section id="highlights" className="section-pad" style={{ background: 'var(--navy)' }}>
+        <section id="highlights" className="section-pad" style={{ background: '#f8fafc' }}>
           <div className="page-width">
             <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
               <span className="section-label" style={{ justifyContent: 'center' }}>Highlights</span>

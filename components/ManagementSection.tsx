@@ -28,9 +28,9 @@ export function ManagementSection() {
 
   if (loading) {
     return (
-      <section className="section-pad" id="management" style={{ background: 'var(--navy-light)' }}>
+      <section className="section-pad" id="management" style={{ background: '#ffffff' }}>
         <div className="page-width" style={{ textAlign: 'center' }}>
-          <Loader2 className="spin" style={{ color: 'var(--gold)', margin: '0 auto' }} size={32} />
+          <Loader2 className="spin" style={{ color: 'var(--gold-dark)', margin: '0 auto' }} size={32} />
         </div>
       </section>
     );
@@ -41,7 +41,7 @@ export function ManagementSection() {
   }
 
   return (
-    <section id="management" className="section-pad" style={{ background: 'var(--navy-light)' }}>
+    <section id="management" className="section-pad" style={{ background: '#ffffff' }}>
       <div className="page-width">
         {/* Section Header */}
         <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 60px' }}>
@@ -71,8 +71,9 @@ export function ManagementSection() {
                 textAlign: 'center',
                 padding: '40px 24px 32px',
                 borderRadius: '20px',
-                background: 'linear-gradient(180deg, var(--navy) 0%, var(--navy-light) 100%)',
+                background: '#ffffff',
                 border: '1px solid var(--border)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 position: 'relative',
               }}
