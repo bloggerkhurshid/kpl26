@@ -82,8 +82,8 @@ function CountdownTimer({ deadlineDate }: { deadlineDate?: string }) {
 function WhatsAppFloat() {
   const [open, setOpen] = useState(false);
   const contacts = [
-    { name: 'Saddad Hussain', number: '8638479115' },
-    { name: 'Support', number: '6002506596' },
+    { name: 'Saddam Hussain', number: '8638479115' },
+    { name: 'Abu Sahid Sk', number: '6002506596' },
   ];
   return (
     <div className="wa-float-wrap">
