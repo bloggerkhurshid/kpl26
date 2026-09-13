@@ -20,19 +20,29 @@ export function isLoggedIn(): boolean {
   return !!getAdminToken();
 }
 
-export async function adminLogin(password: string): Promise<boolean> {
-  const res = await fetch('/api/admin/auth', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
-  });
-  if (!res.ok) return false;
-  const data = await res.json();
-  if (data.token) {
-    setAdminToken(data.token);
-    return true;
+export async function adminLogin(password: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/admin/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    
+    const data = await res.json().catch(() => ({}));
+    
+    if (!res.ok) {
+      return { success: false, error: data.error || 'Server error occurred' };
+    }
+    
+    if (data.token) {
+      setAdminToken(data.token);
+      return { success: true };
+    }
+    
+    return { success: false, error: 'Invalid response from server' };
+  } catch (err) {
+    return { success: false, error: 'Network error occurred' };
   }
-  return false;
 }
 
 export function adminLogout(): void {

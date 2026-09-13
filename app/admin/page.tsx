@@ -20,12 +20,12 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const ok = await adminLogin(password);
+    const result = await adminLogin(password);
     setLoading(false);
-    if (ok) {
+    if (result.success) {
       window.location.href = '/admin/dashboard';
     } else {
-      setError('Incorrect password. Please try again.');
+      setError(result.error || 'Incorrect password. Please try again.');
     }
   }
 
