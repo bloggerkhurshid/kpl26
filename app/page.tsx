@@ -125,38 +125,54 @@ export default function Home() {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     
-    // Fetch dynamic database data
+    // 1. Instantly load from local cache if available (Stale-While-Revalidate)
+    const cachedData = localStorage.getItem('kpl_home_cache');
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        if (parsed.t) setTeams(parsed.t);
+        if (parsed.p) setPlayers(parsed.p);
+        if (parsed.count !== undefined) setPlayerCount(parsed.count);
+        if (parsed.h) setGallery(parsed.h);
+        if (parsed.f) setFees(parsed.f);
+        if (parsed.c) { setContent(parsed.c); setLoadingContent(false); }
+      } catch(e) {}
+    }
+
+    // 2. Fetch fresh data in the background
     Promise.all([
       supabase.from('teams').select('*').eq('status', 'active'),
       supabase.from('players').select('id,player_name,role,photo').eq('status', 'active').limit(8).order('created_at', { ascending: false }),
       supabase.from('players').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-      supabase.from('highlights').select('*').order('created_at', { ascending: false }).limit(6)
-    ]).then(([{ data: t }, { data: p }, { count }, { data: h }]) => {
+      supabase.from('highlights').select('*').order('created_at', { ascending: false }).limit(6),
+      fetch('/api/settings').then(res => res.json()).catch(() => null),
+      fetch('/api/content').then(res => res.json()).catch(() => null)
+    ]).then(([{ data: t }, { data: p }, { count }, { data: h }, f, c]) => {
+      
+      const parsedGallery = h ? h.map(item => ({ title: item.title, image: item.image_url, size: item.size })) : [];
+      
       if (t) setTeams(t as Team[]);
       if (p) setPlayers(p as Player[]);
-      if (count) setPlayerCount(count);
-      if (h) setGallery(h.map(item => ({ title: item.title, image: item.image_url, size: item.size })) as GalleryItem[]);
+      if (count !== null) setPlayerCount(count);
+      if (h) setGallery(parsedGallery as GalleryItem[]);
+      if (f) setFees(f);
+      if (c) {
+        setContent(c);
+        setLoadingContent(false);
+      }
+
+      // 3. Update the cache for the next time the user visits
+      localStorage.setItem('kpl_home_cache', JSON.stringify({
+        t: t || [],
+        p: p || [],
+        count: count || 0,
+        h: parsedGallery,
+        f: f || { fee_player: 500, fee_foreign_player: 1000, fee_team: 5000, active_gateway: 'razorpay' },
+        c: c || {}
+      }));
     }).catch(console.error);
 
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    fetch('/api/settings')
-      .then(res => res.json())
-      .then(data => setFees(data))
-      .catch(console.error);
-
-    fetch('/api/content')
-      .then(res => res.json())
-      .then(data => {
-        setContent(data);
-        setLoadingContent(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoadingContent(false);
-      });
   }, []);
 
   const handlePlayerFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
