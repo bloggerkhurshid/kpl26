@@ -329,7 +329,7 @@ export default function Home() {
       registered_by: 'Self Registration',
       status: 'pending',
       auction_eligible: true,
-      base_price: 500
+      base_price: 50
     }).select().single();
 
     if (error || !player) {

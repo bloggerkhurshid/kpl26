@@ -52,7 +52,7 @@ const EMPTY_FORM = {
   contact_number: '', email: '', present_address: '', address_proof: '', photo: '', batsman: false, batting_hand: '', wicket_keeper: false,
   player_category: '', previously_played: false, all_rounder: false, bowler: false,
   bowling_arm: '', bowling_style: '', bowling_type: '', player_signature: '', registration_number: '', registered_by: 'admin',
-  team_id: '', auction_eligible: true, base_price: '0', status: 'active', notes: '',
+  team_id: '', auction_eligible: true, base_price: '50', status: 'active', notes: '',
 };
 
 const ROLES = ['Batsman', 'Bowler', 'All-rounder', 'Wicket-keeper'];
