@@ -2,6 +2,14 @@ import React from 'react';
 import { MapPin, Phone, Mail } from 'lucide-react';
 
 export const Footer: React.FC = () => {
+  const scrollToSection = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <footer className="footer">
       <div className="container">
@@ -24,10 +32,18 @@ export const Footer: React.FC = () => {
           <div className="col-6 col-lg-4">
             <h6 className="text-white fw-bold mb-3 text-uppercase tracking-wider fs-7">Quick Navigation</h6>
             <ul className="list-unstyled small text-muted">
-              <li className="mb-2"><a href="#prizes" className="text-slate-300 text-decoration-none">Grand Prize Pool</a></li>
-              <li className="mb-2"><a href="#teams" className="text-slate-300 text-decoration-none">Franchise Teams</a></li>
-              <li className="mb-2"><a href="#players" className="text-slate-300 text-decoration-none">Player Draft List</a></li>
-              <li className="mb-2"><a href="#gallery" className="text-slate-300 text-decoration-none">Action Photo Gallery</a></li>
+              <li className="mb-2">
+                <button onClick={(e) => scrollToSection('prizes', e)} className="btn btn-link p-0 text-slate-300 text-decoration-none text-start">Grand Prize Pool</button>
+              </li>
+              <li className="mb-2">
+                <button onClick={(e) => scrollToSection('teams', e)} className="btn btn-link p-0 text-slate-300 text-decoration-none text-start">Franchise Teams</button>
+              </li>
+              <li className="mb-2">
+                <button onClick={(e) => scrollToSection('players', e)} className="btn btn-link p-0 text-slate-300 text-decoration-none text-start">Player Draft List</button>
+              </li>
+              <li className="mb-2">
+                <button onClick={(e) => scrollToSection('gallery', e)} className="btn btn-link p-0 text-slate-300 text-decoration-none text-start">Action Photo Gallery</button>
+              </li>
             </ul>
           </div>
 

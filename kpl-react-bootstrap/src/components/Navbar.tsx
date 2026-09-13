@@ -18,26 +18,40 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister, onOpenAdmin }) =
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const scrollToSection = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setMobileMenuOpen(false);
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const scrollToTop = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <nav className={`site-nav ${isScrolled ? 'is-scrolled' : ''}`}>
       <div className="container-fluid d-flex align-items-center justify-content-between px-0">
         {/* Brand */}
-        <a href="#" className="brand">
+        <button onClick={scrollToTop} className="brand bg-transparent border-0 text-start p-0">
           <img src="/images/kpl-logo.jpg" alt="KPL Logo" className="brand-logo" />
           <div className="brand-text">
             KPL SEASON 3
             <span>KHORAGHAT PREMIER LEAGUE</span>
           </div>
-        </a>
+        </button>
 
         {/* Desktop Links */}
         <div className={`nav-links ${mobileMenuOpen ? 'd-flex flex-column position-absolute top-100 start-0 end-0 bg-white p-4 shadow-lg rounded-4 border border-secondary border-opacity-25' : ''}`}>
-          <a href="#prizes" onClick={() => setMobileMenuOpen(false)}>Prizes</a>
-          <a href="#format" onClick={() => setMobileMenuOpen(false)}>Format</a>
-          <a href="#teams" onClick={() => setMobileMenuOpen(false)}>Teams</a>
-          <a href="#players" onClick={() => setMobileMenuOpen(false)}>Players</a>
-          <a href="#management" onClick={() => setMobileMenuOpen(false)}>Management</a>
-          <a href="#gallery" onClick={() => setMobileMenuOpen(false)}>Gallery</a>
+          <button className="btn p-0 border-0 nav-link-btn" onClick={(e) => scrollToSection('prizes', e)}>Prizes</button>
+          <button className="btn p-0 border-0 nav-link-btn" onClick={(e) => scrollToSection('format', e)}>Format</button>
+          <button className="btn p-0 border-0 nav-link-btn" onClick={(e) => scrollToSection('teams', e)}>Teams</button>
+          <button className="btn p-0 border-0 nav-link-btn" onClick={(e) => scrollToSection('players', e)}>Players</button>
+          <button className="btn p-0 border-0 nav-link-btn" onClick={(e) => scrollToSection('management', e)}>Management</button>
+          <button className="btn p-0 border-0 nav-link-btn" onClick={(e) => scrollToSection('gallery', e)}>Gallery</button>
         </div>
 
         {/* Action CTAs */}

@@ -24,6 +24,14 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister }) => {
     return () => clearInterval(timer);
   }, []);
 
+  const scrollToPrizes = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const el = document.getElementById('prizes');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section className="hero">
       {/* 100% Full Visibility Background Images */}
@@ -67,9 +75,9 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister }) => {
             <button className="button-primary" onClick={onOpenRegister}>
               <span>Register Team / Player <ChevronRight size={18} className="ms-1" /></span>
             </button>
-            <a href="#prizes" className="button-outline">
+            <button className="button-outline" onClick={scrollToPrizes}>
               <span>Explore Prizes</span>
-            </a>
+            </button>
           </div>
         </div>
       </div>
