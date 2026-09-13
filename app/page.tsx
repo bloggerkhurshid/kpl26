@@ -36,6 +36,7 @@ type Team = {
   home_location: string;
   short_code: string;
   accent_color: string;
+  logo_url?: string;
   status: string;
 };
 
@@ -44,6 +45,7 @@ type Player = {
   player_name: string;
   role: string;
   photo: string;
+  player_category?: string;
 };
 
 type GalleryItem = {
@@ -607,16 +609,36 @@ export default function Home() {
 
       {content.show_about === 'true' && (
         <section className="section-pad" id="league" style={{ background: 'var(--navy)' }}>
-          <div className="page-width split-layout">
+          <div className="page-width split-layout" style={{ alignItems: 'flex-start' }}>
             <div>
               <span className="section-label">The League</span>
               <h2 className="sport-heading">{content.about_title || 'Assam’s Premier Cricket League'}</h2>
-            </div>
-            <div>
-              <p className="lead" style={{ whiteSpace: 'pre-wrap' }}>{content.about_text}</p>
+              <p className="lead" style={{ marginTop: '20px', whiteSpace: 'pre-wrap' }}>{content.about_text}</p>
               {content.show_format === 'true' && (
-                <a className="text-link" href="#format" style={{ marginTop: '24px' }}>Discover the format <ArrowRight size={16} strokeWidth={3} /></a>
+                <a className="text-link" href="#format" style={{ marginTop: '28px' }}>Discover the format <ArrowRight size={16} strokeWidth={3} /></a>
               )}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px' }}>
+                <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>🏏</span>
+                <h4 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '18px', marginBottom: '6px' }}>Hard Tennis</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5 }}>High-voltage hard tennis cricket with professional gear.</p>
+              </div>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px' }}>
+                <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>🛡️</span>
+                <h4 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '18px', marginBottom: '6px' }}>8 Franchises</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5 }}>Top team owners competing in an official auction draft.</p>
+              </div>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px' }}>
+                <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>📺</span>
+                <h4 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '18px', marginBottom: '6px' }}>Live Coverage</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5 }}>HD YouTube & Facebook live streaming with commentary.</p>
+              </div>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px' }}>
+                <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>🏆</span>
+                <h4 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '18px', marginBottom: '6px' }}>Grand Finale</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5 }}>Cash rewards, player trophies, and championship glory.</p>
+              </div>
             </div>
           </div>
         </section>
@@ -670,7 +692,11 @@ export default function Home() {
                 teams.map((team, i) => (
                   <article className="team-card" key={team.id}>
                     <div className="team-card-top">
-                      <span className="sport-heading" style={{ fontSize: '20px', color: 'var(--gold)' }}>0{i + 1}</span>
+                      {team.logo_url ? (
+                        <img src={getImageUrl(team.logo_url)} alt={team.name} className="team-logo-avatar" />
+                      ) : (
+                        <span className="sport-heading" style={{ fontSize: '20px', color: 'var(--gold)' }}>0{i + 1}</span>
+                      )}
                       <span className="team-short">{team.short_code}</span>
                     </div>
                     <h3 className="sport-heading">{team.name}</h3>
@@ -713,13 +739,18 @@ export default function Home() {
                     {player.photo ? (
                       <img src={getImageUrl(player.photo)} alt={player.player_name} className="player-photo" />
                     ) : (
-                      <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: '#091325' }}>
+                      <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: '#040d1a' }}>
                         <Users size={48} color="#D4AF37" />
                       </div>
                     )}
                     <div className="player-info">
                       <h3 className="sport-heading">{player.player_name}</h3>
-                      <p>{player.role || 'ALL-ROUNDER'}</p>
+                      <div className="player-badge-wrap">
+                        <span className="player-role-badge">{player.role || 'ALL-ROUNDER'}</span>
+                        {player.player_category && (
+                          <span className="player-category-badge">{player.player_category}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))
