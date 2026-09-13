@@ -70,6 +70,12 @@ export default function PlayersPage() {
   const [filterTeam, setFilterTeam] = useState('');
   const [filterAuction, setFilterAuction] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [proofModal, setProofModal] = useState<{ url: string; title: string } | null>(null);
+
+  function openAddressProof(proofUrl: string | null | undefined, title: string = 'Address Proof') {
+    if (!proofUrl) return;
+    setProofModal({ url: proofUrl, title });
+  }
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
     setToast({ msg, type });
@@ -266,9 +272,9 @@ export default function PlayersPage() {
           <button className="dt-btn dt-btn-icon" title="View details" onClick={() => openView(p)}><FileText size={14} /></button>
           <button className="dt-btn dt-btn-icon" title="Print details" onClick={() => window.open(`/admin/players/print/${p.id}`, '_blank')}><Printer size={14} /></button>
           {p.address_proof ? (
-            <a className="dt-btn dt-btn-icon" title="View Address Proof" href={p.address_proof} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button className="dt-btn dt-btn-icon" title="View Address Proof" onClick={() => openAddressProof(p.address_proof, `${p.player_name} - Address Proof`)} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               <MapPin size={14} />
-            </a>
+            </button>
           ) : (
             <button className="dt-btn dt-btn-icon" title="No address proof uploaded" style={{ opacity: 0.35, cursor: 'not-allowed' }} disabled>
               <MapPin size={14} />
@@ -423,7 +429,7 @@ export default function PlayersPage() {
                       )}
                     </label>
                     {form.address_proof && (
-                      <a href={form.address_proof} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: 'var(--adm-gold)', marginTop: '4px', display: 'inline-block' }}>↗ View full size</a>
+                      <button type="button" onClick={() => openAddressProof(form.address_proof, 'Address Proof Preview')} style={{ fontSize: '11px', color: 'var(--adm-gold)', marginTop: '4px', display: 'inline-block', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↗ View full size</button>
                     )}
                   </div>
                 </div>
@@ -599,7 +605,7 @@ export default function PlayersPage() {
                     <h4><FileText size={14} color="var(--adm-gold)" /> Documents</h4>
                     <div className="player-detail-doc-row">
                       {selected.address_proof ? (
-                        <a href={selected.address_proof} target="_blank" rel="noopener noreferrer" className="player-detail-doc-thumb">
+                        <div className="player-detail-doc-thumb" onClick={() => openAddressProof(selected.address_proof, `${selected.player_name} - Address Proof`)} style={{ cursor: 'pointer' }}>
                           {selected.address_proof.toLowerCase().includes('.pdf') || selected.address_proof.startsWith('data:application/pdf') ? (
                             <div style={{ width: '100%', height: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', background: 'var(--adm-panel)' }}>
                               <FileText size={28} color="var(--adm-gold)" />
@@ -609,7 +615,7 @@ export default function PlayersPage() {
                             <img src={selected.address_proof} alt="Address Proof" />
                           )}
                           <span>Address Proof ↗</span>
-                        </a>
+                        </div>
                       ) : <span className="player-detail-no-doc">No address proof uploaded</span>}
                       {selected.player_signature ? (
                         <div className="player-detail-doc-thumb player-detail-sig">
@@ -648,6 +654,59 @@ export default function PlayersPage() {
                 <button className="admin-btn admin-btn-danger" onClick={deletePlayer} disabled={saving}>
                   {saving ? <><Loader2 size={15} className="spin" /> Deleting...</> : 'Delete'}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Address Proof Viewer Modal */}
+        {proofModal && (
+          <div className="admin-modal-overlay" onClick={() => setProofModal(null)}>
+            <div className="admin-modal" style={{ maxWidth: '800px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+              <div className="admin-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--adm-border)' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FileText size={18} color="var(--adm-gold)" />
+                  {proofModal.title}
+                </h3>
+                <button onClick={() => setProofModal(null)} style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer' }}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="admin-modal-body" style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--adm-input-bg)', minHeight: '300px' }}>
+                {proofModal.url.startsWith('data:application/pdf') || proofModal.url.toLowerCase().endsWith('.pdf') ? (
+                  <iframe src={proofModal.url} title={proofModal.title} style={{ width: '100%', height: '65vh', border: 'none', borderRadius: '8px' }} />
+                ) : (
+                  <img src={proofModal.url} alt={proofModal.title} style={{ maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }} />
+                )}
+              </div>
+              <div className="admin-modal-footer" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-ghost"
+                  onClick={() => {
+                    if (proofModal.url.startsWith('data:')) {
+                      try {
+                        const arr = proofModal.url.split(',');
+                        const mimeMatch = arr[0].match(/:(.*?);/);
+                        const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+                        const bstr = atob(arr[1]);
+                        let n = bstr.length;
+                        const u8arr = new Uint8Array(n);
+                        while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+                        const blob = new Blob([u8arr], { type: mime });
+                        const blobUrl = URL.createObjectURL(blob);
+                        window.open(blobUrl, '_blank');
+                      } catch (e) {
+                        window.open(proofModal.url, '_blank');
+                      }
+                    } else {
+                      window.open(proofModal.url, '_blank');
+                    }
+                  }}
+                >
+                  Open in New Tab ↗
+                </button>
+                <button type="button" className="admin-btn admin-btn-primary" onClick={() => setProofModal(null)}>Close</button>
               </div>
             </div>
           </div>
