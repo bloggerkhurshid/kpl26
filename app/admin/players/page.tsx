@@ -370,19 +370,46 @@ export default function PlayersPage() {
                     <label>Present Address *</label>
                     <input type="text" required value={form.present_address} onChange={e => setForm({ ...form, present_address: e.target.value })} placeholder="Full address" />
                   </div>
+                  {/* Photo Upload */}
                   <div className="admin-form-field">
                     <label>Photo</label>
-                    <input type="file" accept="image/*" onChange={e => handleFileChange(e, 'photo')} />
-                    {form.photo && <img src={form.photo} alt="Preview" style={{ marginTop: 8, width: 40, height: 40, objectFit: 'cover', borderRadius: '4px' }} />}
+                    <label className="admin-upload-box" style={{ aspectRatio: '1/1' }}>
+                      <input type="file" accept="image/*" onChange={e => handleFileChange(e, 'photo')} style={{ display: 'none' }} />
+                      {form.photo ? (
+                        <>
+                          <img src={form.photo} alt="Photo preview" className="admin-upload-preview" />
+                          <div className="admin-upload-overlay">📷 Change Photo</div>
+                        </>
+                      ) : (
+                        <div className="admin-upload-placeholder">
+                          <Users size={28} color="var(--adm-gold)" />
+                          <span>Click to upload photo</span>
+                          <small>JPG, PNG, WEBP</small>
+                        </div>
+                      )}
+                    </label>
                   </div>
+
+                  {/* Address Proof Upload */}
                   <div className="admin-form-field">
                     <label>Address Proof</label>
-                    <input type="file" accept="image/*,application/pdf" onChange={e => handleFileChange(e, 'address_proof')} />
+                    <label className="admin-upload-box" style={{ aspectRatio: '4/3' }}>
+                      <input type="file" accept="image/*" onChange={e => handleFileChange(e, 'address_proof')} style={{ display: 'none' }} />
+                      {form.address_proof ? (
+                        <>
+                          <img src={form.address_proof} alt="Proof preview" className="admin-upload-preview" />
+                          <div className="admin-upload-overlay">📎 Change Proof</div>
+                        </>
+                      ) : (
+                        <div className="admin-upload-placeholder">
+                          <FileText size={28} color="var(--adm-gold)" />
+                          <span>Click to upload proof</span>
+                          <small>Aadhar, Voter ID, etc.</small>
+                        </div>
+                      )}
+                    </label>
                     {form.address_proof && (
-                      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <img src={form.address_proof} alt="Proof" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--adm-border-focus)' }} />
-                        <a href={form.address_proof} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: 'var(--adm-gold)' }}>View current</a>
-                      </div>
+                      <a href={form.address_proof} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: 'var(--adm-gold)', marginTop: '4px', display: 'inline-block' }}>↗ View full size</a>
                     )}
                   </div>
                 </div>
