@@ -454,97 +454,96 @@ export default function PlayersPage() {
           </div>
         )}
 
-        {/* View Details Modal */}
+        {/* View Details Modal — Full Screen */}
         {modal === 'view' && selected && (
-          <div className="admin-modal-overlay" onClick={() => setModal(null)}>
-            <div className="admin-modal" style={{ maxWidth: '800px', width: '100%', aspectRatio: '16/9', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
-              <div className="admin-modal-header">
-                <h2>Player Details: {selected.player_name}</h2>
-                <button onClick={() => setModal(null)}><X size={20} /></button>
-              </div>
-              <div className="admin-modal-body" style={{ flex: 1, overflowY: 'auto', display: 'flex', gap: '32px' }}>
-                
-                {/* Left Side: Photos & Documents (50%) */}
-                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
-                  {selected.photo ? (
-                    <img src={selected.photo} alt="Photo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', background: 'var(--adm-border)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Users size={64} color="var(--adm-text-muted)" />
-                    </div>
-                  )}
-                  
-                  {selected.address_proof && (
-                    <div>
-                      <span style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Address Proof</span>
-                      <a href={selected.address_proof} target="_blank" rel="noopener noreferrer">
-                        <img src={selected.address_proof} alt="Proof" style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0', transition: 'opacity 0.2s' }} onMouseOver={e => e.currentTarget.style.opacity='0.8'} onMouseOut={e => e.currentTarget.style.opacity='1'} />
-                      </a>
-                    </div>
-                  )}
+          <div className="player-detail-overlay" onClick={() => setModal(null)}>
+            <div className="player-detail-modal" onClick={e => e.stopPropagation()}>
 
-                  {selected.player_signature && (
-                    <div>
-                      <span style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Player Signature</span>
-                      <div style={{ background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <img src={selected.player_signature} alt="Signature" style={{ width: '100%', maxHeight: 80, objectFit: 'contain' }} />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Side: Information (50%) */}
-                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div>
-                    <h3 style={{ margin: '0 0 8px', color: 'var(--adm-text-strong)', fontSize: '28px' }}>{selected.player_name}</h3>
-                    <p style={{ margin: '0 0 4px', color: 'var(--adm-text-muted)', fontSize: '15px' }}>Registration #: <strong style={{ color: 'var(--adm-text-strong)' }}>{selected.registration_number || 'N/A'}</strong></p>
-                    <p style={{ margin: '0 0 4px', color: 'var(--adm-text-muted)', fontSize: '15px' }}>Registered by: <strong style={{ color: 'var(--adm-text-strong)' }}>{selected.registered_by}</strong></p>
-                    <p style={{ margin: '0', color: 'var(--adm-text-muted)', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      Status: <span className={`admin-status-badge admin-status-${selected.status}`}>{selected.status}</span>
-                    </p>
+              {/* LEFT — Photo Panel */}
+              <div className="player-detail-photo-panel">
+                {selected.photo ? (
+                  <img src={selected.photo} alt={selected.player_name} className="player-detail-photo" />
+                ) : (
+                  <div className="player-detail-no-photo">
+                    <Users size={80} color="var(--adm-text-muted)" />
                   </div>
-
-                  <div>
-                    <h4 style={{ borderBottom: '1px solid var(--adm-border)', paddingBottom: '8px', marginBottom: '12px', color: 'var(--adm-text-strong)', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}><User size={16} color="var(--adm-gold)"/> Personal Info</h4>
-                    <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Users size={14}/> Father's Name:</strong> <span>{selected.father_name || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={14}/> Age:</strong> <span>{selected.age || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={14}/> Contact:</strong> <span>{selected.contact_number}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Mail size={14}/> Email:</strong> <span>{selected.email || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={14}/> Address:</strong> <span>{selected.present_address || '—'}</span></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 style={{ borderBottom: '1px solid var(--adm-border)', paddingBottom: '8px', marginBottom: '12px', color: 'var(--adm-text-strong)', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}><Target size={16} color="var(--adm-gold)"/> Cricket Profile</h4>
-                    <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Zap size={14}/> Batting:</strong> <span>{selected.batting_hand || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Target size={14}/> Bowling:</strong> <span>{selected.bowling_type || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Hash size={14}/> Category:</strong> <span>{selected.player_category || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Shield size={14}/> Roles:</strong> <span>{[
-                        selected.wicket_keeper ? 'WK' : '',
-                        selected.all_rounder ? 'All-Rounder' : '',
-                        selected.bowler ? 'Bowler' : '',
-                        selected.batsman ? 'Batsman' : ''
-                      ].filter(Boolean).join(', ') || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr' }}><strong style={{ color: '#64748b' }}>Played KPL:</strong> <span>{selected.previously_played ? 'Yes' : 'No'}</span></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '12px', color: '#0f172a', fontSize: '16px' }}>Legal & Declaration</h4>
-                    <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr' }}><strong style={{ color: '#64748b' }}>Declaration:</strong> <span>{selected.declaration_accepted ? 'Accepted ✅' : 'Not Accepted ❌'}</span></div>
-                      {selected.approval && <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr' }}><strong style={{ color: '#64748b' }}>Approval:</strong> <span>{selected.approval}</span></div>}
-                    </div>
-                  </div>
+                )}
+                {/* Name overlay at bottom of photo */}
+                <div className="player-detail-photo-overlay">
+                  <span className="player-detail-reg">#{selected.registration_number || 'N/A'}</span>
+                  <h2 className="player-detail-name">{selected.player_name}</h2>
+                  <span className={`admin-status-badge admin-status-${selected.status}`}>{selected.status}</span>
                 </div>
               </div>
-              <div className="admin-modal-footer no-print">
-                <button className="admin-btn admin-btn-ghost" onClick={() => window.open(`/admin/players/print/${selected.id}`, '_blank')}><Printer size={16} /> Print</button>
-                <div style={{ flex: 1 }}></div>
-                <button className="admin-btn admin-btn-ghost" onClick={() => setModal(null)}>Close</button>
-                <button className="admin-btn admin-btn-primary" onClick={() => { setModal('edit'); openEdit(selected); }}>Edit Player</button>
+
+              {/* RIGHT — Details Panel */}
+              <div className="player-detail-info-panel">
+                {/* Header */}
+                <div className="player-detail-info-header">
+                  <div>
+                    <h3>Player Details</h3>
+                    <p>Registered by: <strong>{selected.registered_by || '—'}</strong></p>
+                  </div>
+                  <div className="player-detail-header-actions">
+                    <button className="admin-btn admin-btn-ghost admin-btn-sm" onClick={() => window.open(`/admin/players/print/${selected.id}`, '_blank')}><Printer size={14} /> Print</button>
+                    <button className="admin-btn admin-btn-primary admin-btn-sm" onClick={() => { setModal('edit'); openEdit(selected); }}><Edit2 size={14} /> Edit</button>
+                    <button className="player-detail-close" onClick={() => setModal(null)}><X size={20} /></button>
+                  </div>
+                </div>
+
+                {/* Details Grid */}
+                <div className="player-detail-grid">
+
+                  {/* Personal Info */}
+                  <div className="player-detail-section">
+                    <h4><User size={14} color="var(--adm-gold)" /> Personal Info</h4>
+                    <div className="player-detail-rows">
+                      <div className="player-detail-row"><span><Users size={13}/>Father's Name</span><strong>{selected.father_name || '—'}</strong></div>
+                      <div className="player-detail-row"><span><Calendar size={13}/>Age</span><strong>{selected.age || '—'}</strong></div>
+                      <div className="player-detail-row"><span><Phone size={13}/>Contact</span><strong>{selected.contact_number || '—'}</strong></div>
+                      <div className="player-detail-row"><span><Mail size={13}/>Email</span><strong>{selected.email || '—'}</strong></div>
+                      <div className="player-detail-row"><span><MapPin size={13}/>Address</span><strong>{selected.present_address || '—'}</strong></div>
+                    </div>
+                  </div>
+
+                  {/* Cricket Profile */}
+                  <div className="player-detail-section">
+                    <h4><Target size={14} color="var(--adm-gold)" /> Cricket Profile</h4>
+                    <div className="player-detail-rows">
+                      <div className="player-detail-row"><span><Zap size={13}/>Batting Hand</span><strong>{selected.batting_hand || '—'}</strong></div>
+                      <div className="player-detail-row"><span><Target size={13}/>Bowling Type</span><strong>{selected.bowling_type || '—'}</strong></div>
+                      <div className="player-detail-row"><span><Hash size={13}/>Category</span><strong style={{ textTransform: 'capitalize' }}>{selected.player_category || '—'}</strong></div>
+                      <div className="player-detail-row"><span><Shield size={13}/>Roles</span><strong>{[selected.wicket_keeper && 'WK', selected.all_rounder && 'All-Rounder', selected.bowler && 'Bowler', selected.batsman && 'Batsman'].filter(Boolean).join(', ') || '—'}</strong></div>
+                      <div className="player-detail-row"><span><CheckCircle2 size={13}/>Played KPL Before</span><strong>{selected.previously_played ? 'Yes' : 'No'}</strong></div>
+                    </div>
+                  </div>
+
+                  {/* Documents */}
+                  <div className="player-detail-section player-detail-docs">
+                    <h4><FileText size={14} color="var(--adm-gold)" /> Documents</h4>
+                    <div className="player-detail-doc-row">
+                      {selected.address_proof ? (
+                        <a href={selected.address_proof} target="_blank" rel="noopener noreferrer" className="player-detail-doc-thumb">
+                          <img src={selected.address_proof} alt="Address Proof" />
+                          <span>Address Proof</span>
+                        </a>
+                      ) : <span className="player-detail-no-doc">No address proof uploaded</span>}
+                      {selected.player_signature ? (
+                        <div className="player-detail-doc-thumb player-detail-sig">
+                          <img src={selected.player_signature} alt="Signature" />
+                          <span>Signature</span>
+                        </div>
+                      ) : <span className="player-detail-no-doc">No signature uploaded</span>}
+                    </div>
+                    <div className="player-detail-row" style={{ marginTop: '10px' }}>
+                      <span><CheckCircle2 size={13}/>Declaration</span>
+                      <strong style={{ color: selected.declaration_accepted ? '#4ade80' : '#f87171' }}>
+                        {selected.declaration_accepted ? 'Accepted ✅' : 'Not Accepted ❌'}
+                      </strong>
+                    </div>
+                  </div>
+
+                </div>
               </div>
             </div>
           </div>
