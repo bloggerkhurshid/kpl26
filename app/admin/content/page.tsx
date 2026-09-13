@@ -103,14 +103,14 @@ export default function ContentPage() {
           <div className="settings-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <LayoutTemplate size={16} />
-              <h3>Stats Strip</h3>
+              <h3>Prize Pool / Stats Section</h3>
             </div>
             <button type="button" onClick={() => toggle('show_stats')} className={`toggle-btn ${content.show_stats === 'true' ? 'active' : ''}`}>
               {content.show_stats === 'true' ? <Eye size={16} /> : <EyeOff size={16} />}
               {content.show_stats === 'true' ? 'Visible' : 'Hidden'}
             </button>
           </div>
-          <p className="settings-hint">The stats strip displays key numbers (teams, players, matches, etc).</p>
+          <p className="settings-hint">The stats strip displays prize pool or key numbers.</p>
         </div>
 
         {/* ABOUT SECTION */}
@@ -158,7 +158,7 @@ export default function ContentPage() {
         </div>
 
         {/* OTHER SECTIONS */}
-        <div className="settings-section">
+        <div className="settings-section admin-form-full">
           <div className="settings-section-header">
             <LayoutTemplate size={16} />
             <h3>Toggle Other Sections</h3>
@@ -178,11 +178,25 @@ export default function ContentPage() {
                 {content.show_teams === 'true' ? 'Visible' : 'Hidden'}
               </button>
             </label>
+
+            <label className="settings-mode-option" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><strong>Registered Players</strong><span>Show the players gallery grid</span></div>
+              <button type="button" onClick={() => toggle('show_players')} className={`toggle-btn ${content.show_players === 'true' ? 'active' : ''}`}>
+                {content.show_players === 'true' ? 'Visible' : 'Hidden'}
+              </button>
+            </label>
             
             <label className="settings-mode-option" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div><strong>Call to Action / Register Strip</strong><span>Show the bottom registration call to action</span></div>
               <button type="button" onClick={() => toggle('show_register')} className={`toggle-btn ${content.show_register === 'true' ? 'active' : ''}`}>
                 {content.show_register === 'true' ? 'Visible' : 'Hidden'}
+              </button>
+            </label>
+
+            <label className="settings-mode-option" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><strong>Highlights Gallery</strong><span>Show the bottom photo highlights gallery</span></div>
+              <button type="button" onClick={() => toggle('show_highlights')} className={`toggle-btn ${content.show_highlights === 'true' ? 'active' : ''}`}>
+                {content.show_highlights === 'true' ? 'Visible' : 'Hidden'}
               </button>
             </label>
           </div>

@@ -27,7 +27,7 @@ const navItems = [
   { href: '/admin/teams', label: 'Teams', icon: Shield },
   { href: '/admin/players', label: 'Players', icon: Users },
   { href: '/admin/payments', label: 'Payments', icon: CreditCard },
-  { href: '/admin/content', label: 'Content', icon: FileText },
+  { href: '/admin/content', label: 'Home Sections', icon: FileText },
   { href: '/admin/highlights', label: 'Highlights', icon: ImageIcon },
   { href: '/admin/auction', label: 'Auction', icon: Gavel },
   { href: '/admin/settings', label: 'Settings', icon: Settings },

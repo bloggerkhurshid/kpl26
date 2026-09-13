@@ -444,6 +444,7 @@ export default function Home() {
         </section>
       )}
 
+      {content.show_stats === 'true' && (
       <section className="section-pad" id="prizes" style={{ background: 'linear-gradient(180deg, var(--navy-light) 0%, var(--navy) 100%)' }}>
         <div className="page-width">
           <div style={{ textAlign: 'center', marginBottom: '60px' }}>
@@ -469,6 +470,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {content.show_about === 'true' && (
         <section className="section-pad" id="league">
@@ -556,6 +558,7 @@ export default function Home() {
         </section>
       )}
 
+      {content.show_players === 'true' && (
       <section className="section-pad" id="players">
         <div className="page-width">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
@@ -589,6 +592,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {content.show_register === 'true' && (
         <section className="section-pad" id="register" style={{ position: 'relative', overflow: 'hidden' }}>
@@ -612,7 +616,7 @@ export default function Home() {
         </section>
       )}
 
-      {gallery.length > 0 && (
+      {content.show_highlights === 'true' && gallery.length > 0 && (
         <section id="highlights" className="section-pad" style={{ background: 'var(--navy)' }}>
           <div className="page-width">
             <SectionLabel>Highlights</SectionLabel>
