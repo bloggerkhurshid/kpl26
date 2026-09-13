@@ -497,7 +497,7 @@ export default function Home() {
             {content.show_about === 'true' && <a href="#league" onClick={() => setMenuOpen(false)}>League</a>}
             {content.show_format === 'true' && <a href="#format" onClick={() => setMenuOpen(false)}>Format</a>}
             {content.show_teams === 'true' && <a href="#teams" onClick={() => setMenuOpen(false)}>Teams</a>}
-            <button className="nav-cta" onClick={() => { setModal('player'); setMenuOpen(false); }}>Register Player <ArrowRight size={15} /></button>
+            <a className="nav-cta" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Register Player <ArrowRight size={15} /></a>
           </div>
           <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">{menuOpen ? <X size={24} /> : <Menu size={24} />}</button>
         </div>
@@ -510,8 +510,9 @@ export default function Home() {
             <h1 className="sport-heading" dangerouslySetInnerHTML={{ __html: content.hero_title || 'Where local legends become <em>champions.</em>' }} />
             <p className="lead">{content.hero_subtitle}</p>
             <div className="hero-actions">
-              <button className="button button-primary" onClick={() => setModal('team')}>Register Franchise <ArrowRight size={18} strokeWidth={3} /></button>
-              <button className="button button-outline" onClick={() => setModal('player')}>Register Player <Users size={18} /></button>
+              {/* Buttons redirect to WhatsApp for now — modals kept for future use */}
+              <a className="button button-primary" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20a%20franchise%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register Franchise <ArrowRight size={18} strokeWidth={3} /></a>
+              <a className="button button-outline" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register Player <Users size={18} /></a>
             </div>
           </div>
         </section>
@@ -598,7 +599,7 @@ export default function Home() {
                 <span className="section-label">Meet the contenders</span>
                 <h2 className="sport-heading">Franchises</h2>
               </div>
-              <button className="text-link" onClick={() => setModal('team')}>Own a franchise <ArrowRight size={14} /></button>
+              <a className="text-link" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20own%20a%20franchise%20in%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Own a franchise <ArrowRight size={14} /></a>
             </div>
             
             <div className="teams-grid">
@@ -639,7 +640,7 @@ export default function Home() {
               <span className="section-label">The Talent</span>
               <h2 className="sport-heading">Registered Players</h2>
             </div>
-            <button className="text-link" onClick={() => setModal('player')}>Register to play <ArrowRight size={14} /></button>
+            <a className="text-link" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20to%20play%20in%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register to play <ArrowRight size={14} /></a>
           </div>
           
           <div className="players-grid">
@@ -676,8 +677,8 @@ export default function Home() {
               <h2 className="sport-heading">Season 3 is calling.</h2>
               <p className="lead" style={{ marginTop: '16px' }}>Join the biggest hard tennis ball cricket league in the region and compete for glory.</p>
               <div className="hero-actions">
-                <button className="button button-primary" onClick={() => setModal('team')}>Register a team <ArrowRight size={16} /></button>
-                <button className="button button-outline" onClick={() => setModal('player')}>Register as player <Users size={16} /></button>
+                <a className="button button-primary" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20a%20team%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register a team <ArrowRight size={16} /></a>
+                <a className="button button-outline" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register as player <Users size={16} /></a>
               </div>
             </div>
             <div className="register-deadline">
