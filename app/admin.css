@@ -331,6 +331,64 @@
 .settings-save-row { display: flex; align-items: center; gap: 14px; padding-bottom: 20px; }
 .settings-unsaved { font-size: 12px; color: var(--adm-gold); font-weight: 600; }
 
+/* ---- CMS / Content Page ---- */
+.admin-content-page { padding: 32px 40px 60px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+.admin-cms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.admin-form-full { grid-column: 1 / -1; }
+
+/* Toggle button */
+.toggle-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px; cursor: pointer;
+  border: 1px solid var(--adm-border-focus);
+  background: var(--adm-border); color: var(--adm-text-muted);
+  transition: all .18s ease; white-space: nowrap;
+}
+.toggle-btn:hover { border-color: var(--adm-border-strong); color: var(--adm-text); }
+.toggle-btn.active {
+  background: rgba(74, 222, 128, 0.1); color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+/* Save button (gold) */
+.button.button-gold {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 22px; border-radius: 8px; font-size: 13px; font-weight: 700;
+  background: linear-gradient(135deg, #f0c040, #d4981a); color: var(--adm-bg);
+  border: none; cursor: pointer; transition: all .18s;
+  box-shadow: 0 4px 15px var(--adm-gold-bg-strong);
+}
+.button.button-gold:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px var(--adm-gold-bg-strong); }
+.button.button-gold:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Status messages */
+.status-success { font-size: 13px; color: #4ade80; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.status-error { font-size: 13px; color: #f87171; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+/* Admin actions row */
+.admin-actions { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 14px; padding-top: 8px; }
+
+/* Form inputs inside settings sections */
+.settings-section .form-row { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.settings-section .form-row label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--adm-gold); }
+.settings-section .form-row input,
+.settings-section .form-row textarea {
+  background: var(--adm-input-bg); border: 1px solid var(--adm-border-focus);
+  color: var(--adm-text-strong); padding: 10px 13px; border-radius: 8px;
+  font-size: 13px; outline: none; transition: border-color .18s;
+  font-family: inherit; resize: vertical;
+}
+.settings-section .form-row input:focus,
+.settings-section .form-row textarea:focus { border-color: var(--adm-gold); box-shadow: 0 0 0 3px var(--adm-gold-bg); }
+.settings-section .form-row input::placeholder,
+.settings-section .form-row textarea::placeholder { color: var(--adm-text-muted); }
+
+@media (max-width: 768px) {
+  .admin-content-page { padding: 20px 18px 40px; }
+  .admin-cms-grid { grid-template-columns: 1fr; }
+}
+
 /* ---- Admin Responsive ---- */
 @media (max-width: 1024px) {
   .admin-stats-grid { grid-template-columns: repeat(2,1fr); }

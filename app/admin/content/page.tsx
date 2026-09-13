@@ -71,8 +71,8 @@ export default function ContentPage() {
     <div className="admin-content-page">
       <div className="admin-page-header">
         <div>
-          <h2>Homepage CMS</h2>
-          <p>Toggle sections on or off and edit the content displayed on the homepage.</p>
+          <h1>Homepage Sections</h1>
+          <p>Toggle sections on or off and edit content displayed on the homepage.</p>
         </div>
       </div>
 
