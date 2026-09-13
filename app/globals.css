@@ -65,7 +65,24 @@ button { font: inherit; cursor: pointer; }
   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 .brand { 
-  font-size: 24px; 
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.brand-logo {
+  height: 44px;
+  width: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.4));
+  transition: transform 0.2s;
+}
+.brand:hover .brand-logo { transform: scale(1.08); }
+.brand-text {
+  font-size: 20px; 
   font-weight: 900; 
   letter-spacing: -1px; 
   text-transform: uppercase; 
@@ -77,9 +94,9 @@ button { font: inherit; cursor: pointer; }
   font-style: italic;
   line-height: 1;
 }
-.brand span { 
+.brand-text span { 
   display: block; 
-  font-size: 11px; 
+  font-size: 10px; 
   color: var(--gold); 
   font-weight: 700; 
   margin-top: 2px; 
@@ -513,7 +530,8 @@ h2 {
   .nav-cta > * { transform: none; }
   .menu-button { display: block; padding: 4px; }
   .site-nav { padding: 0 20px; top: 10px; height: 60px; }
-  .brand { font-size: 18px; }
+  .brand-text { font-size: 15px; }
+  .brand-logo { height: 38px; width: 38px; }
   .brand span { font-size: 9px; }
   
   .page-width { width: calc(100% - 32px); }
@@ -537,7 +555,8 @@ h2 {
 @media (max-width: 480px) {
   .players-grid { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr; }
-  .brand { font-size: 16px; }
+  .brand-text { font-size: 13px; }
+  .brand-logo { height: 34px; width: 34px; }
 }
 
 /* Utils */

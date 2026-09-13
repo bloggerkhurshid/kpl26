@@ -437,8 +437,11 @@ export default function Home() {
       <nav className={`site-nav ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="max-w-7xl mx-auto w-full" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <a className="brand" href="#top" aria-label="KPL home">
-            KHORAGHAT PREMIER LEAGUE
-            <span>SEASON 03</span>
+            <img src="/kpl-logo.jpg" alt="KPL" className="brand-logo" />
+            <span className="brand-text">
+              KHORAGHAT PREMIER LEAGUE
+              <span>SEASON 03</span>
+            </span>
           </a>
           <div className={`nav-links ${menuOpen ? 'is-open' : ''}`}>
             <a href="#top" onClick={() => setMenuOpen(false)}>Home</a>
