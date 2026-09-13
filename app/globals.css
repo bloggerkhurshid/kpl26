@@ -72,8 +72,8 @@ button { font: inherit; cursor: pointer; }
   text-decoration: none;
 }
 .brand-logo {
-  height: 44px;
-  width: 44px;
+  height: 48px;
+  width: 48px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -82,7 +82,7 @@ button { font: inherit; cursor: pointer; }
 }
 .brand:hover .brand-logo { transform: scale(1.08); }
 .brand-text {
-  font-size: 26px; 
+  font-size: 28px; 
   font-weight: 900; 
   letter-spacing: -1px; 
   text-transform: uppercase; 
@@ -92,14 +92,15 @@ button { font: inherit; cursor: pointer; }
   justify-content: center;
   font-family: 'Arial Black', Impact, sans-serif;
   font-style: italic;
-  line-height: 1;
+  line-height: 0.95;
+  white-space: nowrap;
 }
 .brand-text span { 
   display: block; 
   font-size: 8px; 
   color: var(--gold); 
   font-weight: 700; 
-  margin-top: 2px; 
+  margin-top: 3px; 
   letter-spacing: 2.5px;
   font-style: normal;
   font-family: 'Inter', sans-serif;
@@ -547,9 +548,9 @@ h2 {
   .nav-cta { justify-content: center; transform: none; width: 100%; margin-top: 10px; }
   .nav-cta > * { transform: none; }
   .menu-button { display: block; padding: 4px; }
-  .site-nav { padding: 0 20px; top: 10px; height: 60px; }
-  .brand-text { font-size: 23px; }
-  .brand-logo { height: 40px; width: 40px; }
+  .site-nav { padding: 0 16px; top: 10px; height: 64px; }
+  .brand-text { font-size: clamp(20px, 5vw, 25px); }
+  .brand-logo { height: 42px; width: 42px; }
   .brand span, .brand-text span { font-size: 7.5px; }
   
   .page-width { width: calc(100% - 32px); }
@@ -570,10 +571,11 @@ h2 {
 }
 
 @media (max-width: 480px) {
+  .site-nav { padding: 0 12px; top: 8px; height: 62px; width: calc(100% - 20px); }
   .players-grid { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr; }
-  .brand-text { font-size: 21px; }
-  .brand-logo { height: 36px; width: 36px; }
+  .brand-text { font-size: clamp(17px, 4.8vw, 22px); }
+  .brand-logo { height: 38px; width: 38px; }
   .brand span, .brand-text span { font-size: 7px; }
 }
 
