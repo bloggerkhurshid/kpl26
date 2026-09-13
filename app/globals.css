@@ -53,7 +53,7 @@ button { font: inherit; cursor: pointer; }
   background: rgba(9, 19, 37, 0.4);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 100px;
+  border-radius: 16px;
   z-index:50; 
   transition: all 0.3s ease; 
   padding: 0 32px;
