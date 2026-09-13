@@ -419,16 +419,12 @@ export default function Home() {
       {loadingContent && (
         <div className="kpl-loading-screen">
           <div className="kpl-loading-content">
-            {/* Animated cricket ball */}
-            <div className="kpl-loading-ball">
-              <div className="kpl-ball-seam" />
-              <div className="kpl-ball-shine" />
-            </div>
-            {/* Brand */}
-            <div className="kpl-loading-brand">
-              <span className="kpl-loading-title">KHORAGHAT PREMIER LEAGUE</span>
-              <span className="kpl-loading-season">SEASON 03</span>
-            </div>
+            {/* KPL Logo */}
+            <img
+              src="/kpl-logo.jpg"
+              alt="KPL Logo"
+              className="kpl-loading-logo"
+            />
             {/* Progress bar */}
             <div className="kpl-loading-bar-wrap">
               <div className="kpl-loading-bar" />

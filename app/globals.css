@@ -587,43 +587,17 @@ h2 {
   animation: kpl-fade-in 0.5s ease 0.1s both;
 }
 
-/* Cricket ball */
-.kpl-loading-ball {
-  width: 80px; height: 80px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #c0392b, #8b0000);
-  box-shadow:
-    0 0 40px rgba(192, 57, 43, 0.4),
-    0 0 80px rgba(212, 175, 55, 0.1),
-    inset 0 2px 6px rgba(255,255,255,0.15);
-  position: relative; overflow: hidden;
-  animation: kpl-ball-spin 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-.kpl-ball-seam {
-  position: absolute; inset: -4px;
-  border: 2px solid rgba(255, 220, 200, 0.35);
+/* KPL Logo */
+.kpl-loading-logo {
+  width: clamp(180px, 30vw, 260px);
+  height: auto;
   border-radius: 50%;
-  clip-path: ellipse(52% 100% at 50% 50%);
+  animation: kpl-logo-pulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.4));
 }
-.kpl-ball-shine {
-  position: absolute; top: 10px; left: -60%; width: 40%; height: 100%;
-  background: linear-gradient(105deg, transparent, rgba(255,255,255,0.3), transparent);
-  animation: kpl-shine 1.4s ease-in-out infinite;
-}
-
-/* Brand text */
-.kpl-loading-brand { display: flex; flex-direction: column; gap: 4px; }
-.kpl-loading-title {
-  font-family: 'Arial Black', Impact, sans-serif;
-  font-size: clamp(18px, 4vw, 28px);
-  font-weight: 900; font-style: italic;
-  text-transform: uppercase; letter-spacing: -0.5px;
-  color: var(--text);
-}
-.kpl-loading-season {
-  font-family: 'Inter', sans-serif;
-  font-size: 11px; font-weight: 800;
-  text-transform: uppercase; letter-spacing: 4px;
-  color: var(--gold);
+@keyframes kpl-logo-pulse {
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 24px rgba(212, 175, 55, 0.35)); }
+  50%       { transform: scale(1.05); filter: drop-shadow(0 0 44px rgba(212, 175, 55, 0.6));  }
 }
 
 /* Progress bar */
