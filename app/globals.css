@@ -548,11 +548,11 @@ h2 {
   .nav-cta { justify-content: center; transform: none; width: 100%; margin-top: 10px; }
   .nav-cta > * { transform: none; }
   .menu-button { display: block; padding: 4px; }
-  .site-nav { padding: 0 14px; top: 10px; height: 62px; }
+  .site-nav { padding: 0 14px; top: 10px; height: 60px; }
   .brand { flex-shrink: 0; gap: 8px; }
-  .brand-text { font-size: 20px !important; line-height: 1 !important; letter-spacing: -0.5px !important; white-space: nowrap; }
-  .brand-logo { height: 40px; width: 40px; flex-shrink: 0; }
-  .brand-text > span { font-size: 8px !important; margin-top: 2px !important; letter-spacing: 2px !important; }
+  .brand-text { font-size: 16px !important; line-height: 1 !important; letter-spacing: -0.4px !important; white-space: nowrap; }
+  .brand-logo { height: 38px; width: 38px; flex-shrink: 0; }
+  .brand-text > span { font-size: 7.5px !important; margin-top: 1px !important; letter-spacing: 1.8px !important; }
   
   .page-width { width: calc(100% - 32px); }
   .section-pad { padding: 60px 0; }
@@ -572,19 +572,19 @@ h2 {
 }
 
 @media (max-width: 480px) {
-  .site-nav { padding: 0 10px; top: 8px; height: 60px; width: calc(100% - 16px); }
+  .site-nav { padding: 0 10px; top: 8px; height: 58px; width: calc(100% - 16px); }
   .players-grid { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr; }
-  .brand-text { font-size: 18px !important; line-height: 1 !important; letter-spacing: -0.5px !important; white-space: nowrap; }
-  .brand-logo { height: 38px; width: 38px; flex-shrink: 0; }
-  .brand-text > span { font-size: 7.5px !important; margin-top: 2px !important; letter-spacing: 1.5px !important; }
+  .brand-text { font-size: 14.5px !important; line-height: 1 !important; letter-spacing: -0.3px !important; white-space: nowrap; }
+  .brand-logo { height: 36px; width: 36px; flex-shrink: 0; }
+  .brand-text > span { font-size: 7px !important; margin-top: 1px !important; letter-spacing: 1.5px !important; }
 }
 
 @media (max-width: 380px) {
-  .site-nav { padding: 0 8px; height: 58px; }
-  .brand-text { font-size: 16.5px !important; letter-spacing: -0.5px !important; }
-  .brand-logo { height: 34px; width: 34px; }
-  .brand-text > span { font-size: 7px !important; }
+  .site-nav { padding: 0 8px; height: 56px; }
+  .brand-text { font-size: 13.5px !important; letter-spacing: -0.3px !important; }
+  .brand-logo { height: 32px; width: 32px; }
+  .brand-text > span { font-size: 6.5px !important; }
 }
 
 /* Utils */
