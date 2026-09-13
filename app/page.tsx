@@ -655,7 +655,7 @@ export default function Home() {
           </div>
           <div className="footer-bottom">
             <span>© 2026 Khoraghat Premier League. All rights reserved.</span>
-            <span>Made for the love of the game.</span>
+            <span>Developed by <a href="https://projuktisoft.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'none', fontWeight: 600 }}>ProjuktiSoft</a></span>
           </div>
         </div>
       </footer>
