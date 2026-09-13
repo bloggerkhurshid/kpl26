@@ -82,7 +82,7 @@ button { font: inherit; cursor: pointer; }
 }
 .brand:hover .brand-logo { transform: scale(1.08); }
 .brand-text {
-  font-size: 20px; 
+  font-size: 26px; 
   font-weight: 900; 
   letter-spacing: -1px; 
   text-transform: uppercase; 
@@ -96,11 +96,11 @@ button { font: inherit; cursor: pointer; }
 }
 .brand-text span { 
   display: block; 
-  font-size: 10px; 
+  font-size: 8px; 
   color: var(--gold); 
   font-weight: 700; 
   margin-top: 2px; 
-  letter-spacing: 2px;
+  letter-spacing: 2.5px;
   font-style: normal;
   font-family: 'Inter', sans-serif;
 }
@@ -548,9 +548,9 @@ h2 {
   .nav-cta > * { transform: none; }
   .menu-button { display: block; padding: 4px; }
   .site-nav { padding: 0 20px; top: 10px; height: 60px; }
-  .brand-text { font-size: 22px; }
+  .brand-text { font-size: 23px; }
   .brand-logo { height: 40px; width: 40px; }
-  .brand span { font-size: 9px; }
+  .brand span, .brand-text span { font-size: 7.5px; }
   
   .page-width { width: calc(100% - 32px); }
   .section-pad { padding: 60px 0; }
@@ -573,8 +573,9 @@ h2 {
 @media (max-width: 480px) {
   .players-grid { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr; }
-  .brand-text { font-size: 20px; }
+  .brand-text { font-size: 21px; }
   .brand-logo { height: 36px; width: 36px; }
+  .brand span, .brand-text span { font-size: 7px; }
 }
 
 /* Utils */
