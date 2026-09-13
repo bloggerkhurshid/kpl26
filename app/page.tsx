@@ -719,8 +719,8 @@ export default function Home() {
                       <label>Player Category *</label>
                       <select required value={playerForm.player_category} onChange={(e) => setPlayerForm({ ...playerForm, player_category: e.target.value })}>
                         <option value="">Select...</option>
-                        <option value="Local">Local Player</option>
-                        <option value="Foreign">Foreign Player</option>
+                        <option value="Local">Local</option>
+                        <option value="Foreign">Foreign</option>
                       </select>
                     </div>
                     <div className="form-row">
@@ -734,45 +734,35 @@ export default function Home() {
                   
                   <div className="form-row"><label>Present Address *</label><input type="text" required value={playerForm.present_address} onChange={(e) => setPlayerForm({ ...playerForm, present_address: e.target.value })} /></div>
                   
-                  <div className="form-grid">
-                    <div className="form-row">
-                      <label>Role</label>
-                      <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}><input type="checkbox" checked={playerForm.batsman} onChange={(e) => setPlayerForm({ ...playerForm, batsman: e.target.checked })} /> Batsman</label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}><input type="checkbox" checked={playerForm.bowler} onChange={(e) => setPlayerForm({ ...playerForm, bowler: e.target.checked })} /> Bowler</label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}><input type="checkbox" checked={playerForm.wicket_keeper} onChange={(e) => setPlayerForm({ ...playerForm, wicket_keeper: e.target.checked })} /> WK</label>
-                      </div>
-                    </div>
-                    <div className="form-row">
-                      <label>Batting Hand</label>
-                      <select disabled={!playerForm.batsman} value={playerForm.batting_hand} onChange={(e) => setPlayerForm({ ...playerForm, batting_hand: e.target.value })}>
-                        <option value="">Select...</option>
-                        <option value="Right Hand">Right Hand</option>
-                        <option value="Left Hand">Left Hand</option>
-                      </select>
+                  <div className="form-row" style={{ marginTop: '16px', gap: '12px' }}>
+                    <label>Cricket Profile</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      
+                      {/* Batsman */}
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, color: 'var(--text)' }}><input type="checkbox" checked={playerForm.batsman} onChange={(e) => setPlayerForm({ ...playerForm, batsman: e.target.checked })} style={{ width: 'auto' }} /> Batsman</label>
+                      {playerForm.batsman && (
+                        <div style={{ marginLeft: '24px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="batting_hand" checked={playerForm.batting_hand === 'Right Hand'} onChange={() => setPlayerForm({...playerForm, batting_hand: 'Right Hand'})} style={{ width: 'auto' }} /> Right Hand</label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="batting_hand" checked={playerForm.batting_hand === 'Left Hand'} onChange={() => setPlayerForm({...playerForm, batting_hand: 'Left Hand'})} style={{ width: 'auto' }} /> Left Hand</label>
+                        </div>
+                      )}
+                      
+                      {/* Bowler */}
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, color: 'var(--text)', marginTop: '8px' }}><input type="checkbox" checked={playerForm.bowler} onChange={(e) => setPlayerForm({ ...playerForm, bowler: e.target.checked })} style={{ width: 'auto' }} /> Bowler</label>
+                      {playerForm.bowler && (
+                        <div style={{ marginLeft: '24px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="bowling_arm" checked={playerForm.bowling_arm === 'Right Arm'} onChange={() => setPlayerForm({...playerForm, bowling_arm: 'Right Arm'})} style={{ width: 'auto' }} /> Right Arm</label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="bowling_arm" checked={playerForm.bowling_arm === 'Left Arm'} onChange={() => setPlayerForm({...playerForm, bowling_arm: 'Left Arm'})} style={{ width: 'auto' }} /> Left Arm</label>
+                          <span style={{ color: 'var(--muted)' }}>|</span>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="bowling_style" checked={playerForm.bowling_style === 'Pacer'} onChange={() => setPlayerForm({...playerForm, bowling_style: 'Pacer'})} style={{ width: 'auto' }} /> Pacer</label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="bowling_style" checked={playerForm.bowling_style === 'Spinner'} onChange={() => setPlayerForm({...playerForm, bowling_style: 'Spinner'})} style={{ width: 'auto' }} /> Spinner</label>
+                        </div>
+                      )}
+                      
+                      {/* Wicket Keeper */}
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, color: 'var(--text)', marginTop: '8px' }}><input type="checkbox" checked={playerForm.wicket_keeper} onChange={(e) => setPlayerForm({ ...playerForm, wicket_keeper: e.target.checked })} style={{ width: 'auto' }} /> Wicket Keeper</label>
                     </div>
                   </div>
-
-                  {playerForm.bowler && (
-                    <div className="form-grid">
-                      <div className="form-row">
-                        <label>Bowling Arm</label>
-                        <select value={playerForm.bowling_arm} onChange={(e) => setPlayerForm({ ...playerForm, bowling_arm: e.target.value })}>
-                          <option value="">Select...</option>
-                          <option value="Right Arm">Right Arm</option>
-                          <option value="Left Arm">Left Arm</option>
-                        </select>
-                      </div>
-                      <div className="form-row">
-                        <label>Bowling Style</label>
-                        <select value={playerForm.bowling_style} onChange={(e) => setPlayerForm({ ...playerForm, bowling_style: e.target.value })}>
-                          <option value="">Select...</option>
-                          <option value="Pacer">Pacer</option>
-                          <option value="Spinner">Spinner</option>
-                        </select>
-                      </div>
-                    </div>
-                  )}
 
                   <div className="form-grid">
                     <div className="form-row">
