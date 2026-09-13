@@ -264,6 +264,15 @@ export default function PlayersPage() {
         <div className="dt-actions no-print">
           <button className="dt-btn dt-btn-icon" title="View details" onClick={() => openView(p)}><FileText size={14} /></button>
           <button className="dt-btn dt-btn-icon" title="Print details" onClick={() => window.open(`/admin/players/print/${p.id}`, '_blank')}><Printer size={14} /></button>
+          {p.address_proof ? (
+            <a className="dt-btn dt-btn-icon" title="View Address Proof" href={p.address_proof} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <MapPin size={14} />
+            </a>
+          ) : (
+            <button className="dt-btn dt-btn-icon" title="No address proof uploaded" style={{ opacity: 0.35, cursor: 'not-allowed' }} disabled>
+              <MapPin size={14} />
+            </button>
+          )}
           <button className="dt-btn dt-btn-icon" title="Edit" onClick={() => openEdit(p)}><Edit2 size={14} /></button>
           {p.team_id && (
             <button className="dt-btn dt-btn-icon" title="Unassign from team" onClick={() => unassignPlayer(p)}><UserX size={14} /></button>

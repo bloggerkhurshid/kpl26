@@ -530,8 +530,8 @@ h2 {
   .nav-cta > * { transform: none; }
   .menu-button { display: block; padding: 4px; }
   .site-nav { padding: 0 20px; top: 10px; height: 60px; }
-  .brand-text { font-size: 17px; }
-  .brand-logo { height: 38px; width: 38px; }
+  .brand-text { font-size: 20px; }
+  .brand-logo { height: 40px; width: 40px; }
   .brand span { font-size: 9px; }
   
   .page-width { width: calc(100% - 32px); }
@@ -555,8 +555,8 @@ h2 {
 @media (max-width: 480px) {
   .players-grid { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr; }
-  .brand-text { font-size: 15px; }
-  .brand-logo { height: 34px; width: 34px; }
+  .brand-text { font-size: 18px; }
+  .brand-logo { height: 36px; width: 36px; }
 }
 
 /* Utils */
@@ -641,3 +641,82 @@ h2 {
   animation: kpl-pulse-text 1.6s ease-in-out infinite;
 }
 .status-error { background: rgba(220, 38, 38, 0.1); color: #F87171; border: 1px solid rgba(220, 38, 38, 0.2); padding: 16px; border-radius: 8px; font-size: 14px; font-weight: 500; }
+
+/* =============================================
+   WHATSAPP FLOATING BUTTON
+   ============================================= */
+.wa-float-wrap {
+  position: fixed; bottom: 24px; right: 24px;
+  z-index: 9000; display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+}
+
+/* Floating green button */
+.wa-float-btn {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: #25D366;
+  border: none; cursor: pointer; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.5);
+  position: relative; transition: transform .2s, box-shadow .2s;
+}
+.wa-float-btn:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(37, 211, 102, 0.6); }
+.wa-float-btn.wa-open { background: #128C7E; }
+
+/* Pulsing ring */
+.wa-pulse {
+  position: absolute; inset: -6px; border-radius: 50%;
+  border: 2px solid rgba(37, 211, 102, 0.5);
+  animation: wa-ring 1.8s ease-out infinite;
+}
+@keyframes wa-ring {
+  0%   { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* Popup card */
+.wa-popup {
+  background: #fff; border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  width: 300px; overflow: hidden;
+  animation: kpl-fade-in 0.2s ease both;
+}
+.wa-popup-header {
+  background: #075E54; color: #fff;
+  padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 14px; font-weight: 700;
+}
+.wa-popup-close {
+  background: none; border: none; color: rgba(255,255,255,0.8);
+  cursor: pointer; font-size: 16px; line-height: 1; padding: 0;
+  transition: color .15s;
+}
+.wa-popup-close:hover { color: #fff; }
+.wa-popup-sub {
+  padding: 12px 16px 8px;
+  font-size: 13px; color: #555; margin: 0;
+}
+.wa-popup-contacts { padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.wa-contact-btn {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: 10px;
+  background: #f0fdf4; border: 1px solid #bbf7d0;
+  text-decoration: none; color: #065f46;
+  transition: background .18s, border-color .18s;
+}
+.wa-contact-btn:hover { background: #dcfce7; border-color: #4ade80; }
+.wa-contact-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #25D366; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.wa-contact-info { display: flex; flex-direction: column; gap: 2px; }
+.wa-contact-info strong { font-size: 13px; font-weight: 700; }
+.wa-contact-info small { font-size: 11px; color: #16a34a; }
+
+@media (max-width: 480px) {
+  .wa-float-wrap { bottom: 16px; right: 16px; }
+  .wa-float-btn { width: 52px; height: 52px; }
+  .wa-popup { width: calc(100vw - 32px); }
+}
