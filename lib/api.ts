@@ -8,6 +8,21 @@ const API_MODE = process.env.NEXT_PUBLIC_API_MODE || 'php';
 
 export const isPhpBackend = () => true;
 
+export function getImageUrl(path?: string | null): string {
+  if (!path || typeof path !== 'string') return '';
+  const trimmed = path.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('data:') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('/images/') || trimmed === '/kpl-logo.jpg' || trimmed === '/kpl-logo.png') {
+    return trimmed;
+  }
+  const baseUrl = PHP_API_BASE.replace(/\/$/, '');
+  const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${baseUrl}${cleanPath}`;
+}
+
 export async function fetchFromPhpApi(endpoint: string, options: RequestInit = {}) {
   const url = `${PHP_API_BASE.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
   const response = await fetch(url, {

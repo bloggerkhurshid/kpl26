@@ -21,7 +21,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { load } from '@cashfreepayments/cashfree-js';
-import { kplApi } from '@/lib/api';
+import { kplApi, getImageUrl } from '@/lib/api';
 import { ManagementSection } from '@/components/ManagementSection';
 import { GallerySection } from '@/components/GallerySection';
 import { UpiPaymentModal } from '@/components/UpiPaymentModal';
@@ -556,7 +556,7 @@ export default function Home() {
             return (
               <img
                 key={item.image}
-                src={item.image}
+                src={getImageUrl(item.image)}
                 alt=""
                 aria-hidden="true"
                 className={`hero-bg-img ${idx === activeIdx ? 'is-active' : ''}`}
@@ -711,7 +711,7 @@ export default function Home() {
                 players.map((player) => (
                   <div className="player-card" key={player.id}>
                     {player.photo ? (
-                      <img src={player.photo} alt={player.player_name} className="player-photo" />
+                      <img src={getImageUrl(player.photo)} alt={player.player_name} className="player-photo" />
                     ) : (
                       <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: '#091325' }}>
                         <Users size={48} color="#D4AF37" />
@@ -769,7 +769,7 @@ export default function Home() {
             <div className="gallery-grid">
               {gallery.map((item, i) => (
                 <div key={i} className={`gallery-item ${item.size || ''}`} onClick={() => setSelectedImage(item)}>
-                  <img src={item.image} alt={item.title} />
+                  <img src={getImageUrl(item.image)} alt={item.title} />
                   <div className="gallery-title">{item.title}</div>
                 </div>
               ))}
@@ -787,7 +787,7 @@ export default function Home() {
         <div className="image-modal-overlay" onClick={() => setSelectedImage(null)}>
           <button className="image-modal-close" onClick={() => setSelectedImage(null)}><X size={24} /></button>
           <div className="image-modal-content" onClick={e => e.stopPropagation()}>
-            <img src={selectedImage.image} alt={selectedImage.title} />
+            <img src={getImageUrl(selectedImage.image)} alt={selectedImage.title} />
             <div className="image-modal-title">{selectedImage.title}</div>
           </div>
         </div>
@@ -927,14 +927,14 @@ export default function Home() {
                       <label>Player Photo *</label>
                       <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px', border: '1px dashed var(--gold)', borderRadius: '8px', cursor: 'pointer', background: 'rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
                         <input type="file" accept="image/*" required onChange={(e) => handlePlayerFileChange(e, 'photo')} style={{ opacity: 0, position: 'absolute', inset: 0, zIndex: 10 }} />
-                        {playerForm.photo ? <img src={playerForm.photo} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <><Users size={32} color="var(--gold)" style={{ marginBottom: '8px' }} /> <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Upload Photo</span></>}
+                        {playerForm.photo ? <img src={getImageUrl(playerForm.photo)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <><Users size={32} color="var(--gold)" style={{ marginBottom: '8px' }} /> <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Upload Photo</span></>}
                       </label>
                     </div>
                     <div className="form-row">
                       <label>Address Proof *</label>
                       <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px', border: '1px dashed var(--gold)', borderRadius: '8px', cursor: 'pointer', background: 'rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
                         <input type="file" accept="image/*" required onChange={(e) => handlePlayerFileChange(e, 'address_proof')} style={{ opacity: 0, position: 'absolute', inset: 0, zIndex: 10 }} />
-                        {playerForm.address_proof ? <img src={playerForm.address_proof} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <><BadgeCheck size={32} color="var(--gold)" style={{ marginBottom: '8px' }} /> <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Upload Proof</span></>}
+                        {playerForm.address_proof ? <img src={getImageUrl(playerForm.address_proof)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <><BadgeCheck size={32} color="var(--gold)" style={{ marginBottom: '8px' }} /> <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Upload Proof</span></>}
                       </label>
                     </div>
                   </div>

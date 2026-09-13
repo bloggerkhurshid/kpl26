@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { kplApi } from '@/lib/api';
+import { kplApi, getImageUrl } from '@/lib/api';
 import {
   Plus, Edit2, Trash2,
   X, Loader2, Image as ImageIcon, AlertCircle, CheckCircle2
@@ -106,7 +106,7 @@ export default function HighlightsPage() {
       key: 'image_url', label: 'Photo',
       render: h => (
         <div style={{ width: '80px', height: '60px', borderRadius: '4px', overflow: 'hidden', background: '#e2e8f0' }}>
-          <img src={h.image_url} alt={h.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={getImageUrl(h.image_url)} alt={h.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
       )
     },
@@ -200,7 +200,7 @@ export default function HighlightsPage() {
                     </label>
                   ) : (
                     <div style={{ position: 'relative', width: '100%', height: '200px', background: '#f8fafc', borderRadius: '8px', overflow: 'hidden' }}>
-                      <img src={form.image_url} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={getImageUrl(form.image_url)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       <button type="button" onClick={() => setForm({ ...form, image_url: '' })} style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer' }}>Change</button>
                     </div>
                   )}

@@ -6,7 +6,7 @@ import {
   UserCheck, Plus, Edit2, Trash2, X, Phone, Loader2, Search,
   Award, Shield, ToggleLeft, ToggleRight, AlertCircle, CheckCircle2
 } from 'lucide-react';
-import { kplApi, ManagementMember } from '@/lib/api';
+import { kplApi, ManagementMember, getImageUrl } from '@/lib/api';
 
 export default function AdminManagementPage() {
   const [members, setMembers] = useState<ManagementMember[]>([]);
@@ -212,7 +212,7 @@ export default function AdminManagementPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <div style={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', background: '#1e293b', border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             {member.photo_url ? (
-                              <img src={member.photo_url} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <img src={getImageUrl(member.photo_url)} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
                               <UserCheck size={20} color="#10b981" />
                             )}
@@ -342,7 +342,7 @@ export default function AdminManagementPage() {
                       <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', border: '2px solid #d4af37' }}>
                           <img
-                            src={form.photo_base64 || form.photo_url}
+                            src={getImageUrl(form.photo_base64 || form.photo_url)}
                             alt="Preview"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           />

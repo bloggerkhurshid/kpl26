@@ -48,7 +48,8 @@ class FileUploader {
         $decoded = base64_decode($parts[1]);
 
         if ($decoded !== false && @file_put_contents($filePath, $decoded) !== false) {
-            return '/uploads/' . $subfolder . '/' . $fileName;
+            $baseUrl = getenv('APP_URL') ?: 'https://kpl.projuktisoft.com';
+            return rtrim($baseUrl, '/') . '/uploads/' . $subfolder . '/' . $fileName;
         }
 
         // If file saving on disk fails (e.g. permission restriction), return base64 string so database insertion still succeeds

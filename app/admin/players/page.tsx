@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { kplApi } from '@/lib/api';
+import { kplApi, getImageUrl } from '@/lib/api';
 import {
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight,
   X, Loader2, CheckCircle2, AlertCircle, Users,
@@ -260,7 +260,7 @@ export default function PlayersPage() {
       key: 'player_name', label: 'Player', sortable: true,
       render: p => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {p.photo ? <img src={p.photo} alt={p.player_name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} /> : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />}
+          {p.photo ? <img src={getImageUrl(p.photo)} alt={p.player_name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} /> : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />}
           <div>
             <div className="dt-player-name">{p.player_name}</div>
             <div className="dt-player-meta" style={{ fontSize: '11px', color: '#64748b' }}>
@@ -414,7 +414,7 @@ export default function PlayersPage() {
                       <input type="file" accept="image/*" onChange={e => handleFileChange(e, 'photo')} style={{ display: 'none' }} />
                       {form.photo ? (
                         <>
-                          <img src={form.photo} alt="Photo preview" className="admin-upload-preview" />
+                          <img src={getImageUrl(form.photo)} alt="Photo preview" className="admin-upload-preview" />
                           <div className="admin-upload-overlay">📷 Change Photo</div>
                         </>
                       ) : (
@@ -446,7 +446,7 @@ export default function PlayersPage() {
                               <small>Click to change</small>
                             </div>
                           ) : (
-                            <img src={form.address_proof} alt="Proof preview" className="admin-upload-preview" />
+                            <img src={getImageUrl(form.address_proof)} alt="Proof preview" className="admin-upload-preview" />
                           )}
                           <div className="admin-upload-overlay">📎 Change Proof</div>
                         </>
@@ -574,7 +574,7 @@ export default function PlayersPage() {
               {/* LEFT — Photo Panel */}
               <div className="player-detail-photo-panel">
                 {selected.photo ? (
-                  <img src={selected.photo} alt={selected.player_name} className="player-detail-photo" />
+                  <img src={getImageUrl(selected.photo)} alt={selected.player_name} className="player-detail-photo" />
                 ) : (
                   <div className="player-detail-no-photo">
                     <Users size={80} color="var(--adm-text-muted)" />
@@ -642,14 +642,14 @@ export default function PlayersPage() {
                               <span style={{ fontSize: '9px', color: 'var(--adm-text-muted)', fontWeight: 700 }}>PDF</span>
                             </div>
                           ) : (
-                            <img src={selected.address_proof} alt="Address Proof" />
+                            <img src={getImageUrl(selected.address_proof)} alt="Address Proof" />
                           )}
                           <span>Address Proof ↗</span>
                         </div>
                       ) : <span className="player-detail-no-doc">No address proof uploaded</span>}
                       {selected.player_signature ? (
                         <div className="player-detail-doc-thumb player-detail-sig">
-                          <img src={selected.player_signature} alt="Signature" />
+                          <img src={getImageUrl(selected.player_signature)} alt="Signature" />
                           <span>Signature</span>
                         </div>
                       ) : <span className="player-detail-no-doc">No signature uploaded</span>}
@@ -706,7 +706,7 @@ export default function PlayersPage() {
                 {proofModal.url.startsWith('data:application/pdf') || proofModal.url.toLowerCase().endsWith('.pdf') ? (
                   <iframe src={proofModal.url} title={proofModal.title} style={{ width: '100%', height: '65vh', border: 'none', borderRadius: '8px' }} />
                 ) : (
-                  <img src={proofModal.url} alt={proofModal.title} style={{ maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }} />
+                  <img src={getImageUrl(proofModal.url)} alt={proofModal.title} style={{ maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }} />
                 )}
               </div>
               <div className="admin-modal-footer" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>

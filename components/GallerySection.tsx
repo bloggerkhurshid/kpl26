@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Camera, X, Maximize2, Loader2 } from 'lucide-react';
-import { kplApi, GalleryPhoto } from '@/lib/api';
+import { kplApi, GalleryPhoto, getImageUrl } from '@/lib/api';
 
 export function GallerySection() {
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
@@ -78,7 +78,7 @@ export function GallerySection() {
               className="gallery-item-card"
             >
               <img
-                src={photo.photo_url}
+                src={getImageUrl(photo.photo_url)}
                 alt="KPL Gallery Photo"
                 style={{
                   width: '100%',
@@ -135,7 +135,7 @@ export function GallerySection() {
           </button>
           <div className="image-modal-content">
             <img
-              src={selectedPhoto}
+              src={getImageUrl(selectedPhoto)}
               alt="Enlarged KPL Photo"
             />
           </div>

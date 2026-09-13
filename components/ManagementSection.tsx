@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Shield, Phone, UserCheck, Loader2, Award } from 'lucide-react';
-import { kplApi, ManagementMember } from '@/lib/api';
+import { kplApi, ManagementMember, getImageUrl } from '@/lib/api';
 
 export function ManagementSection() {
   const [members, setMembers] = useState<ManagementMember[]>([]);
@@ -122,7 +122,7 @@ export function ManagementSection() {
                   >
                     {member.photo_url ? (
                       <img
-                        src={member.photo_url}
+                        src={getImageUrl(member.photo_url)}
                         alt={member.name}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />

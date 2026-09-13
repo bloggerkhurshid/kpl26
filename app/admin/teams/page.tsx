@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { kplApi } from '@/lib/api';
+import { kplApi, getImageUrl } from '@/lib/api';
 import {
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight,
   X, Loader2, CheckCircle2, AlertCircle, Shield,
@@ -111,7 +111,7 @@ export default function TeamsPage() {
       render: t => (
         <div className="dt-team-cell">
           {t.logo_url ? (
-            <img src={t.logo_url} alt={t.name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', background: '#fff' }} />
+            <img src={getImageUrl(t.logo_url)} alt={t.name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', background: '#fff' }} />
           ) : (
             <div className="dt-team-crest" style={{ background: '#f8fafc', color: '#0f172a', border: '1px solid #e2e8f0' }}>{t.short_code || t.name[0]}</div>
           )}
@@ -191,7 +191,7 @@ export default function TeamsPage() {
                 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
                   {form.logo_url ? (
-                    <img src={form.logo_url} alt="Logo" style={{ width: 80, height: 80, objectFit: 'contain', borderRadius: 8, background: '#fff', marginBottom: 10 }} />
+                    <img src={getImageUrl(form.logo_url)} alt="Logo" style={{ width: 80, height: 80, objectFit: 'contain', borderRadius: 8, background: '#fff', marginBottom: 10 }} />
                   ) : (
                     <div style={{ width: 80, height: 80, borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>No Logo</div>
                   )}

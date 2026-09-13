@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Camera, Upload, Trash2, Loader2, Image as ImageIcon } from 'lucide-react';
-import { kplApi, GalleryPhoto } from '@/lib/api';
+import { kplApi, GalleryPhoto, getImageUrl } from '@/lib/api';
 
 export default function AdminGalleryPage() {
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
@@ -163,7 +163,7 @@ export default function AdminGalleryPage() {
                   className="group"
                 >
                   <img
-                    src={photo.photo_url}
+                    src={getImageUrl(photo.photo_url)}
                     alt="Gallery item"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />

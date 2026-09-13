@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { kplApi } from '@/lib/api';
+import { kplApi, getImageUrl } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import '@/app/register/player/paper.css';
 
@@ -62,7 +62,7 @@ export default function PrintPlayerReceipt({ params }: { params: { id: string } 
         <div className="title-photo-section" style={{ justifyContent: 'center' }}>
           <div className="photo-area">
             <div className="photo-box">
-              {player.photo ? <img src={player.photo} alt="Photo" /> : <div className="photo-placeholder">No Photo</div>}
+              {player.photo ? <img src={getImageUrl(player.photo)} alt="Photo" /> : <div className="photo-placeholder">No Photo</div>}
             </div>
           </div>
         </div>
@@ -240,7 +240,7 @@ export default function PrintPlayerReceipt({ params }: { params: { id: string } 
 
         <div className="signature-area">
           <div className="sig-box">
-            {player.player_signature && <div className="sig-upload"><img src={player.player_signature} alt="Signature" /></div>}
+            {player.player_signature && <div className="sig-upload"><img src={getImageUrl(player.player_signature)} alt="Signature" /></div>}
             <div className="sig-line">Player's Signature</div>
           </div>
           <div className="sig-box">
@@ -289,7 +289,7 @@ export default function PrintPlayerReceipt({ params }: { params: { id: string } 
             <div className="input-group" style={{ gridColumn: 3, gridRow: '1 / span 3', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
               <div className="photo-box">
                 {player.photo ? (
-                  <img src={player.photo} alt="Photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={getImageUrl(player.photo)} alt="Photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div className="photo-placeholder" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>PHOTO</div>
                 )}
