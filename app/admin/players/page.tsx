@@ -151,10 +151,12 @@ export default function PlayersPage() {
       previously_played: form.previously_played,
       all_rounder: form.batsman && form.bowler,
       bowler: form.bowler,
-      bowling_type: form.bowler ? `${form.bowling_arm} ${form.bowling_style}`.trim() : '',
-      player_signature: form.player_signature,
+      bowling_arm: form.bowling_arm,
+      bowling_style: form.bowling_style,
+      bowling_type: form.bowler ? `${form.bowling_arm} ${form.bowling_style}`.trim() : null,
+      player_signature: form.player_signature || null,
       registration_number: regNum,
-      registered_by: modal === 'create' ? 'admin' : form.registered_by,
+      registered_by: form.registered_by || 'admin',
       team_id: form.team_id || null,
       auction_eligible: form.auction_eligible,
       base_price: parseFloat(form.base_price) || 0,
@@ -405,6 +407,10 @@ export default function PlayersPage() {
                 {/* 3. Admin & Auction Controls */}
                 <h4 style={{ margin: '20px 0 10px', color: '#0f172a', textTransform: 'uppercase', fontSize: '13px' }}>3. Admin Controls</h4>
                 <div className="admin-form-grid">
+                  <div className="admin-form-field">
+                    <label>Registered By</label>
+                    <input type="text" value={form.registered_by} onChange={e => setForm({ ...form, registered_by: e.target.value })} placeholder="admin" />
+                  </div>
                   <div className="admin-form-field">
                     <label>Assign to Team</label>
                     <select value={form.team_id} onChange={e => setForm({ ...form, team_id: e.target.value })}>
