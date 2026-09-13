@@ -171,7 +171,7 @@ export default function Home() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [playerCount, setPlayerCount] = useState(0);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
-  const [heroImg, setHeroImg] = useState('');
+  const [heroIndex, setHeroIndex] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -227,19 +227,15 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Cycle hero background through gallery images every 6s
+  // Cycle hero background through gallery images smoothly every 6s
   useEffect(() => {
     const imgs = gallery.filter(g => g.image);
-    if (!imgs.length) return;
-    // Pick a random starting image
-    setHeroImg(imgs[Math.floor(Math.random() * imgs.length)].image);
-    let idx = Math.floor(Math.random() * imgs.length);
+    if (imgs.length <= 1) return;
     const timer = setInterval(() => {
-      idx = (idx + 1) % imgs.length;
-      setHeroImg(imgs[idx].image);
+      setHeroIndex(prev => (prev + 1) % imgs.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, [gallery]);
+  }, [gallery.length]);
 
   const handlePlayerFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     const file = e.target.files?.[0];
@@ -520,16 +516,20 @@ export default function Home() {
 
       {content.show_hero === 'true' && (
         <section className="hero" id="top">
-          {/* Cycling background image with crossfade */}
-          {heroImg && (
-            <img
-              key={heroImg}
-              src={heroImg}
-              alt=""
-              aria-hidden="true"
-              className="hero-bg-img"
-            />
-          )}
+          {/* Cycling background images with smooth 60fps CSS crossfade */}
+          {gallery.filter(g => g.image).map((item, idx) => {
+            const activeImgs = gallery.filter(g => g.image);
+            const activeIdx = heroIndex % (activeImgs.length || 1);
+            return (
+              <img
+                key={item.image}
+                src={item.image}
+                alt=""
+                aria-hidden="true"
+                className={`hero-bg-img ${idx === activeIdx ? 'is-active' : ''}`}
+              />
+            );
+          })}
           <div className="hero-content page-width">
             <span className="section-label">THE BATTLE BEGINS • 2026</span>
             <h1 className="sport-heading" dangerouslySetInnerHTML={{ __html: content.hero_title || 'Where local legends become <em>champions.</em>' }} />

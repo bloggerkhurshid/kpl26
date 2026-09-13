@@ -226,31 +226,29 @@ h2 {
   padding-top: 80px; 
   position: relative;
   overflow: hidden;
-  background: url('https://images.pexels.com/photos/27594195/pexels-photo-27594195.jpeg?auto=compress&cs=tinysrgb&w=2000') center/cover;
-  animation: hero-bg-reveal .8s ease both;
-}
-@keyframes hero-bg-reveal {
-  from { opacity: 0.6; transform: scale(1.03); }
-  to   { opacity: 1;   transform: scale(1); }
+  background: #091325 url('https://images.pexels.com/photos/27594195/pexels-photo-27594195.jpeg?auto=compress&cs=tinysrgb&w=2000') center/cover;
 }
 .hero::after {
   content: '';
   position: absolute;
   inset: 0;
   background: rgba(9, 19, 37, 0.45);
-  z-index: 1;
+  z-index: 2;
 }
-/* Crossfading gallery image */
+/* Smooth crossfading gallery images */
 .hero-bg-img {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover; object-position: center;
   z-index: 0;
-  animation: hero-crossfade 1.2s ease both;
+  opacity: 0;
+  transition: opacity 1.8s ease-in-out, transform 8s ease-out;
+  transform: scale(1.05);
 }
-@keyframes hero-crossfade {
-  from { opacity: 0; transform: scale(1.04); }
-  to   { opacity: 1; transform: scale(1); }
+.hero-bg-img.is-active {
+  opacity: 1;
+  z-index: 1;
+  transform: scale(1);
 }
 .hero-content { position: relative; z-index: 10; display: grid; gap: 40px; }
 .hero-actions { display: flex; gap: 24px; margin-top: 40px; }
