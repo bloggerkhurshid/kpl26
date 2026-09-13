@@ -56,19 +56,21 @@ function SectionLabel({ children }: { children: string }) {
   return <p className="section-label"><span />{children}</p>;
 }
 
-function Countdown() {
-  const [time, setTime] = useState({ days: 12, hours: 8, minutes: 42, seconds: 19 });
+function CountdownTimer({ deadlineDate }: { deadlineDate?: string }) {
+  const getTimeLeft = () => {
+    const target = deadlineDate ? new Date(deadlineDate) : new Date(Date.now() + 12 * 86400000);
+    const diff = Math.max(0, target.getTime() - Date.now());
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    return { days, hours, minutes, seconds };
+  };
+  const [time, setTime] = useState(getTimeLeft);
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setTime((current) => {
-        if (current.seconds > 0) return { ...current, seconds: current.seconds - 1 };
-        if (current.minutes > 0) return { ...current, minutes: current.minutes - 1, seconds: 59 };
-        if (current.hours > 0) return { ...current, hours: current.hours - 1, minutes: 59, seconds: 59 };
-        return { ...current, days: Math.max(0, current.days - 1), hours: 23, minutes: 59, seconds: 59 };
-      });
-    }, 1000);
+    const timer = window.setInterval(() => setTime(getTimeLeft()), 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [deadlineDate]);
   return (
     <div className="countdown" aria-label="Registration deadline countdown">
       {Object.entries(time).map(([label, value]) => <div className="countdown-cell" key={label}><strong>{String(value).padStart(2, '0')}</strong><span>{label}</span></div>)}
@@ -609,8 +611,16 @@ export default function Home() {
             </div>
             <div className="register-deadline">
               <span className="section-label">Registration Deadline</span>
-              <strong className="sport-heading" style={{ fontSize: 'clamp(64px, 10vw, 96px)', color: 'var(--gold)', letterSpacing: '-0.05em', lineHeight: 1 }}>12 <span style={{ fontSize: 'clamp(18px, 4vw, 24px)', color: 'var(--text)', fontStyle: 'normal', fontFamily: 'Inter', letterSpacing: 'normal', marginLeft: '8px' }}>Days left</span></strong>
-              <p className="lead" style={{ marginTop: '16px' }}>Secure your franchise or player spot before 24 August 2026.</p>
+              <strong className="sport-heading" style={{ fontSize: 'clamp(64px, 10vw, 96px)', color: 'var(--gold)', letterSpacing: '-0.05em', lineHeight: 1 }}>
+                {(() => {
+                  const target = content.deadline_date ? new Date(content.deadline_date) : null;
+                  if (!target) return '—';
+                  const diff = Math.max(0, target.getTime() - Date.now());
+                  const days = Math.floor(diff / 86400000);
+                  return <>{days} <span style={{ fontSize: 'clamp(18px, 4vw, 24px)', color: 'var(--text)', fontStyle: 'normal', fontFamily: 'Inter', letterSpacing: 'normal', marginLeft: '8px' }}>Days left</span></>;
+                })()}
+              </strong>
+              <p className="lead" style={{ marginTop: '16px' }}>{content.deadline_text || 'Secure your spot before the registration closes.'}</p>
             </div>
           </div>
         </section>

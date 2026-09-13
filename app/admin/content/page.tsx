@@ -159,6 +159,38 @@ export default function ContentPage() {
           </div>
         </div>
 
+        {/* REGISTRATION DEADLINE SECTION */}
+        <div className="settings-section">
+          <div className="settings-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <Type size={16} />
+              <h3>Registration Deadline</h3>
+            </div>
+            <button type="button" onClick={() => toggle('show_register')} className={`toggle-btn ${content.show_register === 'true' ? 'active' : ''}`}>
+              {content.show_register === 'true' ? <Eye size={16} /> : <EyeOff size={16} />}
+              {content.show_register === 'true' ? 'Visible' : 'Hidden'}
+            </button>
+          </div>
+          <div className="form-row">
+            <label>Deadline Date</label>
+            <input
+              type="date"
+              value={content.deadline_date || ''}
+              onChange={(e) => update('deadline_date', e.target.value)}
+            />
+          </div>
+          <div className="form-row">
+            <label>Deadline Description Text</label>
+            <textarea
+              rows={2}
+              placeholder="e.g. Secure your franchise or player spot before 24 August 2026."
+              value={content.deadline_text || ''}
+              onChange={(e) => update('deadline_text', e.target.value)}
+            />
+          </div>
+          <p className="settings-hint">The countdown on the homepage auto-calculates days left from the date above.</p>
+        </div>
+
         {/* OTHER SECTIONS */}
         <div className="settings-section admin-form-full">
           <div className="settings-section-header">
@@ -185,13 +217,6 @@ export default function ContentPage() {
               <div><strong>Registered Players</strong><span>Show the players gallery grid</span></div>
               <button type="button" onClick={() => toggle('show_players')} className={`toggle-btn ${content.show_players === 'true' ? 'active' : ''}`}>
                 {content.show_players === 'true' ? 'Visible' : 'Hidden'}
-              </button>
-            </label>
-            
-            <label className="settings-mode-option" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div><strong>Call to Action / Register Strip</strong><span>Show the bottom registration call to action</span></div>
-              <button type="button" onClick={() => toggle('show_register')} className={`toggle-btn ${content.show_register === 'true' ? 'active' : ''}`}>
-                {content.show_register === 'true' ? 'Visible' : 'Hidden'}
               </button>
             </label>
 
