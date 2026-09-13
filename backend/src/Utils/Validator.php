@@ -2,9 +2,21 @@
 namespace Kpl\Utils;
 
 /**
- * Input Validator Utility
+ * Input Validator & Request Body Parsing Utility
  */
 class Validator {
+
+    /**
+     * Parse JSON request payload or fall back to $_POST
+     */
+    public static function getJsonInput(): array {
+        $input = file_get_contents('php://input');
+        if (empty($input)) {
+            return $_POST ?: [];
+        }
+        $data = json_decode($input, true);
+        return is_array($data) ? $data : ($_POST ?: []);
+    }
 
     public static function sanitizeString(string $input): string {
         return htmlspecialchars(strip_tags(trim($input)), ENT_QUOTES, 'UTF-8');
