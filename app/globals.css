@@ -294,54 +294,73 @@ h2 {
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 250px;
+  grid-auto-rows: 230px;
+  grid-auto-flow: dense;
   gap: 16px;
   margin-top: 40px;
 }
 .gallery-item {
   position: relative;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 16px;
   cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0b1a2d;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 .gallery-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s;
+  transition: transform 0.5s ease;
 }
 .gallery-item::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(9, 19, 37, 0.8), transparent);
-  opacity: 0;
-  transition: opacity 0.3s;
+  background: linear-gradient(to top, rgba(4, 13, 26, 0.85) 0%, rgba(4, 13, 26, 0.2) 60%, transparent 100%);
+  opacity: 0.75;
+  transition: opacity 0.3s ease;
 }
-.gallery-item:hover img { transform: scale(1.05); }
-.gallery-item:hover::after { opacity: 1; }
+.gallery-item:hover {
+  border-color: var(--gold);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+.gallery-item:hover img { transform: scale(1.06); }
+.gallery-item:hover::after { opacity: 0.95; }
+
 .gallery-title {
   position: absolute;
-  bottom: 20px;
-  left: 20px;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
   z-index: 2;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   color: #fff;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: all 0.3s;
+  opacity: 0.95;
+  transition: all 0.3s ease;
+  line-height: 1.3;
 }
-.gallery-item:hover .gallery-title { opacity: 1; transform: translateY(0); }
+.gallery-item:hover .gallery-title {
+  opacity: 1;
+  color: var(--gold);
+  transform: translateY(-2px);
+}
 
 .gallery-wide { grid-column: span 2; }
 .gallery-tall { grid-row: span 2; }
 
 @media (max-width: 900px) {
-  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
-  .gallery-wide, .gallery-tall { grid-column: span 1; grid-row: span 1; }
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 200px;
+    gap: 14px;
+  }
+  .gallery-wide { grid-column: span 2; }
+  .gallery-tall { grid-row: span 2; }
 }
 
 /* Image Modal */
@@ -560,7 +579,10 @@ h2 {
   
   .teams-grid { grid-template-columns: 1fr; gap: 24px; }
   .players-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
-  .gallery-grid { grid-template-columns: 1fr; grid-auto-rows: 200px; }
+  .gallery-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 150px; gap: 10px; }
+  .gallery-wide { grid-column: span 2; }
+  .gallery-tall { grid-row: span 1; }
+  .gallery-title { font-size: 11px; bottom: 10px; left: 10px; right: 10px; }
   
   .modal-overlay { padding: 10px; }
   .modal-card { padding: 32px 20px; max-width: 95%; }
