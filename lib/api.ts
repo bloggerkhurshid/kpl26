@@ -3,8 +3,9 @@
  * Connects Next.js Frontend to PHP MySQL REST API or Supabase Backend
  */
 
-const PHP_API_BASE = process.env.NEXT_PUBLIC_PHP_API_URL || 'http://localhost:8000';
+const PHP_API_BASE = process.env.NEXT_PUBLIC_PHP_API_URL || 'https://kpl.projuktisoft.com';
 const API_MODE = process.env.NEXT_PUBLIC_API_MODE || 'php'; // 'php' or 'supabase'
+
 
 export const isPhpBackend = () => API_MODE === 'php';
 
