@@ -236,7 +236,7 @@ h2 {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(9, 19, 37, 0.95) 0%, rgba(9, 19, 37, 0.75) 35%, rgba(9, 19, 37, 0.85) 75%, var(--navy) 100%);
+  background: rgba(9, 19, 37, 0.45);
   z-index: 1;
 }
 /* Crossfading gallery image */
@@ -567,7 +567,6 @@ h2 {
   .modal-close { top: 12px; right: 12px; }
   .form-row input, .form-row select, .form-row textarea { font-size: 16px; padding: 14px; }
   .hero { background-position: center; }
-  .hero::after { background: linear-gradient(180deg, rgba(9, 19, 37, 0.95) 0%, rgba(9, 19, 37, 0.8) 50%, var(--navy) 100%); }
 }
 
 @media (max-width: 480px) {
