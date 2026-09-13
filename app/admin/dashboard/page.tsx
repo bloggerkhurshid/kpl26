@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { supabase } from '@/lib/supabase';
+import { kplApi } from '@/lib/api';
 import {
   Users, Shield, CreditCard, ClipboardList,
   TrendingUp, Clock, CheckCircle2, AlertCircle,
@@ -37,49 +37,36 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
-      const [
-        { count: teamsCount },
-        { count: playersCount },
-        { data: payments },
-        { count: pendingTeams },
-        { count: pendingPlayers },
-        { count: auctionCount },
-        { data: teamRegs },
-        { data: playerRegs },
-      ] = await Promise.all([
-        supabase.from('teams').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('players').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('payments').select('amount,status'),
-        supabase.from('team_registrations').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('player_registrations').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('players').select('*', { count: 'exact', head: true }).eq('auction_eligible', true).eq('status', 'active'),
-        supabase.from('team_registrations').select('id,team_name,status,created_at').order('created_at', { ascending: false }).limit(5),
-        supabase.from('player_registrations').select('id,player_name,status,created_at').order('created_at', { ascending: false }).limit(5),
-      ]);
+      try {
+        const res = await kplApi.getDashboardMetrics();
+        if (res && res.stats) {
+          setStats({
+            teams: res.stats.active_teams || 0,
+            activePlayers: res.stats.active_players || 0,
+            totalPayments: res.stats.active_teams + res.stats.active_players,
+            paymentsAmount: Number(res.stats.total_revenue) || 0,
+            pendingTeamRegs: res.stats.pending_teams || 0,
+            pendingPlayerRegs: res.stats.pending_players || 0,
+            successPayments: res.stats.active_players || 0,
+            auctionEligible: res.stats.auction_eligible || 0,
+          });
 
-      const totalAmt = (payments || []).filter(p => p.status === 'success').reduce((s, p) => s + Number(p.amount), 0);
-      const successPay = (payments || []).filter(p => p.status === 'success').length;
+          const recentItems: RecentReg[] = [
+            ...(res.recent_team_registrations || []).map((r: any) => ({ id: r.id, name: r.team_name, type: 'team' as const, status: r.status, created_at: r.created_at })),
+            ...(res.recent_player_registrations || []).map((r: any) => ({ id: r.id, name: r.player_name, type: 'player' as const, status: r.status, created_at: r.created_at })),
+          ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 8);
 
-      setStats({
-        teams: teamsCount ?? 0,
-        activePlayers: playersCount ?? 0,
-        totalPayments: (payments || []).length,
-        paymentsAmount: totalAmt,
-        pendingTeamRegs: pendingTeams ?? 0,
-        pendingPlayerRegs: pendingPlayers ?? 0,
-        successPayments: successPay,
-        auctionEligible: auctionCount ?? 0,
-      });
-
-      const recentItems: RecentReg[] = [
-        ...(teamRegs || []).map(r => ({ id: r.id, name: r.team_name, type: 'team' as const, status: r.status, created_at: r.created_at })),
-        ...(playerRegs || []).map(r => ({ id: r.id, name: r.player_name, type: 'player' as const, status: r.status, created_at: r.created_at })),
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 8);
-      setRecent(recentItems);
-      setLoading(false);
+          setRecent(recentItems);
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard metrics:', err);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
+
 
   const statCards = [
     { label: 'Active Teams', value: stats.teams, icon: Shield, color: '#f59e0b', sub: `${stats.pendingTeamRegs} pending registrations` },

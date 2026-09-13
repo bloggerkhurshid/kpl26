@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { supabase } from '@/lib/supabase';
 import { kplApi } from '@/lib/api';
 import {
   CreditCard, Plus, X, Loader2, CheckCircle2,
@@ -20,14 +19,21 @@ interface Payment {
   amount: number;
   currency?: string;
   status: string;
+  payment_status?: string;
+  registration_type?: string;
+  registration_id?: string;
+  purpose?: string;
+  entity_type?: string;
+  entity_name?: string;
+  applicant_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
   payer_name?: string;
   name?: string;
   payer_email?: string;
   payer_phone?: string;
   phone?: string;
-  purpose?: string;
-  registration_type?: string;
-  registration_id?: string;
+  utr_number?: string;
   created_at: string;
 }
 
@@ -55,16 +61,12 @@ export default function PaymentsPage() {
   const loadPayments = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await kplApi.getPayments(500);
-      if (Array.isArray(data)) {
-        setPayments(data);
-      } else {
-        const { data: supaData } = await supabase.from('payments').select('*').order('created_at', { ascending: false });
-        setPayments(supaData || []);
-      }
-    } catch {
-      const { data: supaData } = await supabase.from('payments').select('*').order('created_at', { ascending: false });
-      setPayments(supaData || []);
+      const res = await kplApi.getPayments(500);
+      const data = res?.data || res || [];
+      setPayments(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Failed to load payments', 'error');
     } finally {
       setLoading(false);
     }
@@ -275,7 +277,7 @@ export default function PaymentsPage() {
           columns={columns}
           data={filtered}
           loading={loading}
-          searchKeys={['order_id', 'payment_id', 'payer_name', 'payer_email', 'payer_phone']}
+          searchKeys={['order_id', 'payment_id', 'name', 'payer_name', 'contact_phone']}
           searchPlaceholder="Search by order ID, payer..."
           emptyMessage="No payment records found."
         />

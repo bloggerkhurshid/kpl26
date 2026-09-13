@@ -1,13 +1,12 @@
 /**
  * KPL API Adapter
- * Connects Next.js Frontend to PHP MySQL REST API or Supabase Backend
+ * Connects Next.js Frontend to PHP MySQL REST API
  */
 
 const PHP_API_BASE = process.env.NEXT_PUBLIC_PHP_API_URL || 'https://kpl.projuktisoft.com';
-const API_MODE = process.env.NEXT_PUBLIC_API_MODE || 'php'; // 'php' or 'supabase'
+const API_MODE = process.env.NEXT_PUBLIC_API_MODE || 'php';
 
-
-export const isPhpBackend = () => API_MODE === 'php';
+export const isPhpBackend = () => true;
 
 export async function fetchFromPhpApi(endpoint: string, options: RequestInit = {}) {
   const url = `${PHP_API_BASE.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;

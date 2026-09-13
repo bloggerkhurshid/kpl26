@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { supabase } from '@/lib/supabase';
+import { kplApi } from '@/lib/api';
 import {
   Plus, Edit2, Trash2,
   X, Loader2, Image as ImageIcon, AlertCircle, CheckCircle2
@@ -35,9 +35,16 @@ export default function HighlightsPage() {
 
   async function loadHighlights() {
     setLoading(true);
-    const { data } = await supabase.from('highlights').select('*').order('created_at', { ascending: false });
-    setHighlights(data || []);
-    setLoading(false);
+    try {
+      const res = await kplApi.getHighlights(100);
+      const data = res?.data || res || [];
+      setHighlights(data);
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Failed to load highlights', 'error');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { loadHighlights(); }, []);
@@ -63,24 +70,35 @@ export default function HighlightsPage() {
   async function saveHighlight(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    let error;
-    if (modal === 'create') {
-      ({ error } = await supabase.from('highlights').insert([form]));
-    } else if (modal === 'edit' && selected) {
-      ({ error } = await supabase.from('highlights').update(form).eq('id', selected.id));
+    try {
+      if (modal === 'create') {
+        await kplApi.createHighlight(form);
+      } else if (modal === 'edit' && selected) {
+        await kplApi.updateHighlight(selected.id, form);
+      }
+      showToast(modal === 'create' ? 'Highlight added!' : 'Highlight updated!');
+      setModal(null);
+      loadHighlights();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to save highlight', 'error');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    if (error) { showToast(error.message, 'error'); }
-    else { showToast(modal === 'create' ? 'Highlight added!' : 'Highlight updated!'); setModal(null); loadHighlights(); }
   }
 
   async function deleteHighlight() {
     if (!selected) return;
     setSaving(true);
-    const { error } = await supabase.from('highlights').delete().eq('id', selected.id);
-    setSaving(false);
-    if (error) showToast(error.message, 'error');
-    else { showToast('Highlight deleted.'); setModal(null); loadHighlights(); }
+    try {
+      await kplApi.deleteHighlight(selected.id);
+      showToast('Highlight deleted.');
+      setModal(null);
+      loadHighlights();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete highlight', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   const columns: Column<Highlight>[] = [

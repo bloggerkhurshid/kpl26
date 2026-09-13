@@ -1,12 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-// Use service role if available, otherwise fall back to publishable/anon key
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy'
-);
+import { kplApi } from '@/lib/api';
 
 // Cache for gateway settings (TTL: 60s) to avoid hammering DB on every request
 let cachedSettings: Record<string, string> = {};
@@ -17,16 +9,23 @@ export async function getGatewaySettings(): Promise<Record<string, string>> {
     return cachedSettings;
   }
 
-  const { data } = await supabaseAdmin
-    .from('content_settings')
-    .select('key,value');
+  try {
+    const res = await kplApi.getContentSettings();
+    const settingsData = res?.data || res || {};
+    const settings: Record<string, string> = {};
+    if (Array.isArray(settingsData)) {
+      settingsData.forEach(({ key, value }: { key: string; value: string }) => { settings[key] = value; });
+    } else if (typeof settingsData === 'object') {
+      Object.assign(settings, settingsData);
+    }
 
-  const settings: Record<string, string> = {};
-  (data || []).forEach(({ key, value }) => { settings[key] = value; });
-
-  cachedSettings = settings;
-  cacheExpiry = Date.now() + 60_000; // 60s TTL
-  return settings;
+    cachedSettings = settings;
+    cacheExpiry = Date.now() + 60_000; // 60s TTL
+    return settings;
+  } catch (err) {
+    console.error('Failed to load gateway settings from PHP API:', err);
+    return cachedSettings;
+  }
 }
 
 /** Resolve a setting: DB value → env var fallback → empty string */
@@ -45,3 +44,4 @@ export function isProductionMode(settings: Record<string, string>): boolean {
   const mode = settings['gateway_mode'] || 'sandbox';
   return mode === 'production';
 }
+

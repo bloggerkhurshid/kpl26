@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { supabase } from '@/lib/supabase';
+import { kplApi } from '@/lib/api';
 import {
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight,
   X, Loader2, CheckCircle2, AlertCircle, Users,
@@ -84,13 +84,19 @@ export default function PlayersPage() {
 
   async function loadData() {
     setLoading(true);
-    const [{ data: playersData }, { data: teamsData }] = await Promise.all([
-      supabase.from('players').select('*, teams(id,name,short_code,accent_color)').order('created_at', { ascending: false }),
-      supabase.from('teams').select('id,name,short_code,accent_color').eq('status', 'active').order('name'),
-    ]);
-    setPlayers(playersData || []);
-    setTeams(teamsData || []);
-    setLoading(false);
+    try {
+      const [pRes, tRes] = await Promise.all([
+        kplApi.getPlayers({ limit: 1000 }),
+        kplApi.getTeams('active'),
+      ]);
+      setPlayers(pRes?.data || pRes || []);
+      setTeams(tRes?.data || tRes || []);
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Failed to load players data', 'error');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { loadData(); }, []);
@@ -127,8 +133,7 @@ export default function PlayersPage() {
     // Auto generate reg number for admin creations if empty
     let regNum = form.registration_number;
     if (modal === 'create' && !regNum) {
-      const { count } = await supabase.from('players').select('*', { count: 'exact', head: true });
-      const nextSl = 1001 + (count || 0);
+      const nextSl = 1001 + (players.length || 0);
       regNum = `KPL-PLR-${nextSl}`;
     }
 
@@ -170,43 +175,68 @@ export default function PlayersPage() {
       base_price: parseFloat(form.base_price) || 0,
       status: form.status,
       notes: form.notes || null,
-      updated_at: new Date().toISOString(),
     };
     
-    let error;
-    if (modal === 'create') ({ error } = await supabase.from('players').insert(payload));
-    else if (modal === 'edit' && selected) ({ error } = await supabase.from('players').update(payload).eq('id', selected.id));
-    setSaving(false);
-    if (error) showToast(error.message, 'error');
-    else { showToast(modal === 'create' ? 'Player created!' : 'Player updated!'); setModal(null); loadData(); }
+    try {
+      if (modal === 'create') {
+        await kplApi.createPlayer(payload);
+      } else if (modal === 'edit' && selected) {
+        await kplApi.updatePlayer(selected.id, payload);
+      }
+      showToast(modal === 'create' ? 'Player created!' : 'Player updated!');
+      setModal(null);
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to save player', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function deletePlayer() {
     if (!selected) return;
     setSaving(true);
-    const { error } = await supabase.from('players').delete().eq('id', selected.id);
-    setSaving(false);
-    if (error) showToast(error.message, 'error');
-    else { showToast('Player deleted.'); setModal(null); loadData(); }
+    try {
+      await kplApi.deletePlayer(selected.id);
+      showToast('Player deleted.');
+      setModal(null);
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete player', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function toggleStatus(p: Player) {
     const newStatus = p.status === 'active' ? 'disabled' : 'active';
-    const { error } = await supabase.from('players').update({ status: newStatus }).eq('id', p.id);
-    if (error) showToast(error.message, 'error');
-    else { showToast(`Player ${newStatus}.`); loadData(); }
+    try {
+      await kplApi.updatePlayer(p.id, { status: newStatus });
+      showToast(`Player ${newStatus}.`);
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update player status', 'error');
+    }
   }
 
   async function toggleAuction(p: Player) {
-    const { error } = await supabase.from('players').update({ auction_eligible: !p.auction_eligible }).eq('id', p.id);
-    if (error) showToast(error.message, 'error');
-    else { showToast(`Auction eligibility ${!p.auction_eligible ? 'enabled' : 'disabled'}.`); loadData(); }
+    try {
+      await kplApi.updatePlayer(p.id, { auction_eligible: !p.auction_eligible });
+      showToast(`Auction eligibility ${!p.auction_eligible ? 'enabled' : 'disabled'}.`);
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to toggle auction eligibility', 'error');
+    }
   }
 
   async function unassignPlayer(p: Player) {
-    const { error } = await supabase.from('players').update({ team_id: null, sold_price: null }).eq('id', p.id);
-    if (error) showToast(error.message, 'error');
-    else { showToast('Player unassigned from team.'); loadData(); }
+    try {
+      await kplApi.updatePlayer(p.id, { team_id: null, sold_price: null });
+      showToast('Player unassigned from team.');
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to unassign player', 'error');
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {

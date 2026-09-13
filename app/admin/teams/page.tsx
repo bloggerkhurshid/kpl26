@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { supabase } from '@/lib/supabase';
+import { kplApi } from '@/lib/api';
 import {
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight,
   X, Loader2, CheckCircle2, AlertCircle, Shield,
@@ -41,9 +41,16 @@ export default function TeamsPage() {
 
   async function loadTeams() {
     setLoading(true);
-    const { data } = await supabase.from('teams').select('*').order('created_at', { ascending: false });
-    setTeams(data || []);
-    setLoading(false);
+    try {
+      const res = await kplApi.getTeams('all');
+      const data = res?.data || res || [];
+      setTeams(data);
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Failed to load teams', 'error');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { loadTeams(); }, []);
@@ -55,32 +62,47 @@ export default function TeamsPage() {
   async function saveTeam(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const payload = { ...form, updated_at: new Date().toISOString() };
-    let error;
-    if (modal === 'create') {
-      ({ error } = await supabase.from('teams').insert(payload));
-    } else if (modal === 'edit' && selected) {
-      ({ error } = await supabase.from('teams').update(payload).eq('id', selected.id));
+    const payload = { ...form };
+    try {
+      if (modal === 'create') {
+        await kplApi.createTeam(payload);
+      } else if (modal === 'edit' && selected) {
+        await kplApi.updateTeam(selected.id, payload);
+      }
+      showToast(modal === 'create' ? 'Team created!' : 'Team updated!');
+      setModal(null);
+      loadTeams();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to save team', 'error');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    if (error) { showToast(error.message, 'error'); }
-    else { showToast(modal === 'create' ? 'Team created!' : 'Team updated!'); setModal(null); loadTeams(); }
   }
 
   async function deleteTeam() {
     if (!selected) return;
     setSaving(true);
-    const { error } = await supabase.from('teams').delete().eq('id', selected.id);
-    setSaving(false);
-    if (error) showToast(error.message, 'error');
-    else { showToast('Team deleted.'); setModal(null); loadTeams(); }
+    try {
+      await kplApi.deleteTeam(selected.id);
+      showToast('Team deleted.');
+      setModal(null);
+      loadTeams();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete team', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function toggleStatus(t: Team) {
     const newStatus = t.status === 'active' ? 'disabled' : 'active';
-    const { error } = await supabase.from('teams').update({ status: newStatus }).eq('id', t.id);
-    if (error) showToast(error.message, 'error');
-    else { showToast(`Team ${newStatus === 'active' ? 'enabled' : 'disabled'}.`); loadTeams(); }
+    try {
+      await kplApi.updateTeam(t.id, { status: newStatus });
+      showToast(`Team ${newStatus === 'active' ? 'enabled' : 'disabled'}.`);
+      loadTeams();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update team status', 'error');
+    }
   }
 
   const columns: Column<Team>[] = [

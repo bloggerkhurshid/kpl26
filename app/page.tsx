@@ -20,11 +20,12 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { load } from '@cashfreepayments/cashfree-js';
+import { kplApi } from '@/lib/api';
 import { ManagementSection } from '@/components/ManagementSection';
 import { GallerySection } from '@/components/GallerySection';
 import { UpiPaymentModal } from '@/components/UpiPaymentModal';
+
 
 
 type Team = {
@@ -212,38 +213,39 @@ export default function Home() {
       } catch(e) {}
     }
 
-    // 2. Fetch fresh data in the background
+    // 2. Fetch fresh data in the background from PHP API (https://kpl.projuktisoft.com/)
     Promise.all([
-      supabase.from('teams').select('*').eq('status', 'active'),
-      supabase.from('players').select('id,player_name,role,photo').eq('status', 'active').limit(8).order('created_at', { ascending: false }),
-      supabase.from('players').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-      supabase.from('highlights').select('*').order('created_at', { ascending: false }).limit(6),
-      fetch('/api/settings').then(res => res.json()).catch(() => null),
-      fetch('/api/content').then(res => res.json()).catch(() => null)
-    ]).then(([{ data: t }, { data: p }, { count }, { data: h }, f, c]) => {
+      kplApi.getTeams('active').catch(() => []),
+      kplApi.getPlayers({ status: 'active', limit: 8 }).catch(() => []),
+      kplApi.getHighlights(6).catch(() => []),
+      kplApi.getFeeSettings().catch(() => null),
+      kplApi.getContentSettings().catch(() => null),
+    ]).then(([t, p, h, f, c]) => {
+      const parsedGallery = Array.isArray(h) ? h.map((item: any) => ({ title: item.title || '', image: item.image_url || item.image || '', size: item.size || 'normal' })) : [];
       
-      const parsedGallery = h ? h.map(item => ({ title: item.title, image: item.image_url, size: item.size })) : [];
-      
-      if (t) setTeams(t as Team[]);
-      if (p) setPlayers(p as Player[]);
-      if (count !== null) setPlayerCount(count);
-      if (h) setGallery(parsedGallery as GalleryItem[]);
+      if (Array.isArray(t)) setTeams(t as Team[]);
+      if (Array.isArray(p)) {
+        setPlayers(p as Player[]);
+        setPlayerCount(p.length);
+      }
+      if (parsedGallery.length > 0) setGallery(parsedGallery as GalleryItem[]);
       if (f) setFees(f);
       if (c) {
         setContent(c);
         setLoadingContent(false);
       }
 
-      // 3. Update the cache for the next time the user visits
+      // 3. Update local cache
       localStorage.setItem('kpl_home_cache', JSON.stringify({
         t: t || [],
         p: p || [],
-        count: count || 0,
+        count: Array.isArray(p) ? p.length : 0,
         h: parsedGallery,
-        f: f || { fee_player: 500, fee_foreign_player: 1000, fee_team: 5000, active_gateway: 'razorpay' },
+        f: f || fees,
         c: c || {}
       }));
     }).catch(console.error);
+
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -285,26 +287,20 @@ export default function Home() {
     e.preventDefault();
     setStatus('submitting');
     setErrorMsg('');
-    const { data: team, error } = await supabase.from('team_registrations').insert({
-      team_name: teamForm.team_name,
-      owner_name: teamForm.owner_name,
-      captain_name: teamForm.captain_name || null,
-      contact_number: teamForm.contact_number,
-      email: teamForm.email || null,
-      home_location: teamForm.home_location || null,
-      message: teamForm.message || null,
-      status: 'pending'
-    }).select().single();
+    const newRegNum = `KPL-TEAM-${Date.now().toString().slice(-6)}`;
 
-    if (error || !team) {
-      setStatus('error');
-      setErrorMsg(error?.message || 'Failed to register team');
-      return;
-    }
-
-    // Handle Payment Gateway for Team
     try {
-      const newRegNum = `KPL-TEAM-${Date.now().toString().slice(-6)}`;
+      const res = await kplApi.createTeam({
+        name: teamForm.team_name,
+        owner_name: teamForm.owner_name,
+        owner_contact: teamForm.contact_number,
+        short_code: teamForm.team_name.slice(0, 3).toUpperCase(),
+        home_location: teamForm.home_location || null,
+        status: 'pending'
+      });
+
+      const teamId = res.id || res.data?.id || newRegNum;
+
       if (fees.active_gateway === 'upi_direct' || !fees.active_gateway) {
         setUpiModalData({
           isOpen: true,
@@ -320,7 +316,7 @@ export default function Home() {
       if (fees.active_gateway === 'razorpay') {
         const res = await fetch('/api/payments/razorpay/create-order', {
           method: 'POST',
-          body: JSON.stringify({ amount: fees.fee_team, receipt: newRegNum, notes: { teamId: team.id } })
+          body: JSON.stringify({ amount: fees.fee_team, receipt: newRegNum, notes: { teamId } })
         });
         const data = await res.json();
         
@@ -334,7 +330,7 @@ export default function Home() {
           description: 'Team Registration Fee',
           order_id: data.orderId,
           handler: async function (response: any) {
-            await supabase.from('team_registrations').update({ status: 'active' }).eq('id', team.id);
+            await kplApi.updateTeam(teamId, { status: 'active' });
             setStatus('success');
             setRegisteredId(newRegNum);
             setTeamForm({ team_name: '', owner_name: '', captain_name: '', contact_number: '', email: '', home_location: '', message: '' });
@@ -375,7 +371,7 @@ export default function Home() {
             setErrorMsg(result.error.message);
           }
           if (result.paymentDetails) {
-            await supabase.from('team_registrations').update({ status: 'active' }).eq('id', team.id);
+            await kplApi.updateTeam(teamId, { status: 'active' });
             setStatus('success');
             setRegisteredId(newRegNum);
             setTeamForm({ team_name: '', owner_name: '', captain_name: '', contact_number: '', email: '', home_location: '', message: '' });
@@ -394,48 +390,35 @@ export default function Home() {
     setStatus('submitting');
     setErrorMsg('');
     
-    // Generate Registration Number
-    const { count, error: countError } = await supabase.from('players').select('*', { count: 'exact', head: true });
-    if (countError) {
-      setStatus('error');
-      setErrorMsg('Failed to generate registration number.');
-      return;
-    }
-    const currentCount = count || 0;
-    const newRegNum = `KPL-PLR-${9910 + currentCount + 1}`;
-
+    const newRegNum = `KPL-PLR-${Date.now().toString().slice(-6)}`;
     const age = parseInt(playerForm.age_input);
     const calculatedAge = age > 1900 ? new Date().getFullYear() - age : age;
 
-    const { data: player, error } = await supabase.from('players').insert({
-      registration_number: newRegNum,
-      player_name: playerForm.player_name,
-      father_name: playerForm.father_name,
-      age: calculatedAge,
-      contact_number: playerForm.contact_number,
-      present_address: playerForm.present_address,
-      address_proof: playerForm.address_proof || null,
-      photo: playerForm.photo || null,
-      role: [playerForm.batsman ? 'Batsman' : '', playerForm.bowler ? 'Bowler' : '', playerForm.wicket_keeper ? 'Wicket-keeper' : ''].filter(Boolean).join(', '),
-      batting_hand: playerForm.batting_hand || null,
-      wicket_keeper: playerForm.wicket_keeper,
-      previously_played: playerForm.previously_played,
-      bowler: playerForm.bowler,
-      bowling_type: playerForm.bowler ? `${playerForm.bowling_arm} ${playerForm.bowling_style}`.trim() : null,
-      registered_by: 'Self Registration',
-      status: 'pending',
-      auction_eligible: true,
-      base_price: 50
-    }).select().single();
-
-    if (error || !player) {
-      setStatus('error');
-      setErrorMsg(error?.message || 'Failed to register player');
-      return;
-    }
-
-    // Handle Payment Gateway
     try {
+      const res = await kplApi.createPlayer({
+        registration_number: newRegNum,
+        player_name: playerForm.player_name,
+        father_name: playerForm.father_name,
+        age: calculatedAge,
+        contact_number: playerForm.contact_number,
+        present_address: playerForm.present_address,
+        address_proof: playerForm.address_proof || null,
+        photo: playerForm.photo || null,
+        role: [playerForm.batsman ? 'Batsman' : '', playerForm.bowler ? 'Bowler' : '', playerForm.wicket_keeper ? 'Wicket-keeper' : ''].filter(Boolean).join(', '),
+        batting_hand: playerForm.batting_hand || null,
+        wicket_keeper: playerForm.wicket_keeper ? 1 : 0,
+        previously_played: playerForm.previously_played ? 1 : 0,
+        bowler: playerForm.bowler ? 1 : 0,
+        bowling_type: playerForm.bowler ? `${playerForm.bowling_arm} ${playerForm.bowling_style}`.trim() : null,
+        registered_by: 'Self Registration',
+        status: 'pending',
+        auction_eligible: 1,
+        base_price: 50
+      });
+
+      const playerId = res.id || res.data?.id || newRegNum;
+
+      // Handle Payment Gateway
       const paymentAmount = playerForm.player_category === 'Foreign' ? Number(fees.fee_foreign_player) : Number(fees.fee_player);
 
       if (fees.active_gateway === 'upi_direct' || !fees.active_gateway) {
@@ -451,10 +434,9 @@ export default function Home() {
       }
 
       if (fees.active_gateway === 'razorpay') {
-
         const res = await fetch('/api/payments/razorpay/create-order', {
           method: 'POST',
-          body: JSON.stringify({ amount: paymentAmount, receipt: newRegNum, notes: { playerId: player.id } })
+          body: JSON.stringify({ amount: paymentAmount, receipt: newRegNum, notes: { playerId } })
         });
         const data = await res.json();
         
@@ -468,7 +450,7 @@ export default function Home() {
           description: 'Player Registration Fee',
           order_id: data.orderId,
           handler: async function (response: any) {
-            await supabase.from('players').update({ status: 'active' }).eq('id', player.id);
+            await kplApi.updatePlayer(playerId, { status: 'active' });
             setStatus('success');
             setRegisteredId(newRegNum);
             setPlayerForm({ player_name: '', father_name: '', age_input: '', contact_number: '', present_address: '', address_proof: '', photo: '', batsman: false, batting_hand: '', wicket_keeper: false, previously_played: false, player_category: 'local', bowler: false, bowling_arm: '', bowling_style: '' });
@@ -507,13 +489,14 @@ export default function Home() {
             setErrorMsg(result.error.message);
           }
           if (result.paymentDetails) {
-            await supabase.from('players').update({ status: 'active' }).eq('id', player.id);
+            await kplApi.updatePlayer(playerId, { status: 'active' });
             setStatus('success');
             setRegisteredId(newRegNum);
             setPlayerForm({ player_name: '', father_name: '', age_input: '', contact_number: '', present_address: '', address_proof: '', photo: '', batsman: false, batting_hand: '', wicket_keeper: false, previously_played: false, player_category: 'local', bowler: false, bowling_arm: '', bowling_style: '' });
           }
         });
       }
+
     } catch (err: any) {
       setStatus('error');
       setErrorMsg(err.message || 'Payment failed to initiate.');

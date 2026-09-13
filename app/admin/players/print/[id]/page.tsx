@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { kplApi } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import '@/app/register/player/paper.css';
 
@@ -11,15 +11,19 @@ export default function PrintPlayerReceipt({ params }: { params: { id: string } 
 
   useEffect(() => {
     async function load() {
-      const { data, error } = await supabase.from('players').select('*').eq('id', params.id).single();
-      if (!error && data) {
-        setPlayer(data);
+      try {
+        const res = await kplApi.getPlayers({ limit: 1000 });
+        const list = res?.data || res || [];
+        const found = list.find((p: any) => String(p.id) === String(params.id));
+        if (found) setPlayer(found);
+      } catch (err) {
+        console.error('Failed to load player print data:', err);
+      } finally {
+        setLoading(false);
+        setTimeout(() => {
+          window.print();
+        }, 500);
       }
-      setLoading(false);
-      // Give images time to load before triggering print
-      setTimeout(() => {
-        window.print();
-      }, 500);
     }
     load();
   }, [params.id]);

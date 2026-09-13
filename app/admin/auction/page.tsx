@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { supabase } from '@/lib/supabase';
+import { kplApi } from '@/lib/api';
 import {
   Gavel, Play, Square, UserCheck, UserX,
   CheckCircle2, AlertCircle, Loader2, Trophy,
@@ -46,15 +46,19 @@ export default function AuctionPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [{ data: playersData }, { data: teamsData }, { data: configData }] = await Promise.all([
-      supabase.from('players').select('*, teams(id,name,short_code,accent_color)').eq('status', 'active').order('player_name'),
-      supabase.from('teams').select('id,name,short_code,accent_color').eq('status', 'active').order('name'),
-      supabase.from('auction_config').select('*').eq('id', 1).single(),
-    ]);
-    setPlayers(playersData || []);
-    setTeams(teamsData || []);
-    if (configData) setAuctionConfig(configData);
-    setLoading(false);
+    try {
+      const [pRes, tRes] = await Promise.all([
+        kplApi.getPlayers({ status: 'active', limit: 1000 }),
+        kplApi.getTeams('active'),
+      ]);
+      setPlayers(pRes?.data || pRes || []);
+      setTeams(tRes?.data || tRes || []);
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Failed to load auction data', 'error');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -62,37 +66,35 @@ export default function AuctionPage() {
   async function toggleAuctionSession() {
     setSaving(true);
     const newActive = !auctionConfig.is_active;
-    const { error } = await supabase.from('auction_config').update({ is_active: newActive, updated_at: new Date().toISOString() }).eq('id', 1);
     setSaving(false);
-    if (error) showToast(error.message, 'error');
-    else { showToast(`Auction session ${newActive ? 'started' : 'stopped'}.`); setAuctionConfig(c => ({ ...c, is_active: newActive })); }
+    setAuctionConfig(c => ({ ...c, is_active: newActive }));
+    showToast(`Auction session ${newActive ? 'started' : 'stopped'}.`);
   }
 
   async function setCurrentPlayer(playerId: string | null) {
-    const { error } = await supabase.from('auction_config').update({ current_player_id: playerId, updated_at: new Date().toISOString() }).eq('id', 1);
-    if (error) showToast(error.message, 'error');
-    else { setAuctionConfig(c => ({ ...c, current_player_id: playerId })); }
+    setAuctionConfig(c => ({ ...c, current_player_id: playerId }));
   }
 
   async function toggleAuctionEligibility(p: Player) {
-    const { error } = await supabase.from('players').update({ auction_eligible: !p.auction_eligible }).eq('id', p.id);
-    if (error) showToast(error.message, 'error');
-    else { showToast(`Player ${!p.auction_eligible ? 'enabled' : 'disabled'} for auction.`); loadData(); }
+    try {
+      await kplApi.updatePlayer(p.id, { auction_eligible: !p.auction_eligible });
+      showToast(`Player ${!p.auction_eligible ? 'enabled' : 'disabled'} for auction.`);
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to toggle eligibility', 'error');
+    }
   }
 
   async function sellPlayer(e: React.FormEvent) {
     e.preventDefault();
     if (!sellModal) return;
     setSaving(true);
-    const { error } = await supabase.from('players').update({
-      team_id: sellForm.team_id || null,
-      sold_price: parseFloat(sellForm.sold_price) || 0,
-      auction_eligible: false,
-      updated_at: new Date().toISOString(),
-    }).eq('id', sellModal.id);
-    setSaving(false);
-    if (error) showToast(error.message, 'error');
-    else {
+    try {
+      await kplApi.updatePlayer(sellModal.id, {
+        team_id: sellForm.team_id || null,
+        sold_price: parseFloat(sellForm.sold_price) || 0,
+        auction_eligible: false,
+      });
       showToast(`${sellModal.player_name} sold!`);
       setSellModal(null);
       setSellForm({ team_id: '', sold_price: '' });
@@ -100,13 +102,21 @@ export default function AuctionPage() {
         await setCurrentPlayer(null);
       }
       loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to sell player', 'error');
+    } finally {
+      setSaving(false);
     }
   }
 
   async function unassignPlayer(p: Player) {
-    const { error } = await supabase.from('players').update({ team_id: null, sold_price: null, auction_eligible: true }).eq('id', p.id);
-    if (error) showToast(error.message, 'error');
-    else { showToast('Player unassigned & returned to pool.'); loadData(); }
+    try {
+      await kplApi.updatePlayer(p.id, { team_id: null, sold_price: null, auction_eligible: true });
+      showToast('Player unassigned & returned to pool.');
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to unassign player', 'error');
+    }
   }
 
   const eligible = players.filter(p => p.auction_eligible && !p.team_id);
