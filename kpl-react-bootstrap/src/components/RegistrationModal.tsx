@@ -32,50 +32,50 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
     <div
       className="modal show d-block"
       tabIndex={-1}
-      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 1050 }}
+      style={{ background: 'rgba(15,23,42,0.7)', backdropFilter: 'blur(8px)', zIndex: 1050 }}
     >
       <div className="modal-dialog modal-dialog-centered modal-lg">
         <div className="kpl-modal-content p-4">
-          <div className="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary border-opacity-25 pb-3">
+          <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
             <div>
-              <h4 className="text-white fw-bold mb-1">
-                {regType === 'player' ? 'Player Registration' : 'Team Franchise Registration'}
-              </h4>
-              <p className="text-success small mb-0">Khoraghat Premier League Season 3 · 2026</p>
+              <h3 className="sport-heading fs-4 mb-1">
+                {regType === 'player' ? 'Player Registration' : 'Franchise Team Registration'}
+              </h3>
+              <p className="text-muted small mb-0">Khoraghat Premier League Season 3 · 2026</p>
             </div>
-            <button type="button" className="btn-close btn-close-white" onClick={onClose}></button>
+            <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
 
           {submitted ? (
             <div className="text-center py-4">
               <CheckCircle size={64} className="text-success mb-3" />
-              <h4 className="text-white fw-bold">Registration Submitted Successfully!</h4>
-              <p className="text-slate-300 max-w-md mx-auto small mb-4">
-                Thank you for registering for KPL Season 3. Our organizing committee will review your details and contact you via phone/WhatsApp.
+              <h4 className="sport-heading text-dark">Registration Submitted!</h4>
+              <p className="text-muted small mb-4">
+                Thank you for registering for KPL Season 3. Our organizing committee will review your details and contact you.
               </p>
-              <button className="btn btn-kpl-green rounded-pill px-4 py-2" onClick={onClose}>
-                Close & Return
+              <button className="button-primary" onClick={onClose}>
+                <span>Close & Return</span>
               </button>
             </div>
           ) : (
             <div>
-              {/* Type Switcher */}
+              {/* Switcher */}
               <div className="d-flex gap-2 mb-4">
                 <button
-                  className={`btn flex-grow-1 rounded-pill ${
-                    regType === 'player' ? 'btn-kpl-green' : 'btn-kpl-outline'
+                  className={`btn flex-grow-1 rounded-pill fw-bold ${
+                    regType === 'player' ? 'btn-dark text-warning' : 'btn-outline-secondary'
                   }`}
                   onClick={() => setRegType('player')}
                 >
-                  <User size={16} className="me-1" /> Register as Player (₹ 500)
+                  <User size={16} className="me-1" /> Player (₹ 500)
                 </button>
                 <button
-                  className={`btn flex-grow-1 rounded-pill ${
-                    regType === 'team' ? 'btn-kpl-green' : 'btn-kpl-outline'
+                  className={`btn flex-grow-1 rounded-pill fw-bold ${
+                    regType === 'team' ? 'btn-dark text-warning' : 'btn-outline-secondary'
                   }`}
                   onClick={() => setRegType('team')}
                 >
-                  <Shield size={16} className="me-1" /> Register Franchise Team (₹ 5,000)
+                  <Shield size={16} className="me-1" /> Franchise Team (₹ 5,000)
                 </button>
               </div>
 
@@ -83,10 +83,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
                 {regType === 'player' ? (
                   <div className="row g-3">
                     <div className="col-md-6">
-                      <label className="form-label text-slate-300 small fw-bold">Full Name *</label>
+                      <label className="form-label text-dark small fw-bold">Full Name *</label>
                       <input
                         type="text"
-                        className="form-control kpl-form-control"
+                        className="form-control form-control-light"
                         placeholder="e.g. Jahidul Hasan"
                         required
                         value={fullName}
@@ -94,9 +94,9 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
                       />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label text-slate-300 small fw-bold">Playing Role *</label>
+                      <label className="form-label text-dark small fw-bold">Playing Role *</label>
                       <select
-                        className="form-select kpl-form-control"
+                        className="form-select form-control-light"
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
                       >
@@ -107,10 +107,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
                       </select>
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label text-slate-300 small fw-bold">Contact Number *</label>
+                      <label className="form-label text-dark small fw-bold">Contact Phone *</label>
                       <input
                         type="tel"
-                        className="form-control kpl-form-control"
+                        className="form-control form-control-light"
                         placeholder="+91 98765 43210"
                         required
                         value={contact}
@@ -118,10 +118,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
                       />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label text-slate-300 small fw-bold">Village / Town *</label>
+                      <label className="form-label text-dark small fw-bold">Village / Town *</label>
                       <input
                         type="text"
-                        className="form-control kpl-form-control"
+                        className="form-control form-control-light"
                         placeholder="e.g. Khoraghat / Bilasipara"
                         required
                         value={village}
@@ -132,10 +132,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
                 ) : (
                   <div className="row g-3">
                     <div className="col-md-6">
-                      <label className="form-label text-slate-300 small fw-bold">Franchise Team Name *</label>
+                      <label className="form-label text-dark small fw-bold">Franchise Team Name *</label>
                       <input
                         type="text"
-                        className="form-control kpl-form-control"
+                        className="form-control form-control-light"
                         placeholder="e.g. Bilasipara Strikers"
                         required
                         value={teamName}
@@ -143,10 +143,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
                       />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label text-slate-300 small fw-bold">Franchise Owner Name *</label>
+                      <label className="form-label text-dark small fw-bold">Owner Name *</label>
                       <input
                         type="text"
-                        className="form-control kpl-form-control"
+                        className="form-control form-control-light"
                         placeholder="e.g. Rafiqul Islam"
                         required
                         value={ownerName}
@@ -154,10 +154,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
                       />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label text-slate-300 small fw-bold">City / District *</label>
+                      <label className="form-label text-dark small fw-bold">City / District *</label>
                       <input
                         type="text"
-                        className="form-control kpl-form-control"
+                        className="form-control form-control-light"
                         placeholder="e.g. Bilasipara, Dhubri"
                         required
                         value={city}
@@ -165,10 +165,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
                       />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label text-slate-300 small fw-bold">Owner Contact Phone *</label>
+                      <label className="form-label text-dark small fw-bold">Owner Contact Phone *</label>
                       <input
                         type="tel"
-                        className="form-control kpl-form-control"
+                        className="form-control form-control-light"
                         placeholder="+91 98765 43210"
                         required
                       />
@@ -177,16 +177,16 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
                 )}
 
                 {/* Payment QR Section */}
-                <div className="kpl-card p-3 my-4 bg-dark bg-opacity-50">
+                <div className="p-3 my-4 bg-light rounded-3 border">
                   <div className="d-flex align-items-center gap-3">
-                    <div className="bg-success bg-opacity-20 p-3 rounded-3 text-success">
+                    <div className="bg-warning bg-opacity-20 p-3 rounded-3 text-dark">
                       <QrCode size={36} />
                     </div>
                     <div>
-                      <h6 className="text-white mb-1 fw-bold">
+                      <h6 className="text-dark mb-1 fw-bold">
                         UPI Payment Fee: {regType === 'player' ? '₹ 500' : '₹ 5,000'}
                       </h6>
-                      <p className="text-slate-300 small mb-0">
+                      <p className="text-muted small mb-0">
                         Scan & Pay via GPay / PhonePe / Paytm to UPI ID: <code>kpl2026@paytm</code>
                       </p>
                     </div>
@@ -194,11 +194,11 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
                 </div>
 
                 <div className="d-flex justify-content-end gap-2">
-                  <button type="button" className="btn btn-kpl-outline rounded-pill px-4" onClick={onClose}>
-                    Cancel
+                  <button type="button" className="button-outline py-2 px-4" onClick={onClose}>
+                    <span>Cancel</span>
                   </button>
-                  <button type="submit" className="btn btn-kpl-green rounded-pill px-4">
-                    Submit Registration
+                  <button type="submit" className="button-primary py-2 px-4">
+                    <span>Submit</span>
                   </button>
                 </div>
               </form>
