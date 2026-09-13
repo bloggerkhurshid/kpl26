@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Settings,
   Image as ImageIcon,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { isLoggedIn, adminLogout } from '@/lib/adminAuth';
 
@@ -34,12 +36,33 @@ const navItems = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [lightMode, setLightMode] = useState(false);
 
   useEffect(() => {
     if (!isLoggedIn() && pathname !== '/admin') {
       window.location.href = '/admin';
     }
   }, [pathname]);
+
+  useEffect(() => {
+    const isLight = localStorage.getItem('kpl_admin_light') === 'true';
+    if (isLight) {
+      setLightMode(true);
+      document.documentElement.classList.add('light-mode');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextMode = !lightMode;
+    setLightMode(nextMode);
+    if (nextMode) {
+      document.documentElement.classList.add('light-mode');
+      localStorage.setItem('kpl_admin_light', 'true');
+    } else {
+      document.documentElement.classList.remove('light-mode');
+      localStorage.setItem('kpl_admin_light', 'false');
+    }
+  };
 
   if (pathname === '/admin') return <>{children}</>;
 
@@ -98,6 +121,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Menu size={20} />
           </button>
           <div className="admin-header-right">
+            <button onClick={toggleTheme} className="admin-theme-toggle" aria-label="Toggle theme">
+              {lightMode ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
             <span className="admin-badge">Admin</span>
             <Link href="/" target="_blank" className="admin-view-site">
               View Site →
