@@ -13,14 +13,13 @@ export default function ContentPage() {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   useEffect(() => {
-    fetch('/api/content')
-      .then(res => res.json())
+    kplApi.getContentSettings()
       .then(data => {
-        setContent(data);
+        setContent(data?.data || data || {});
         setLoading(false);
       })
       .catch(err => {
-        console.error(err);
+        console.error('Failed to load content settings:', err);
         setLoading(false);
       });
   }, []);

@@ -40,7 +40,18 @@ class ContentSetting {
     ];
 
     private static function getDb(): PDO {
-        return Database::getConnection();
+        $pdo = Database::getConnection();
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS `content_settings` (
+              `id` INT AUTO_INCREMENT PRIMARY KEY,
+              `key` VARCHAR(100) NOT NULL UNIQUE,
+              `value` LONGTEXT NOT NULL,
+              `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        } catch (\Throwable $e) {
+            // Ignore table creation error if already present
+        }
+        return $pdo;
     }
 
     public static function getContentSettings(): array {
@@ -78,7 +89,6 @@ class ContentSetting {
         ];
     }
 
-
     public static function saveMultiple(array $data): bool {
         if (empty($data)) return false;
 
@@ -89,8 +99,11 @@ class ContentSetting {
         ");
 
         foreach ($data as $key => $value) {
+            if (is_array($value) || is_object($value)) {
+                $value = json_encode($value);
+            }
             $stmt->execute([
-                ':key' => $key,
+                ':key' => (string)$key,
                 ':value' => (string)$value
             ]);
         }
