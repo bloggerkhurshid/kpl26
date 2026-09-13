@@ -4,15 +4,18 @@
  * Khoraghat Premier League (KPL) PHP Backend
  */
 
-class Database {
+class Database
+{
     private static $host = "localhost";
-    private static $db_name = "kpl_db";
-    private static $username = "root";
-    private static $password = "";
+    private static $db_name = "u564473618_kpl";
+    private static $username = "u564473618_kpl";
+    private static $password = "Numun@100";
     private static $port = "3306";
     private static $conn = null;
 
-    public static function getConnection() {
+
+    public static function getConnection()
+    {
         if (self::$conn !== null) {
             return self::$conn;
         }
