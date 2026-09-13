@@ -7,7 +7,8 @@ import { supabase } from '@/lib/supabase';
 import {
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight,
   X, Loader2, CheckCircle2, AlertCircle, Users,
-  UserCheck, UserX, Gavel, FileText, Printer
+  UserCheck, UserX, Gavel, FileText, Printer,
+  Phone, Mail, MapPin, Calendar, Hash, User, Shield, Target, Zap
 } from 'lucide-react';
 
 interface Team { id: string; name: string; short_code: string; accent_color: string; }
@@ -456,20 +457,20 @@ export default function PlayersPage() {
         {/* View Details Modal */}
         {modal === 'view' && selected && (
           <div className="admin-modal-overlay" onClick={() => setModal(null)}>
-            <div className="admin-modal" style={{ maxWidth: '800px' }} onClick={e => e.stopPropagation()}>
+            <div className="admin-modal" style={{ maxWidth: '800px', width: '100%', aspectRatio: '16/9', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
               <div className="admin-modal-header">
                 <h2>Player Details: {selected.player_name}</h2>
                 <button onClick={() => setModal(null)}><X size={20} /></button>
               </div>
-              <div className="admin-modal-body" style={{ maxHeight: '70vh', overflowY: 'auto', display: 'flex', gap: '32px' }}>
+              <div className="admin-modal-body" style={{ flex: 1, overflowY: 'auto', display: 'flex', gap: '32px' }}>
                 
                 {/* Left Side: Photos & Documents (50%) */}
-                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
                   {selected.photo ? (
-                    <img src={selected.photo} alt="Photo" style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
+                    <img src={selected.photo} alt="Photo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
                   ) : (
-                    <div style={{ width: '100%', aspectRatio: '4/5', background: '#f1f5f9', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Users size={64} color="#94a3b8" />
+                    <div style={{ width: '100%', height: '100%', background: 'var(--adm-border)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Users size={64} color="var(--adm-text-muted)" />
                     </div>
                   )}
                   
@@ -495,32 +496,32 @@ export default function PlayersPage() {
                 {/* Right Side: Information (50%) */}
                 <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   <div>
-                    <h3 style={{ margin: '0 0 8px', color: '#0f172a', fontSize: '28px' }}>{selected.player_name}</h3>
-                    <p style={{ margin: '0 0 4px', color: '#64748b', fontSize: '15px' }}>Registration #: <strong style={{ color: '#0f172a' }}>{selected.registration_number || 'N/A'}</strong></p>
-                    <p style={{ margin: '0 0 4px', color: '#64748b', fontSize: '15px' }}>Registered by: <strong style={{ color: '#0f172a' }}>{selected.registered_by}</strong></p>
-                    <p style={{ margin: '0', color: '#64748b', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ margin: '0 0 8px', color: 'var(--adm-text-strong)', fontSize: '28px' }}>{selected.player_name}</h3>
+                    <p style={{ margin: '0 0 4px', color: 'var(--adm-text-muted)', fontSize: '15px' }}>Registration #: <strong style={{ color: 'var(--adm-text-strong)' }}>{selected.registration_number || 'N/A'}</strong></p>
+                    <p style={{ margin: '0 0 4px', color: 'var(--adm-text-muted)', fontSize: '15px' }}>Registered by: <strong style={{ color: 'var(--adm-text-strong)' }}>{selected.registered_by}</strong></p>
+                    <p style={{ margin: '0', color: 'var(--adm-text-muted)', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       Status: <span className={`admin-status-badge admin-status-${selected.status}`}>{selected.status}</span>
                     </p>
                   </div>
 
                   <div>
-                    <h4 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '12px', color: '#0f172a', fontSize: '16px' }}>Personal Info</h4>
+                    <h4 style={{ borderBottom: '1px solid var(--adm-border)', paddingBottom: '8px', marginBottom: '12px', color: 'var(--adm-text-strong)', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}><User size={16} color="var(--adm-gold)"/> Personal Info</h4>
                     <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr' }}><strong style={{ color: '#64748b' }}>Father's Name:</strong> <span>{selected.father_name || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr' }}><strong style={{ color: '#64748b' }}>Age:</strong> <span>{selected.age || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr' }}><strong style={{ color: '#64748b' }}>Contact:</strong> <span>{selected.contact_number}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr' }}><strong style={{ color: '#64748b' }}>Email:</strong> <span>{selected.email || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr' }}><strong style={{ color: '#64748b' }}>Address:</strong> <span>{selected.present_address || '—'}</span></div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Users size={14}/> Father's Name:</strong> <span>{selected.father_name || '—'}</span></div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={14}/> Age:</strong> <span>{selected.age || '—'}</span></div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={14}/> Contact:</strong> <span>{selected.contact_number}</span></div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Mail size={14}/> Email:</strong> <span>{selected.email || '—'}</span></div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={14}/> Address:</strong> <span>{selected.present_address || '—'}</span></div>
                     </div>
                   </div>
 
                   <div>
-                    <h4 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '12px', color: '#0f172a', fontSize: '16px' }}>Cricket Profile</h4>
+                    <h4 style={{ borderBottom: '1px solid var(--adm-border)', paddingBottom: '8px', marginBottom: '12px', color: 'var(--adm-text-strong)', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}><Target size={16} color="var(--adm-gold)"/> Cricket Profile</h4>
                     <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr' }}><strong style={{ color: '#64748b' }}>Batting:</strong> <span>{selected.batting_hand || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr' }}><strong style={{ color: '#64748b' }}>Bowling:</strong> <span>{selected.bowling_type || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr' }}><strong style={{ color: '#64748b' }}>Category:</strong> <span>{selected.player_category || '—'}</span></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr' }}><strong style={{ color: '#64748b' }}>Roles:</strong> <span>{[
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Zap size={14}/> Batting:</strong> <span>{selected.batting_hand || '—'}</span></div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Target size={14}/> Bowling:</strong> <span>{selected.bowling_type || '—'}</span></div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Hash size={14}/> Category:</strong> <span>{selected.player_category || '—'}</span></div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr' }}><strong style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}><Shield size={14}/> Roles:</strong> <span>{[
                         selected.wicket_keeper ? 'WK' : '',
                         selected.all_rounder ? 'All-Rounder' : '',
                         selected.bowler ? 'Bowler' : '',
