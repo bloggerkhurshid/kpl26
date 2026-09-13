@@ -548,7 +548,7 @@ h2 {
   .nav-cta > * { transform: none; }
   .menu-button { display: block; padding: 4px; }
   .site-nav { padding: 0 20px; top: 10px; height: 60px; }
-  .brand-text { font-size: 20px; }
+  .brand-text { font-size: 22px; }
   .brand-logo { height: 40px; width: 40px; }
   .brand span { font-size: 9px; }
   
@@ -573,7 +573,7 @@ h2 {
 @media (max-width: 480px) {
   .players-grid { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr; }
-  .brand-text { font-size: 18px; }
+  .brand-text { font-size: 20px; }
   .brand-logo { height: 36px; width: 36px; }
 }
 

@@ -54,6 +54,7 @@ const EMPTY_FORM = {
   player_category: '', previously_played: false, all_rounder: false, bowler: false,
   bowling_arm: '', bowling_style: '', bowling_type: '', player_signature: '', registration_number: '', registered_by: 'admin',
   team_id: '', auction_eligible: true, base_price: '50', status: 'active', notes: '',
+  declaration_accepted: false,
 };
 
 const ROLES = ['Batsman', 'Bowler', 'All-rounder', 'Wicket-keeper'];
@@ -106,6 +107,7 @@ export default function PlayersPage() {
       registered_by: p.registered_by || 'admin', team_id: p.team_id || '',
       auction_eligible: p.auction_eligible, base_price: p.base_price?.toString() || '0',
       status: p.status, notes: p.notes || '',
+      declaration_accepted: p.declaration_accepted || false,
     });
     setSelected(p); setModal('edit');
   }
@@ -156,6 +158,7 @@ export default function PlayersPage() {
       player_signature: form.player_signature || null,
       registration_number: regNum,
       registered_by: form.registered_by || 'admin',
+      declaration_accepted: form.declaration_accepted,
       team_id: form.team_id || null,
       auction_eligible: form.auction_eligible,
       base_price: parseFloat(form.base_price) || 0,
@@ -498,6 +501,22 @@ export default function PlayersPage() {
                     <label>Notes</label>
                     <textarea rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Internal admin notes..." />
                   </div>
+                </div>
+
+                {/* Declaration */}
+                <div style={{ margin: '20px 0 4px', padding: '16px', borderRadius: '10px', border: `2px solid ${form.declaration_accepted ? 'var(--adm-gold)' : 'var(--adm-border)'}`, background: form.declaration_accepted ? 'var(--adm-gold-bg)' : 'var(--adm-panel)', transition: 'all .2s' }}>
+                  <label className="admin-checkbox-label" style={{ alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={form.declaration_accepted}
+                      onChange={e => setForm({ ...form, declaration_accepted: e.target.checked })}
+                      style={{ marginTop: '3px', flexShrink: 0 }}
+                    />
+                    <span style={{ fontSize: '13px', lineHeight: 1.6, color: 'var(--adm-text)' }}>
+                      <strong style={{ display: 'block', marginBottom: '4px', color: 'var(--adm-text-strong)' }}>Declaration</strong>
+                      I hereby declare that all the information provided above is true and correct to the best of my knowledge. I agree to abide by the rules and regulations of Khoraghat Premier League (KPL) Season 3. I understand that any false information may lead to disqualification.
+                    </span>
+                  </label>
                 </div>
                 
                 <div className="admin-modal-footer">
