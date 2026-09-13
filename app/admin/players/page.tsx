@@ -392,17 +392,30 @@ export default function PlayersPage() {
                   <div className="admin-form-field">
                     <label>Address Proof</label>
                     <label className="admin-upload-box" style={{ aspectRatio: '4/3' }}>
-                      <input type="file" accept="image/*" onChange={e => handleFileChange(e, 'address_proof')} style={{ display: 'none' }} />
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={e => handleFileChange(e, 'address_proof')}
+                        style={{ display: 'none' }}
+                      />
                       {form.address_proof ? (
                         <>
-                          <img src={form.address_proof} alt="Proof preview" className="admin-upload-preview" />
+                          {form.address_proof.startsWith('data:application/pdf') || form.address_proof.endsWith('.pdf') ? (
+                            <div className="admin-upload-placeholder" style={{ gap: '6px' }}>
+                              <FileText size={36} color="var(--adm-gold)" />
+                              <span style={{ fontSize: '12px' }}>PDF Uploaded</span>
+                              <small>Click to change</small>
+                            </div>
+                          ) : (
+                            <img src={form.address_proof} alt="Proof preview" className="admin-upload-preview" />
+                          )}
                           <div className="admin-upload-overlay">📎 Change Proof</div>
                         </>
                       ) : (
                         <div className="admin-upload-placeholder">
                           <FileText size={28} color="var(--adm-gold)" />
                           <span>Click to upload proof</span>
-                          <small>Aadhar, Voter ID, etc.</small>
+                          <small>Image or PDF — Aadhar, Voter ID, etc.</small>
                         </div>
                       )}
                     </label>
@@ -568,8 +581,15 @@ export default function PlayersPage() {
                     <div className="player-detail-doc-row">
                       {selected.address_proof ? (
                         <a href={selected.address_proof} target="_blank" rel="noopener noreferrer" className="player-detail-doc-thumb">
-                          <img src={selected.address_proof} alt="Address Proof" />
-                          <span>Address Proof</span>
+                          {selected.address_proof.toLowerCase().includes('.pdf') || selected.address_proof.startsWith('data:application/pdf') ? (
+                            <div style={{ width: '100%', height: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', background: 'var(--adm-panel)' }}>
+                              <FileText size={28} color="var(--adm-gold)" />
+                              <span style={{ fontSize: '9px', color: 'var(--adm-text-muted)', fontWeight: 700 }}>PDF</span>
+                            </div>
+                          ) : (
+                            <img src={selected.address_proof} alt="Address Proof" />
+                          )}
+                          <span>Address Proof ↗</span>
                         </a>
                       ) : <span className="player-detail-no-doc">No address proof uploaded</span>}
                       {selected.player_signature ? (
