@@ -415,6 +415,29 @@ export default function Home() {
 
   return (
     <main>
+      {/* Loading Screen — shown only on first visit (no cache) */}
+      {loadingContent && (
+        <div className="kpl-loading-screen">
+          <div className="kpl-loading-content">
+            {/* Animated cricket ball */}
+            <div className="kpl-loading-ball">
+              <div className="kpl-ball-seam" />
+              <div className="kpl-ball-shine" />
+            </div>
+            {/* Brand */}
+            <div className="kpl-loading-brand">
+              <span className="kpl-loading-title">KHORAGHAT PREMIER LEAGUE</span>
+              <span className="kpl-loading-season">SEASON 03</span>
+            </div>
+            {/* Progress bar */}
+            <div className="kpl-loading-bar-wrap">
+              <div className="kpl-loading-bar" />
+            </div>
+            <p className="kpl-loading-text">Loading the arena…</p>
+          </div>
+        </div>
+      )}
+
       <nav className={`site-nav ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="max-w-7xl mx-auto w-full" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <a className="brand" href="#top" aria-label="KPL home">

@@ -543,4 +543,108 @@ h2 {
 /* Utils */
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* =============================================
+   KPL LOADING SCREEN
+   ============================================= */
+@keyframes kpl-fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes kpl-ball-spin {
+  0%   { transform: rotate(0deg) scale(1); }
+  50%  { transform: rotate(180deg) scale(1.08); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes kpl-bar-fill {
+  0%   { width: 0%; }
+  40%  { width: 55%; }
+  70%  { width: 78%; }
+  90%  { width: 92%; }
+  100% { width: 100%; }
+}
+@keyframes kpl-pulse-text {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+@keyframes kpl-shine {
+  0%   { left: -60%; opacity: 0.6; }
+  100% { left: 120%; opacity: 0; }
+}
+
+.kpl-loading-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--navy);
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 0% 100%, rgba(0, 225, 255, 0.05) 0%, transparent 50%);
+  display: flex; align-items: center; justify-content: center;
+  animation: kpl-fade-in 0.3s ease both;
+}
+.kpl-loading-content {
+  display: flex; flex-direction: column; align-items: center; gap: 28px;
+  text-align: center; padding: 40px;
+  animation: kpl-fade-in 0.5s ease 0.1s both;
+}
+
+/* Cricket ball */
+.kpl-loading-ball {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #c0392b, #8b0000);
+  box-shadow:
+    0 0 40px rgba(192, 57, 43, 0.4),
+    0 0 80px rgba(212, 175, 55, 0.1),
+    inset 0 2px 6px rgba(255,255,255,0.15);
+  position: relative; overflow: hidden;
+  animation: kpl-ball-spin 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.kpl-ball-seam {
+  position: absolute; inset: -4px;
+  border: 2px solid rgba(255, 220, 200, 0.35);
+  border-radius: 50%;
+  clip-path: ellipse(52% 100% at 50% 50%);
+}
+.kpl-ball-shine {
+  position: absolute; top: 10px; left: -60%; width: 40%; height: 100%;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: kpl-shine 1.4s ease-in-out infinite;
+}
+
+/* Brand text */
+.kpl-loading-brand { display: flex; flex-direction: column; gap: 4px; }
+.kpl-loading-title {
+  font-family: 'Arial Black', Impact, sans-serif;
+  font-size: clamp(18px, 4vw, 28px);
+  font-weight: 900; font-style: italic;
+  text-transform: uppercase; letter-spacing: -0.5px;
+  color: var(--text);
+}
+.kpl-loading-season {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 4px;
+  color: var(--gold);
+}
+
+/* Progress bar */
+.kpl-loading-bar-wrap {
+  width: 240px; height: 3px;
+  background: rgba(255,255,255,0.08); border-radius: 100px;
+  overflow: hidden;
+}
+.kpl-loading-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), #FFDF00);
+  border-radius: 100px;
+  animation: kpl-bar-fill 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+}
+
+/* Loading text */
+.kpl-loading-text {
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 2px; color: var(--muted);
+  margin: 0;
+  animation: kpl-pulse-text 1.6s ease-in-out infinite;
+}
 .status-error { background: rgba(220, 38, 38, 0.1); color: #F87171; border: 1px solid rgba(220, 38, 38, 0.2); padding: 16px; border-radius: 8px; font-size: 14px; font-weight: 500; }
