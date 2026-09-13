@@ -10,7 +10,18 @@ use PDO;
 class Gallery {
 
     private static function getDb(): PDO {
-        return Database::getConnection();
+        $pdo = Database::getConnection();
+        // Ensure table exists on the database
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS `gallery` (
+              `id` INT AUTO_INCREMENT PRIMARY KEY,
+              `photo_url` LONGTEXT NOT NULL,
+              `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        } catch (\Throwable $e) {
+            // Ignore table creation error if already present or restricted permissions
+        }
+        return $pdo;
     }
 
     public static function findById(int $id): ?array {

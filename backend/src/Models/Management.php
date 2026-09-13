@@ -10,7 +10,22 @@ use PDO;
 class Management {
 
     private static function getDb(): PDO {
-        return Database::getConnection();
+        $pdo = Database::getConnection();
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS `management` (
+              `id` VARCHAR(36) NOT NULL PRIMARY KEY,
+              `name` VARCHAR(255) NOT NULL,
+              `designation` VARCHAR(255) NOT NULL,
+              `contact` VARCHAR(100) DEFAULT '',
+              `photo_url` LONGTEXT DEFAULT NULL,
+              `display_order` INT DEFAULT 0,
+              `status` VARCHAR(20) DEFAULT 'active',
+              `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        } catch (\Throwable $e) {
+            // Ignore table creation error if already present or restricted permissions
+        }
+        return $pdo;
     }
 
     public static function findById(string $id): ?array {
