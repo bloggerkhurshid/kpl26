@@ -171,6 +171,7 @@ export default function Home() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [playerCount, setPlayerCount] = useState(0);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [heroImg, setHeroImg] = useState('');
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -225,6 +226,20 @@ export default function Home() {
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Cycle hero background through gallery images every 6s
+  useEffect(() => {
+    const imgs = gallery.filter(g => g.image);
+    if (!imgs.length) return;
+    // Pick a random starting image
+    setHeroImg(imgs[Math.floor(Math.random() * imgs.length)].image);
+    let idx = Math.floor(Math.random() * imgs.length);
+    const timer = setInterval(() => {
+      idx = (idx + 1) % imgs.length;
+      setHeroImg(imgs[idx].image);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [gallery]);
 
   const handlePlayerFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     const file = e.target.files?.[0];
@@ -505,6 +520,16 @@ export default function Home() {
 
       {content.show_hero === 'true' && (
         <section className="hero" id="top">
+          {/* Cycling background image with crossfade */}
+          {heroImg && (
+            <img
+              key={heroImg}
+              src={heroImg}
+              alt=""
+              aria-hidden="true"
+              className="hero-bg-img"
+            />
+          )}
           <div className="hero-content page-width">
             <span className="section-label">THE BATTLE BEGINS • 2026</span>
             <h1 className="sport-heading" dangerouslySetInnerHTML={{ __html: content.hero_title || 'Where local legends become <em>champions.</em>' }} />
