@@ -1,0 +1,66 @@
+<?php
+namespace Kpl\Models;
+
+use Database;
+use PDO;
+
+/**
+ * Payment Model
+ */
+class Payment {
+
+    private static function getDb(): PDO {
+        return Database::getConnection();
+    }
+
+    public static function count(string $status = 'completed'): int {
+        $stmt = self::getDb()->prepare("SELECT COUNT(*) as count FROM payments WHERE status = :status");
+        $stmt->execute([':status' => $status]);
+        $res = $stmt->fetch();
+        return (int)($res['count'] ?? 0);
+    }
+
+    public static function totalRevenue(): float {
+        $stmt = self::getDb()->prepare("SELECT SUM(amount) as total FROM payments WHERE status = 'completed'");
+        $stmt->execute();
+        $res = $stmt->fetch();
+        return (float)($res['total'] ?? 0.0);
+    }
+
+    public static function all(int $limit = 500): array {
+        $stmt = self::getDb()->prepare("SELECT * FROM payments ORDER BY created_at DESC LIMIT " . (int)$limit);
+        $stmt->execute();
+        return $stmt->fetchAll() ?: [];
+    }
+
+    public static function create(array $data): string {
+        $id = $data['id'] ?? sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+
+        $stmt = self::getDb()->prepare("
+            INSERT INTO payments (
+                id, registration_type, registration_id, name, phone, amount, payment_gateway, payment_id, status
+            ) VALUES (
+                :id, :registration_type, :registration_id, :name, :phone, :amount, :payment_gateway, :payment_id, :status
+            )
+        ");
+
+        $stmt->execute([
+            ':id' => $id,
+            ':registration_type' => $data['registration_type'] ?? 'player',
+            ':registration_id' => $data['registration_id'] ?? null,
+            ':name' => $data['name'],
+            ':phone' => $data['phone'],
+            ':amount' => (float)$data['amount'],
+            ':payment_gateway' => $data['payment_gateway'] ?? 'razorpay',
+            ':payment_id' => $data['payment_id'] ?? null,
+            ':status' => $data['status'] ?? 'completed'
+        ]);
+
+        return $id;
+    }
+}
