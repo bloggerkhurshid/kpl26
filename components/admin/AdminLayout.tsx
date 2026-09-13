@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Settings,
   Image as ImageIcon,
+  UserCheck,
+  Camera,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -26,12 +28,15 @@ const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/teams', label: 'Teams', icon: Shield },
   { href: '/admin/players', label: 'Players', icon: Users },
+  { href: '/admin/management', label: 'Management', icon: UserCheck },
+  { href: '/admin/gallery', label: 'Photo Gallery', icon: Camera },
   { href: '/admin/payments', label: 'Payments', icon: CreditCard },
   { href: '/admin/content', label: 'Home Sections', icon: FileText },
   { href: '/admin/highlights', label: 'Highlights', icon: ImageIcon },
   { href: '/admin/auction', label: 'Auction', icon: Gavel },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
+
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

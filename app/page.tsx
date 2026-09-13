@@ -22,6 +22,9 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { load } from '@cashfreepayments/cashfree-js';
+import { ManagementSection } from '@/components/ManagementSection';
+import { GallerySection } from '@/components/GallerySection';
+
 type Team = {
   id: string;
   name: string;
@@ -508,7 +511,10 @@ export default function Home() {
             {content.show_about === 'true' && <a href="#league" onClick={() => setMenuOpen(false)}>League</a>}
             {content.show_format === 'true' && <a href="#format" onClick={() => setMenuOpen(false)}>Format</a>}
             {content.show_teams === 'true' && <a href="#teams" onClick={() => setMenuOpen(false)}>Teams</a>}
+            {content.show_management === 'true' && <a href="#management" onClick={() => setMenuOpen(false)}>Management</a>}
+            {content.show_gallery === 'true' && <a href="#gallery" onClick={() => setMenuOpen(false)}>Gallery</a>}
             <a className="nav-cta" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Register Player <ArrowRight size={15} /></a>
+
           </div>
           <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">{menuOpen ? <X size={24} /> : <Menu size={24} />}</button>
         </div>
@@ -739,6 +745,10 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {content.show_management === 'true' && <ManagementSection />}
+      {content.show_gallery === 'true' && <GallerySection />}
+
 
       {/* Fullscreen Image Modal */}
       {selectedImage && (

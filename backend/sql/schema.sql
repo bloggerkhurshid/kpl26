@@ -136,6 +136,29 @@ CREATE TABLE IF NOT EXISTS `admin_users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
+-- Table: management (Executive Committee / Management Board)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `management` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `designation` VARCHAR(255) NOT NULL,
+  `contact` VARCHAR(100) DEFAULT '',
+  `photo_url` LONGTEXT DEFAULT NULL,
+  `display_order` INT DEFAULT 0,
+  `status` VARCHAR(20) DEFAULT 'active',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- Table: gallery (Photo Gallery without captions)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gallery` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `photo_url` LONGTEXT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
 -- Default Seed Data
 -- ------------------------------------------------------------
 
@@ -155,6 +178,8 @@ INSERT INTO `content_settings` (`key`, `value`) VALUES
 ('show_players', 'true'),
 ('show_register', 'true'),
 ('show_highlights', 'true'),
+('show_management', 'true'),
+('show_gallery', 'true'),
 ('hero_title', 'Where local legends become <em>champions.</em>'),
 ('hero_subtitle', 'Assam\'s premier hard tennis ball cricket championship. Eight franchises. One unforgettable summer.'),
 ('about_title', 'A different kind of cricket.'),
@@ -170,3 +195,4 @@ INSERT INTO `content_settings` (`key`, `value`) VALUES
 ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
 
 SET FOREIGN_KEY_CHECKS = 1;
+

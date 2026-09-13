@@ -12,6 +12,8 @@ use Kpl\Controllers\ContentController;
 use Kpl\Controllers\SettingsController;
 use Kpl\Controllers\PaymentController;
 use Kpl\Controllers\DashboardController;
+use Kpl\Controllers\ManagementController;
+use Kpl\Controllers\GalleryController;
 use Kpl\Utils\Response;
 
 class Router {
@@ -67,6 +69,29 @@ class Router {
                 if ($method === 'GET') $controller->index();
                 elseif ($method === 'POST') $controller->store();
                 elseif ($method === 'PUT') $controller->update();
+                elseif ($method === 'DELETE') $controller->destroy();
+                break;
+
+            case 'management':
+            case 'management.php':
+                $controller = new ManagementController();
+                if ($method === 'GET') {
+                    if (isset($_GET['id'])) $controller->show();
+                    else $controller->index();
+                } elseif ($method === 'POST') {
+                    $controller->store();
+                } elseif ($method === 'PUT') {
+                    $controller->update();
+                } elseif ($method === 'DELETE') {
+                    $controller->destroy();
+                }
+                break;
+
+            case 'gallery':
+            case 'gallery.php':
+                $controller = new GalleryController();
+                if ($method === 'GET') $controller->index();
+                elseif ($method === 'POST') $controller->store();
                 elseif ($method === 'DELETE') $controller->destroy();
                 break;
 

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Save, Loader2, LayoutTemplate, Type, Eye, EyeOff } from 'lucide-react';
+import { kplApi } from '@/lib/api';
+
 
 export default function ContentPage() {
   const [content, setContent] = useState<Record<string, string>>({});
@@ -39,17 +41,9 @@ export default function ContentPage() {
     setStatus('idle');
 
     try {
-      const res = await fetch('/api/admin/content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
-      });
-
-      if (!res.ok) throw new Error('Failed to save');
-      
+      await kplApi.saveContentSettings(content);
       setStatus('success');
-      // Invalidate cache by calling settings api again
-      await fetch('/api/settings');
+      localStorage.removeItem('kpl_home_cache');
     } catch (err) {
       console.error(err);
       setStatus('error');
@@ -57,6 +51,7 @@ export default function ContentPage() {
       setSaving(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -221,13 +216,28 @@ export default function ContentPage() {
             </label>
 
             <label className="settings-mode-option" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div><strong>Highlights Gallery</strong><span>Show the bottom photo highlights gallery</span></div>
+              <div><strong>Management Section</strong><span>Show the leadership and committee section</span></div>
+              <button type="button" onClick={() => toggle('show_management')} className={`toggle-btn ${content.show_management === 'true' ? 'active' : ''}`}>
+                {content.show_management === 'true' ? 'Visible' : 'Hidden'}
+              </button>
+            </label>
+
+            <label className="settings-mode-option" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><strong>Photo Gallery</strong><span>Show the full photo gallery grid</span></div>
+              <button type="button" onClick={() => toggle('show_gallery')} className={`toggle-btn ${content.show_gallery === 'true' ? 'active' : ''}`}>
+                {content.show_gallery === 'true' ? 'Visible' : 'Hidden'}
+              </button>
+            </label>
+
+            <label className="settings-mode-option" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><strong>Highlights Gallery</strong><span>Show the photo highlights gallery</span></div>
               <button type="button" onClick={() => toggle('show_highlights')} className={`toggle-btn ${content.show_highlights === 'true' ? 'active' : ''}`}>
                 {content.show_highlights === 'true' ? 'Visible' : 'Hidden'}
               </button>
             </label>
           </div>
         </div>
+
 
         <div className="admin-actions">
           {status === 'success' && <span className="status-success">Content saved successfully!</span>}

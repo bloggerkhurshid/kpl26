@@ -26,6 +26,23 @@ export async function fetchFromPhpApi(endpoint: string, options: RequestInit = {
   return response.json();
 }
 
+export interface ManagementMember {
+  id: string;
+  name: string;
+  designation: string;
+  contact: string;
+  photo_url?: string;
+  display_order?: number;
+  status?: string;
+  created_at?: string;
+}
+
+export interface GalleryPhoto {
+  id: number;
+  photo_url: string;
+  created_at?: string;
+}
+
 export const kplApi = {
   // 1. Players API
   async getPlayers(params: { status?: string; limit?: number; team_id?: string; count_only?: boolean } = {}) {
@@ -106,7 +123,50 @@ export const kplApi = {
     });
   },
 
-  // 4. Content Settings API
+  // 4. Management API
+  async getManagement(status: string = 'active') {
+    return fetchFromPhpApi(`api/management.php?status=${status}`);
+  },
+
+  async createManagement(memberData: Partial<ManagementMember> & { photo_base64?: string }) {
+    return fetchFromPhpApi('api/management.php', {
+      method: 'POST',
+      body: JSON.stringify(memberData),
+    });
+  },
+
+  async updateManagement(id: string, memberData: Partial<ManagementMember> & { photo_base64?: string }) {
+    return fetchFromPhpApi(`api/management.php?id=${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(memberData),
+    });
+  },
+
+  async deleteManagement(id: string) {
+    return fetchFromPhpApi(`api/management.php?id=${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // 5. Gallery API (No captions, single & multi upload support)
+  async getGallery(limit: number = 500) {
+    return fetchFromPhpApi(`api/gallery.php?limit=${limit}`);
+  },
+
+  async uploadGalleryPhotos(photos: Array<{ photo_base64?: string; photo_url?: string }>) {
+    return fetchFromPhpApi('api/gallery.php', {
+      method: 'POST',
+      body: JSON.stringify({ photos }),
+    });
+  },
+
+  async deleteGalleryPhoto(id: number | string) {
+    return fetchFromPhpApi(`api/gallery.php?id=${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // 6. Content Settings API
   async getContentSettings() {
     return fetchFromPhpApi('api/content.php');
   },
@@ -118,12 +178,12 @@ export const kplApi = {
     });
   },
 
-  // 5. Dashboard API
+  // 7. Dashboard API
   async getDashboardMetrics() {
     return fetchFromPhpApi('api/dashboard.php');
   },
 
-  // 6. Auth API
+  // 8. Auth API
   async adminLogin(credentials: { username: string; password: string }) {
     return fetchFromPhpApi('api/auth.php', {
       method: 'POST',
@@ -131,3 +191,4 @@ export const kplApi = {
     });
   }
 };
+
