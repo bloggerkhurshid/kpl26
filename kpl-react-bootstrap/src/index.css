@@ -1,0 +1,307 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+/* =========================================================
+   KPL GREEN THEME SYSTEM — Matching Admin Panel Aesthetic
+   ========================================================= */
+
+:root {
+  --kpl-bg: #040d1a;
+  --kpl-bg-gradient: radial-gradient(ellipse at 50% 0%, #082f1e 0%, #040d1a 70%);
+  --kpl-panel: rgba(11, 31, 22, 0.75);
+  --kpl-panel-solid: #092418;
+  --kpl-panel-hover: rgba(34, 197, 94, 0.12);
+  --kpl-border: rgba(34, 197, 94, 0.2);
+  --kpl-border-strong: rgba(34, 197, 94, 0.4);
+  --kpl-text: #cbd5e1;
+  --kpl-text-strong: #ffffff;
+  --kpl-text-muted: #64748b;
+  --kpl-green: #22c55e;
+  --kpl-green-light: #4ade80;
+  --kpl-green-dark: #15803d;
+  --kpl-green-bg: rgba(34, 197, 94, 0.15);
+  --kpl-green-glow: rgba(34, 197, 94, 0.35);
+  --kpl-gold: #fbbf24;
+  --kpl-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+body {
+  margin: 0;
+  background-color: var(--kpl-bg);
+  background-image: var(--kpl-bg-gradient);
+  background-attachment: fixed;
+  color: var(--kpl-text);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #040d1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #15803d;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #22c55e;
+}
+
+/* Glassmorphic Navbar */
+.kpl-navbar {
+  background: rgba(4, 13, 26, 0.85) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--kpl-border);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.kpl-navbar .nav-link {
+  color: #cbd5e1 !important;
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.9rem !important;
+  transition: all 0.2s ease;
+}
+
+.kpl-navbar .nav-link:hover,
+.kpl-navbar .nav-link.active {
+  color: #4ade80 !important;
+  background: var(--kpl-green-bg);
+  border-radius: 6px;
+}
+
+/* Brand Logo */
+.brand-logo-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--kpl-green-glow);
+  object-fit: cover;
+}
+
+.brand-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+}
+
+.brand-sub {
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #22c55e;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Cards & Panels */
+.kpl-card {
+  background: var(--kpl-panel);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--kpl-border);
+  border-radius: 16px;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.kpl-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--kpl-border-strong);
+  box-shadow: 0 12px 30px var(--kpl-green-glow);
+}
+
+/* Green Buttons */
+.btn-kpl-green {
+  background: linear-gradient(135deg, #22c55e, #15803d) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: 0 4px 15px var(--kpl-green-glow);
+  transition: all 0.2s ease !important;
+}
+
+.btn-kpl-green:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--kpl-green-glow) !important;
+  color: #ffffff !important;
+}
+
+.btn-kpl-outline {
+  background: transparent !important;
+  border: 1px solid var(--kpl-green) !important;
+  color: var(--kpl-green-light) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-kpl-outline:hover {
+  background: var(--kpl-green-bg) !important;
+  color: #ffffff !important;
+  border-color: var(--kpl-green-light) !important;
+}
+
+/* Hero Section */
+.hero-section {
+  position: relative;
+  min-height: 88vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero-bg-container {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.hero-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1 !important;
+  filter: brightness(1.05) contrast(1.05);
+  transition: opacity 1s ease-in-out;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(4, 13, 26, 0.45) 0%, rgba(4, 13, 26, 0.75) 60%, #040d1a 100%);
+  z-index: 2;
+}
+
+.hero-content-card {
+  position: relative;
+  z-index: 3;
+  background: rgba(9, 36, 24, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--kpl-border-strong);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--kpl-green-bg);
+  border: 1px solid var(--kpl-border-strong);
+  color: #4ade80;
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Badges */
+.badge-green {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.badge-gold {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.badge-blue {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* Section Titles */
+.section-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+  color: var(--kpl-green-light);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Table Styling */
+.kpl-table {
+  background: transparent;
+  color: var(--kpl-text);
+  margin-bottom: 0;
+}
+
+.kpl-table th {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #ffffff !important;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--kpl-border);
+}
+
+.kpl-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--kpl-border);
+  vertical-align: middle;
+  color: var(--kpl-text);
+}
+
+.kpl-table tbody tr:hover td {
+  background: rgba(34, 197, 94, 0.08);
+}
+
+/* Form inputs */
+.kpl-form-control {
+  background: rgba(4, 13, 26, 0.8) !important;
+  border: 1px solid var(--kpl-border) !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-size: 0.9rem !important;
+}
+
+.kpl-form-control:focus {
+  border-color: var(--kpl-green) !important;
+  box-shadow: 0 0 0 3px var(--kpl-green-bg) !important;
+}
+
+.kpl-form-control::placeholder {
+  color: var(--kpl-text-muted) !important;
+}
+
+/* Modal styling */
+.kpl-modal-content {
+  background: #092418 !important;
+  border: 1px solid var(--kpl-border-strong) !important;
+  border-radius: 20px !important;
+  color: #ffffff !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+}
+
+.kpl-modal-header {
+  border-bottom: 1px solid var(--kpl-border) !important;
+}
+
+.kpl-modal-footer {
+  border-top: 1px solid var(--kpl-border) !important;
+}
