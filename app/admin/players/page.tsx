@@ -152,8 +152,6 @@ export default function PlayersPage() {
       previously_played: form.previously_played,
       all_rounder: form.batsman && form.bowler,
       bowler: form.bowler,
-      bowling_arm: form.bowling_arm,
-      bowling_style: form.bowling_style,
       bowling_type: form.bowler ? `${form.bowling_arm} ${form.bowling_style}`.trim() : null,
       player_signature: form.player_signature || null,
       registration_number: regNum,
