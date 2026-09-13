@@ -500,7 +500,7 @@ export default function Home() {
               <div className="format-card">
                 <span className="format-icon">01</span>
                 <h3 className="sport-heading">Match format</h3>
-                <p>15–20 overs of high intensity hard tennis ball cricket.</p>
+                <p>15 overs of high intensity hard tennis ball cricket.</p>
               </div>
               <div className="format-card">
                 <span className="format-icon">02</span>
@@ -607,9 +607,9 @@ export default function Home() {
                 <button className="button button-outline" onClick={() => setModal('player')}>Register as player <Users size={16} /></button>
               </div>
             </div>
-            <div style={{ borderLeft: '2px solid var(--gold)', paddingLeft: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div className="register-deadline">
               <span className="section-label">Registration Deadline</span>
-              <strong className="sport-heading" style={{ fontSize: '96px', color: 'var(--gold)', letterSpacing: '-0.05em', lineHeight: 1 }}>12 <span style={{ fontSize: '24px', color: 'var(--text)', fontStyle: 'normal', fontFamily: 'Inter', letterSpacing: 'normal', marginLeft: '8px' }}>Days left</span></strong>
+              <strong className="sport-heading" style={{ fontSize: 'clamp(64px, 10vw, 96px)', color: 'var(--gold)', letterSpacing: '-0.05em', lineHeight: 1 }}>12 <span style={{ fontSize: 'clamp(18px, 4vw, 24px)', color: 'var(--text)', fontStyle: 'normal', fontFamily: 'Inter', letterSpacing: 'normal', marginLeft: '8px' }}>Days left</span></strong>
               <p className="lead" style={{ marginTop: '16px' }}>Secure your franchise or player spot before 24 August 2026.</p>
             </div>
           </div>
