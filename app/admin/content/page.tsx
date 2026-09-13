@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { Save, Loader2, LayoutTemplate, Type, Eye, EyeOff } from 'lucide-react';
 
 export default function ContentPage() {
@@ -66,6 +67,7 @@ export default function ContentPage() {
   }
 
   return (
+    <AdminLayout>
     <div className="admin-content-page">
       <div className="admin-page-header">
         <div>
@@ -212,5 +214,6 @@ export default function ContentPage() {
         </div>
       </form>
     </div>
+    </AdminLayout>
   );
 }
