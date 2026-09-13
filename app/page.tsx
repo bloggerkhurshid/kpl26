@@ -505,6 +505,21 @@ export default function Home() {
     }
   }
 
+  const scrollTo = (id: string, e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    setMenuOpen(false);
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const scrollToTop = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <main>
       {/* Loading Screen — shown only on first visit (no cache) */}
@@ -521,29 +536,28 @@ export default function Home() {
             <div className="kpl-loading-bar-wrap">
               <div className="kpl-loading-bar" />
             </div>
-            <p className="kpl-loading-text">Loading the arena…</p>
+            <p className="kpl-loading-text">Entering the KPL Arena…</p>
           </div>
         </div>
       )}
 
       <nav className={`site-nav ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="max-w-7xl mx-auto w-full" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <a className="brand" href="#top" aria-label="KPL home">
+          <button className="brand" onClick={scrollToTop} aria-label="KPL home">
             <img src="/kpl-logo.jpg" alt="KPL" className="brand-logo" />
             <span className="brand-text">
               KHORAGHAT PREMIER LEAGUE
-              <span>SEASON 03</span>
+              <span>SEASON 03 • 2026</span>
             </span>
-          </a>
+          </button>
           <div className={`nav-links ${menuOpen ? 'is-open' : ''}`}>
-            <a href="#top" onClick={() => setMenuOpen(false)}>Home</a>
-            {content.show_about === 'true' && <a href="#league" onClick={() => setMenuOpen(false)}>League</a>}
-            {content.show_format === 'true' && <a href="#format" onClick={() => setMenuOpen(false)}>Format</a>}
-            {content.show_teams === 'true' && <a href="#teams" onClick={() => setMenuOpen(false)}>Teams</a>}
-            {content.show_management === 'true' && <a href="#management" onClick={() => setMenuOpen(false)}>Management</a>}
-            {content.show_gallery === 'true' && <a href="#gallery" onClick={() => setMenuOpen(false)}>Gallery</a>}
+            <button onClick={scrollToTop}>Home</button>
+            {content.show_about === 'true' && <button onClick={(e) => scrollTo('league', e)}>League</button>}
+            {content.show_format === 'true' && <button onClick={(e) => scrollTo('format', e)}>Format</button>}
+            {content.show_teams === 'true' && <button onClick={(e) => scrollTo('teams', e)}>Teams</button>}
+            {content.show_management === 'true' && <button onClick={(e) => scrollTo('management', e)}>Management</button>}
+            {content.show_gallery === 'true' && <button onClick={(e) => scrollTo('gallery', e)}>Gallery</button>}
             <a className="nav-cta" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Register Player <ArrowRight size={15} /></a>
-
           </div>
           <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">{menuOpen ? <X size={24} /> : <Menu size={24} />}</button>
         </div>
@@ -551,7 +565,7 @@ export default function Home() {
 
       {content.show_hero === 'true' && (
         <section className="hero" id="top">
-          {/* Cycling background images with smooth 60fps CSS crossfade */}
+          {/* Cycling background images with smooth CSS crossfade */}
           {gallery.filter(g => g.image).map((item, idx) => {
             const activeImgs = gallery.filter(g => g.image);
             const activeIdx = heroIndex % (activeImgs.length || 1);
@@ -566,20 +580,35 @@ export default function Home() {
             );
           })}
           <div className="hero-content page-width">
-            <span className="section-label">THE BATTLE BEGINS • 2026</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <span className="section-label">THE BATTLE BEGINS • SEASON 3</span>
+              <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(34, 197, 94, 0.15)', color: 'var(--green-mint)', border: '1px solid var(--border-strong)', padding: '4px 12px', borderRadius: '20px' }}>
+                🏏 HARD TENNIS TOURNAMENT
+              </span>
+            </div>
+
             <h1 className="sport-heading" dangerouslySetInnerHTML={{ __html: content.hero_title || 'Where local legends become <em>champions.</em>' }} />
             <p className="lead">{content.hero_subtitle}</p>
+
+            {/* Countdown timer & Quick stats */}
+            <div style={{ marginTop: '8px', marginBottom: '8px' }}>
+              <CountdownTimer deadlineDate={content.deadline_date} />
+            </div>
+
             <div className="hero-actions">
-              {/* Buttons redirect to WhatsApp for now — modals kept for future use */}
-              <a className="button button-primary" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20a%20franchise%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register Franchise <ArrowRight size={18} strokeWidth={3} /></a>
-              <a className="button button-outline" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register Player <Users size={18} /></a>
+              <a className="button button-primary" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20a%20franchise%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">
+                <span>Register Franchise <ArrowRight size={18} strokeWidth={3} /></span>
+              </a>
+              <a className="button button-outline" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">
+                <span>Register Player <Users size={18} /></span>
+              </a>
             </div>
           </div>
         </section>
       )}
 
       {content.show_stats === 'true' && (
-        <section className="section-pad" id="prizes" style={{ background: '#f8fafc' }}>
+        <section className="section-pad" id="prizes">
           <div className="page-width">
             <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
               <span className="section-label" style={{ justifyContent: 'center' }}>Ultimate Glory</span>
@@ -587,20 +616,23 @@ export default function Home() {
               <p className="lead" style={{ margin: '16px auto 0' }}>Compete for major cash prizes and prestigious trophies in KPL Season 3.</p>
             </div>
             <div className="format-grid" style={{ alignItems: 'center' }}>
-              <div className="format-card" style={{ borderColor: 'var(--gold)', boxShadow: '0 12px 30px rgba(212, 175, 55, 0.25)', background: '#ffffff' }}>
-                <span className="format-icon" style={{ color: 'rgba(212,175,55,0.12)' }}>🏆</span>
-                <h3 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '28px' }}>Champions</h3>
-                <p style={{ fontSize: '52px', fontWeight: '900', color: '#0f172a', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹27,000</p>
+              <div className="format-card" style={{ borderColor: 'var(--green)', boxShadow: '0 16px 40px rgba(0,0,0,0.6), 0 0 30px var(--green-glow)', background: 'var(--bg-card)' }}>
+                <span className="format-icon" style={{ color: 'rgba(34,197,94,0.18)' }}>🏆</span>
+                <h3 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '28px' }}>Champions</h3>
+                <p style={{ fontSize: '52px', fontWeight: '900', color: 'var(--green-mint)', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹27,000</p>
+                <span style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '12px', fontWeight: 600 }}>Grand Trophy + Winner Medals</span>
               </div>
-              <div className="format-card" style={{ background: '#ffffff' }}>
+              <div className="format-card" style={{ background: 'var(--bg-card)' }}>
                 <span className="format-icon">🥈</span>
-                <h3 className="sport-heading" style={{ fontSize: '24px', color: '#0f172a' }}>Runners Up</h3>
-                <p style={{ fontSize: '42px', fontWeight: '900', color: '#0f172a', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹17,000</p>
+                <h3 className="sport-heading" style={{ fontSize: '24px', color: '#ffffff' }}>Runners Up</h3>
+                <p style={{ fontSize: '42px', fontWeight: '900', color: '#ffffff', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹17,000</p>
+                <span style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '12px', fontWeight: 600 }}>Runner-Up Trophy + Medals</span>
               </div>
-              <div className="format-card" style={{ background: '#ffffff' }}>
+              <div className="format-card" style={{ background: 'var(--bg-card)' }}>
                 <span className="format-icon">⭐</span>
-                <h3 className="sport-heading" style={{ fontSize: '24px', color: '#0f172a' }}>Player of Series</h3>
-                <p style={{ fontSize: '42px', fontWeight: '900', color: '#0f172a', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹500</p>
+                <h3 className="sport-heading" style={{ fontSize: '24px', color: '#ffffff' }}>Player of Series</h3>
+                <p style={{ fontSize: '42px', fontWeight: '900', color: '#ffffff', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹500</p>
+                <span style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '12px', fontWeight: 600 }}>MOM Trophy & Cap Awards</span>
               </div>
             </div>
           </div>
@@ -608,36 +640,36 @@ export default function Home() {
       )}
 
       {content.show_about === 'true' && (
-        <section className="section-pad" id="league" style={{ background: '#ffffff' }}>
+        <section className="section-pad" id="league">
           <div className="page-width split-layout" style={{ alignItems: 'flex-start' }}>
             <div>
               <span className="section-label">The League</span>
               <h2 className="sport-heading">{content.about_title || 'Assam’s Premier Cricket League'}</h2>
               <p className="lead" style={{ marginTop: '20px', whiteSpace: 'pre-wrap' }}>{content.about_text}</p>
               {content.show_format === 'true' && (
-                <a className="text-link" href="#format" style={{ marginTop: '28px' }}>Discover the format <ArrowRight size={16} strokeWidth={3} /></a>
+                <button className="text-link" onClick={(e) => scrollTo('format', e)} style={{ marginTop: '28px' }}>Discover the format <ArrowRight size={16} strokeWidth={3} /></button>
               )}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: '#f8fafc' }}>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: 'var(--bg-card)' }}>
                 <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>🏏</span>
-                <h4 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '18px', marginBottom: '6px' }}>Hard Tennis</h4>
-                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: '#475569' }}>High-voltage hard tennis cricket with professional gear.</p>
+                <h4 className="sport-heading" style={{ color: 'var(--green-mint)', fontSize: '18px', marginBottom: '6px' }}>Hard Tennis</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: 'var(--muted)' }}>High-voltage hard tennis cricket with professional gear.</p>
               </div>
-              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: '#f8fafc' }}>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: 'var(--bg-card)' }}>
                 <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>🛡️</span>
-                <h4 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '18px', marginBottom: '6px' }}>8 Franchises</h4>
-                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: '#475569' }}>Top team owners competing in an official auction draft.</p>
+                <h4 className="sport-heading" style={{ color: 'var(--green-mint)', fontSize: '18px', marginBottom: '6px' }}>8 Franchises</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: 'var(--muted)' }}>Top team owners competing in an official auction draft.</p>
               </div>
-              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: '#f8fafc' }}>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: 'var(--bg-card)' }}>
                 <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>📺</span>
-                <h4 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '18px', marginBottom: '6px' }}>Live Coverage</h4>
-                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: '#475569' }}>HD YouTube & Facebook live streaming with commentary.</p>
+                <h4 className="sport-heading" style={{ color: 'var(--green-mint)', fontSize: '18px', marginBottom: '6px' }}>Live Coverage</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: 'var(--muted)' }}>HD YouTube & Facebook live streaming with commentary.</p>
               </div>
-              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: '#f8fafc' }}>
+              <div className="format-card" style={{ padding: '24px', borderRadius: '16px', background: 'var(--bg-card)' }}>
                 <span style={{ fontSize: '28px', marginBottom: '8px', display: 'block' }}>🏆</span>
-                <h4 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '18px', marginBottom: '6px' }}>Grand Finale</h4>
-                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: '#475569' }}>Cash rewards, player trophies, and championship glory.</p>
+                <h4 className="sport-heading" style={{ color: 'var(--green-mint)', fontSize: '18px', marginBottom: '6px' }}>Grand Finale</h4>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, color: 'var(--muted)' }}>Cash rewards, player trophies, and championship glory.</p>
               </div>
             </div>
           </div>
@@ -645,7 +677,7 @@ export default function Home() {
       )}
 
       {content.show_format === 'true' && (
-        <section className="section-pad" id="format" style={{ background: '#f8fafc' }}>
+        <section className="section-pad" id="format">
           <div className="page-width">
             <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
               <span className="section-label" style={{ justifyContent: 'center' }}>Built for the bold</span>
@@ -656,17 +688,17 @@ export default function Home() {
             <div className="format-grid">
               <div className="format-card">
                 <span className="format-icon">01</span>
-                <h3 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '22px' }}>Match format</h3>
+                <h3 className="sport-heading" style={{ color: 'var(--green-mint)', fontSize: '22px' }}>Match format</h3>
                 <p style={{ marginTop: '8px', lineHeight: 1.6 }}>15 overs of high intensity hard tennis ball cricket.</p>
               </div>
               <div className="format-card">
                 <span className="format-icon">02</span>
-                <h3 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '22px' }}>League structure</h3>
+                <h3 className="sport-heading" style={{ color: 'var(--green-mint)', fontSize: '22px' }}>League structure</h3>
                 <p style={{ marginTop: '8px', lineHeight: 1.6 }}>8 franchise teams playing round robin matches followed by a knockout stage.</p>
               </div>
               <div className="format-card">
                 <span className="format-icon">03</span>
-                <h3 className="sport-heading" style={{ color: 'var(--gold-dark)', fontSize: '22px' }}>Season duration</h3>
+                <h3 className="sport-heading" style={{ color: 'var(--green-mint)', fontSize: '22px' }}>Season duration</h3>
                 <p style={{ marginTop: '8px', lineHeight: 1.6 }}>A multi-week tournament featuring competitive fixtures.</p>
               </div>
             </div>
@@ -675,7 +707,7 @@ export default function Home() {
       )}
 
       {content.show_teams === 'true' && (
-        <section className="section-pad" id="teams" style={{ background: '#ffffff' }}>
+        <section className="section-pad" id="teams">
           <div className="page-width">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px', flexWrap: 'wrap', gap: '16px' }}>
               <div>
@@ -695,7 +727,7 @@ export default function Home() {
                       {team.logo_url ? (
                         <img src={getImageUrl(team.logo_url)} alt={team.name} className="team-logo-avatar" />
                       ) : (
-                        <span className="sport-heading" style={{ fontSize: '20px', color: 'var(--gold-dark)' }}>0{i + 1}</span>
+                        <span className="sport-heading" style={{ fontSize: '20px', color: 'var(--green-mint)' }}>0{i + 1}</span>
                       )}
                       <span className="team-short">{team.short_code}</span>
                     </div>
@@ -720,7 +752,7 @@ export default function Home() {
       )}
 
       {content.show_players === 'true' && (
-        <section className="section-pad" id="players" style={{ background: '#f1f5f9' }}>
+        <section className="section-pad" id="players">
           <div className="page-width">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px', flexWrap: 'wrap', gap: '16px' }}>
               <div>
@@ -739,8 +771,8 @@ export default function Home() {
                     {player.photo ? (
                       <img src={getImageUrl(player.photo)} alt={player.player_name} className="player-photo" />
                     ) : (
-                      <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: '#f8fafc' }}>
-                        <Users size={48} color="#d4af37" />
+                      <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: 'var(--bg-subtle)' }}>
+                        <Users size={48} color="var(--green-mint)" />
                       </div>
                     )}
                     <div className="player-info">
@@ -761,7 +793,7 @@ export default function Home() {
       )}
 
       {content.show_register === 'true' && (
-        <section className="section-pad" id="register" style={{ position: 'relative', overflow: 'hidden', background: '#ffffff' }}>
+        <section className="section-pad" id="register" style={{ position: 'relative', overflow: 'hidden' }}>
           <div className="page-width split-layout">
             <div>
               <span className="section-label">Your moment is here</span>
@@ -772,15 +804,15 @@ export default function Home() {
                 <a className="button button-outline" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register as player <Users size={16} /></a>
               </div>
             </div>
-            <div className="register-deadline">
+            <div className="register-deadline" style={{ borderLeft: '2px solid var(--green)', paddingLeft: '40px' }}>
               <span className="section-label">Registration Deadline</span>
-              <strong className="sport-heading" style={{ fontSize: 'clamp(64px, 10vw, 96px)', color: 'var(--gold-dark)', letterSpacing: '-0.05em', lineHeight: 1 }}>
+              <strong className="sport-heading" style={{ fontSize: 'clamp(56px, 9vw, 88px)', color: 'var(--green-mint)', letterSpacing: '-0.05em', lineHeight: 1 }}>
                 {(() => {
                   const target = content.deadline_date ? new Date(content.deadline_date) : null;
                   if (!target) return '—';
                   const diff = Math.max(0, target.getTime() - Date.now());
                   const days = Math.floor(diff / 86400000);
-                  return <>{days} <span style={{ fontSize: 'clamp(18px, 4vw, 24px)', color: '#0f172a', fontStyle: 'normal', fontFamily: 'Inter', letterSpacing: 'normal', marginLeft: '8px' }}>Days left</span></>;
+                  return <>{days} <span style={{ fontSize: 'clamp(18px, 4vw, 24px)', color: '#ffffff', fontStyle: 'normal', fontFamily: 'Inter', letterSpacing: 'normal', marginLeft: '8px' }}>Days left</span></>;
                 })()}
               </strong>
               <p className="lead" style={{ marginTop: '16px' }}>{content.deadline_text || 'Secure your spot before the registration closes.'}</p>
@@ -790,7 +822,7 @@ export default function Home() {
       )}
 
       {content.show_highlights === 'true' && gallery.length > 0 && (
-        <section id="highlights" className="section-pad" style={{ background: '#f8fafc' }}>
+        <section id="highlights" className="section-pad">
           <div className="page-width">
             <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
               <span className="section-label" style={{ justifyContent: 'center' }}>Highlights</span>
@@ -812,7 +844,6 @@ export default function Home() {
       {content.show_management === 'true' && <ManagementSection />}
       {content.show_gallery === 'true' && <GallerySection />}
 
-
       {/* Fullscreen Image Modal */}
       {selectedImage && (
         <div className="image-modal-overlay" onClick={() => setSelectedImage(null)}>
@@ -824,27 +855,27 @@ export default function Home() {
         </div>
       )}
 
-      <footer className="footer" style={{ background: '#040d1a', borderTop: '1px solid var(--border)' }}>
+      <footer className="footer">
         <div className="page-width">
           <div className="footer-top" style={{ gap: '32px' }}>
-            <a className="brand" href="#top">
+            <button className="brand" onClick={scrollToTop} aria-label="KPL home">
               <img src="/images/kpl-logo.jpg" alt="KPL Logo" className="brand-logo" />
               <div className="brand-text">
                 KHORAGHAT PREMIER LEAGUE
                 <span>SEASON-3 • 2026</span>
               </div>
-            </a>
+            </button>
             <div className="nav-links">
-              <a href="#league">League</a>
-              <a href="#teams">Teams</a>
-              <a href="#players">Players</a>
-              <a href="#management">Management</a>
-              <a href="#gallery">Gallery</a>
+              <button onClick={(e) => scrollTo('league', e)}>League</button>
+              <button onClick={(e) => scrollTo('teams', e)}>Teams</button>
+              <button onClick={(e) => scrollTo('players', e)}>Players</button>
+              <button onClick={(e) => scrollTo('management', e)}>Management</button>
+              <button onClick={(e) => scrollTo('gallery', e)}>Gallery</button>
             </div>
           </div>
           <div className="footer-bottom">
             <span>© 2026 Khoraghat Premier League. All rights reserved.</span>
-            <span>Developed by <a href="https://projuktisoft.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'none', fontWeight: 600 }}>ProjuktiSoft</a></span>
+            <span>Developed by <a href="https://projuktisoft.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--green-mint)', textDecoration: 'none', fontWeight: 600 }}>ProjuktiSoft</a></span>
           </div>
         </div>
       </footer>

@@ -29,9 +29,9 @@ export function GallerySection() {
 
   if (loading) {
     return (
-      <section className="section-pad" id="gallery" style={{ background: '#f1f5f9' }}>
+      <section className="section-pad" id="gallery">
         <div className="page-width" style={{ textAlign: 'center' }}>
-          <Loader2 className="spin" style={{ color: 'var(--gold-dark)', margin: '0 auto' }} size={32} />
+          <Loader2 className="spin" style={{ color: 'var(--green-mint)', margin: '0 auto' }} size={32} />
         </div>
       </section>
     );
@@ -42,7 +42,7 @@ export function GallerySection() {
   }
 
   return (
-    <section id="gallery" className="section-pad" style={{ background: '#f1f5f9' }}>
+    <section id="gallery" className="section-pad">
       <div className="page-width">
         {/* Symmetrical Header */}
         <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
