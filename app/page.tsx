@@ -577,39 +577,40 @@ export default function Home() {
       )}
 
       {content.show_stats === 'true' && (
-      <section className="section-pad" id="prizes" style={{ background: 'linear-gradient(180deg, var(--navy-light) 0%, var(--navy) 100%)' }}>
-        <div className="page-width">
-          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <span className="section-label" style={{ justifyContent: 'center' }}>Ultimate Glory</span>
-            <h2 className="sport-heading">Prize Pool</h2>
+        <section className="section-pad" id="prizes" style={{ background: 'linear-gradient(180deg, var(--navy-light) 0%, var(--navy) 100%)' }}>
+          <div className="page-width">
+            <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
+              <span className="section-label" style={{ justifyContent: 'center' }}>Ultimate Glory</span>
+              <h2 className="sport-heading">Prize <em>Pool</em></h2>
+              <p className="lead" style={{ margin: '16px auto 0' }}>Compete for major cash prizes and prestigious trophies in KPL Season 3.</p>
+            </div>
+            <div className="format-grid" style={{ alignItems: 'center' }}>
+              <div className="format-card" style={{ borderColor: 'var(--gold)', boxShadow: '0 12px 36px var(--gold-glow)', background: 'linear-gradient(180deg, var(--navy) 0%, var(--navy-light) 100%)' }}>
+                <span className="format-icon" style={{ color: 'rgba(212,175,55,0.15)' }}>🏆</span>
+                <h3 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '28px' }}>Champions</h3>
+                <p style={{ fontSize: '54px', fontWeight: '900', color: 'var(--text)', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹27,000</p>
+              </div>
+              <div className="format-card">
+                <span className="format-icon">🥈</span>
+                <h3 className="sport-heading" style={{ fontSize: '24px' }}>Runners Up</h3>
+                <p style={{ fontSize: '42px', fontWeight: '900', color: 'var(--text)', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹17,000</p>
+              </div>
+              <div className="format-card">
+                <span className="format-icon">⭐</span>
+                <h3 className="sport-heading" style={{ fontSize: '24px' }}>Player of Series</h3>
+                <p style={{ fontSize: '42px', fontWeight: '900', color: 'var(--text)', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹500</p>
+              </div>
+            </div>
           </div>
-          <div className="format-grid">
-            <div className="format-card" style={{ borderColor: 'var(--gold)', boxShadow: '0 10px 30px rgba(212,175,55,0.15)', transform: 'scale(1.05)', zIndex: 2 }}>
-              <span className="format-icon" style={{ color: 'rgba(212,175,55,0.1)' }}>🏆</span>
-              <h3 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '28px' }}>Champions</h3>
-              <p style={{ fontSize: '54px', fontWeight: '900', color: 'var(--text)', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹27,000</p>
-            </div>
-            <div className="format-card">
-              <span className="format-icon">🥈</span>
-              <h3 className="sport-heading" style={{ fontSize: '24px' }}>Runners Up</h3>
-              <p style={{ fontSize: '42px', fontWeight: '900', color: 'var(--text)', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹17,000</p>
-            </div>
-            <div className="format-card">
-              <span className="format-icon">⭐</span>
-              <h3 className="sport-heading" style={{ fontSize: '24px' }}>Player of Series</h3>
-              <p style={{ fontSize: '42px', fontWeight: '900', color: 'var(--text)', marginTop: '8px', fontFamily: '"Arial Black", Impact, sans-serif', fontStyle: 'italic', lineHeight: 1 }}>₹500</p>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
       )}
 
       {content.show_about === 'true' && (
-        <section className="section-pad" id="league">
+        <section className="section-pad" id="league" style={{ background: 'var(--navy)' }}>
           <div className="page-width split-layout">
             <div>
               <span className="section-label">The League</span>
-              <h2 className="sport-heading">{content.about_title}</h2>
+              <h2 className="sport-heading">{content.about_title || 'Assam’s Premier Cricket League'}</h2>
             </div>
             <div>
               <p className="lead" style={{ whiteSpace: 'pre-wrap' }}>{content.about_text}</p>
@@ -622,27 +623,29 @@ export default function Home() {
       )}
 
       {content.show_format === 'true' && (
-        <section className="section-pad" id="format">
+        <section className="section-pad" id="format" style={{ background: 'var(--navy-light)' }}>
           <div className="page-width">
-            <span className="section-label">Built for the bold</span>
-            <h2 className="sport-heading">{content.format_title}</h2>
-            <p className="lead" style={{ whiteSpace: 'pre-wrap', marginTop: '16px' }}>{content.format_subtitle}</p>
+            <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
+              <span className="section-label" style={{ justifyContent: 'center' }}>Built for the bold</span>
+              <h2 className="sport-heading">{content.format_title || 'Tournament Format'}</h2>
+              <p className="lead" style={{ margin: '16px auto 0', whiteSpace: 'pre-wrap' }}>{content.format_subtitle}</p>
+            </div>
             
             <div className="format-grid">
               <div className="format-card">
                 <span className="format-icon">01</span>
-                <h3 className="sport-heading">Match format</h3>
-                <p>15 overs of high intensity hard tennis ball cricket.</p>
+                <h3 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '22px' }}>Match format</h3>
+                <p style={{ marginTop: '8px', lineHeight: 1.6 }}>15 overs of high intensity hard tennis ball cricket.</p>
               </div>
               <div className="format-card">
                 <span className="format-icon">02</span>
-                <h3 className="sport-heading">League structure</h3>
-                <p>8 franchise teams playing round robin matches followed by a knockout stage.</p>
+                <h3 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '22px' }}>League structure</h3>
+                <p style={{ marginTop: '8px', lineHeight: 1.6 }}>8 franchise teams playing round robin matches followed by a knockout stage.</p>
               </div>
               <div className="format-card">
                 <span className="format-icon">03</span>
-                <h3 className="sport-heading">Season duration</h3>
-                <p>A multi-week tournament featuring competitive fixtures.</p>
+                <h3 className="sport-heading" style={{ color: 'var(--gold)', fontSize: '22px' }}>Season duration</h3>
+                <p style={{ marginTop: '8px', lineHeight: 1.6 }}>A multi-week tournament featuring competitive fixtures.</p>
               </div>
             </div>
           </div>
@@ -650,9 +653,9 @@ export default function Home() {
       )}
 
       {content.show_teams === 'true' && (
-        <section className="section-pad" id="teams">
+        <section className="section-pad" id="teams" style={{ background: 'var(--navy)' }}>
           <div className="page-width">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px', flexWrap: 'wrap', gap: '16px' }}>
               <div>
                 <span className="section-label">Meet the contenders</span>
                 <h2 className="sport-heading">Franchises</h2>
@@ -691,50 +694,49 @@ export default function Home() {
       )}
 
       {content.show_players === 'true' && (
-      <section className="section-pad" id="players">
-        <div className="page-width">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
-            <div>
-              <span className="section-label">The Talent</span>
-              <h2 className="sport-heading">Registered Players</h2>
+        <section className="section-pad" id="players" style={{ background: 'var(--navy-light)' }}>
+          <div className="page-width">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <span className="section-label">The Talent</span>
+                <h2 className="sport-heading">Registered Players</h2>
+              </div>
+              <a className="text-link" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20to%20play%20in%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register to play <ArrowRight size={14} /></a>
             </div>
-            <a className="text-link" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20to%20play%20in%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register to play <ArrowRight size={14} /></a>
-          </div>
-          
-          <div className="players-grid">
-            {players.length === 0 ? (
-              <p className="lead">Players will be revealed soon...</p>
-            ) : (
-              players.map((player) => (
-                <div className="player-card" key={player.id}>
-                  {player.photo ? (
-                    <img src={player.photo} alt={player.player_name} className="player-photo" />
-                  ) : (
-                    <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: '#091325' }}>
-                      <Users size={48} color="#D4AF37" />
+            
+            <div className="players-grid">
+              {players.length === 0 ? (
+                <p className="lead">Players will be revealed soon...</p>
+              ) : (
+                players.map((player) => (
+                  <div className="player-card" key={player.id}>
+                    {player.photo ? (
+                      <img src={player.photo} alt={player.player_name} className="player-photo" />
+                    ) : (
+                      <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: '#091325' }}>
+                        <Users size={48} color="#D4AF37" />
+                      </div>
+                    )}
+                    <div className="player-info">
+                      <h3 className="sport-heading">{player.player_name}</h3>
+                      <p>{player.role || 'ALL-ROUNDER'}</p>
                     </div>
-                  )}
-                  <div className="player-info">
-                    <h3 className="sport-heading">{player.player_name}</h3>
-                    <p>{player.role || 'ALL-ROUNDER'}</p>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
       )}
 
       {content.show_register === 'true' && (
-        <section className="section-pad" id="register" style={{ position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(45deg, #091325, #12213F)', zIndex: -1 }}></div>
+        <section className="section-pad" id="register" style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%)' }}>
           <div className="page-width split-layout">
             <div>
               <span className="section-label">Your moment is here</span>
               <h2 className="sport-heading">Season 3 is calling.</h2>
               <p className="lead" style={{ marginTop: '16px' }}>Join the biggest hard tennis ball cricket league in the region and compete for glory.</p>
-              <div className="hero-actions">
+              <div className="hero-actions" style={{ marginTop: '32px' }}>
                 <a className="button button-primary" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20a%20team%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register a team <ArrowRight size={16} /></a>
                 <a className="button button-outline" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register as player <Users size={16} /></a>
               </div>
@@ -759,8 +761,11 @@ export default function Home() {
       {content.show_highlights === 'true' && gallery.length > 0 && (
         <section id="highlights" className="section-pad" style={{ background: 'var(--navy)' }}>
           <div className="page-width">
-            <SectionLabel>Highlights</SectionLabel>
-            <h2>Best of <em>Season 1 & 2</em></h2>
+            <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
+              <span className="section-label" style={{ justifyContent: 'center' }}>Highlights</span>
+              <h2 className="sport-heading">Best of <em>Season 1 & 2</em></h2>
+              <p className="lead" style={{ margin: '16px auto 0' }}>Unforgettable moments, winning shots, and electric crowd reactions.</p>
+            </div>
             <div className="gallery-grid">
               {gallery.map((item, i) => (
                 <div key={i} className={`gallery-item ${item.size || ''}`} onClick={() => setSelectedImage(item)}>
@@ -788,17 +793,22 @@ export default function Home() {
         </div>
       )}
 
-      <footer className="footer">
+      <footer className="footer" style={{ background: '#040d1a', borderTop: '1px solid var(--border)' }}>
         <div className="page-width">
-          <div className="footer-top">
+          <div className="footer-top" style={{ gap: '32px' }}>
             <a className="brand" href="#top">
-              KHORAGHAT PREMIER LEAGUE
-              <span>WHERE LEGENDS RISE</span>
+              <img src="/images/kpl-logo.jpg" alt="KPL Logo" className="brand-logo" />
+              <div className="brand-text">
+                KHORAGHAT PREMIER LEAGUE
+                <span>SEASON-3 • 2026</span>
+              </div>
             </a>
             <div className="nav-links">
               <a href="#league">League</a>
               <a href="#teams">Teams</a>
               <a href="#players">Players</a>
+              <a href="#management">Management</a>
+              <a href="#gallery">Gallery</a>
             </div>
           </div>
           <div className="footer-bottom">

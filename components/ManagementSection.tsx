@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Shield, Phone, UserCheck, Sparkles } from 'lucide-react';
+import { Shield, Phone, UserCheck, Loader2 } from 'lucide-react';
 import { kplApi, ManagementMember } from '@/lib/api';
 
 export function ManagementSection() {
@@ -28,12 +28,9 @@ export function ManagementSection() {
 
   if (loading) {
     return (
-      <section className="py-20 bg-emerald-950/20 text-white relative">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-emerald-800/30 rounded w-1/4 mx-auto"></div>
-            <div className="h-4 bg-emerald-800/20 rounded w-1/2 mx-auto"></div>
-          </div>
+      <section className="section-pad" id="management" style={{ background: 'var(--navy-light)' }}>
+        <div className="page-width" style={{ textAlign: 'center' }}>
+          <Loader2 className="spin" style={{ color: 'var(--gold)', margin: '0 auto' }} size={32} />
         </div>
       </section>
     );
@@ -44,56 +41,111 @@ export function ManagementSection() {
   }
 
   return (
-    <section id="management" className="py-24 bg-gradient-to-b from-black via-emerald-950/20 to-black text-white relative overflow-hidden border-t border-emerald-900/30">
-      {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-4">
-            <Shield className="w-3.5 h-3.5" />
-            Leadership & Guidance
-          </div>
-          <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white mb-4">
-            League <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-green-500">Management</span>
-          </h2>
-          <p className="text-slate-400 text-base sm:text-lg">
-            The visionary team and committee members driving Khoraghat Premier League forward.
+    <section id="management" className="section-pad" style={{ background: 'var(--navy-light)' }}>
+      <div className="page-width">
+        {/* Symmetrical Section Header */}
+        <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
+          <span className="section-label" style={{ justifyContent: 'center' }}>Leadership & Guidance</span>
+          <h2 className="sport-heading">League <em>Management</em></h2>
+          <p className="lead" style={{ margin: '16px auto 0' }}>
+            The visionary leaders and organizers driving Khoraghat Premier League forward.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+        {/* Symmetrical Committee Grid */}
+        <div className="teams-grid">
           {members.map((member) => (
             <div
               key={member.id}
-              className="group relative bg-slate-900/60 backdrop-blur-sm border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-emerald-950/40 text-center flex flex-col items-center"
+              className="format-card"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                padding: '36px 28px',
+                borderRadius: '16px',
+                background: 'var(--navy)',
+                border: '1px solid var(--border)',
+                transition: 'all 0.3s ease',
+              }}
             >
               {/* Photo Avatar */}
-              <div className="relative w-28 h-28 sm:w-32 sm:h-32 mb-5 rounded-full p-1 bg-gradient-to-br from-emerald-500 via-teal-400 to-emerald-700 shadow-lg group-hover:scale-105 transition-transform duration-300">
-                <div className="w-full h-full rounded-full overflow-hidden bg-slate-950 relative flex items-center justify-center">
+              <div
+                style={{
+                  width: '110px',
+                  height: '110px',
+                  borderRadius: '50%',
+                  padding: '3px',
+                  background: 'linear-gradient(135deg, var(--gold), var(--electric))',
+                  marginBottom: '20px',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    background: '#040d1a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
                   {member.photo_url ? (
                     <img
                       src={member.photo_url}
                       alt={member.name}
-                      className="w-full h-full object-cover"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
-                    <UserCheck className="w-12 h-12 text-emerald-400 opacity-60" />
+                    <UserCheck style={{ width: '40px', height: '40px', color: 'var(--gold)', opacity: 0.8 }} />
                   )}
                 </div>
               </div>
 
               {/* Details */}
-              <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors mb-1">
+              <h3 className="sport-heading" style={{ fontSize: '20px', color: 'var(--text)', marginBottom: '8px' }}>
                 {member.name}
               </h3>
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-950/80 border border-emerald-800/40 rounded-full px-3 py-1 mb-3">
+              
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  color: 'var(--gold)',
+                  background: 'rgba(212, 175, 55, 0.1)',
+                  border: '1px solid rgba(212, 175, 55, 0.25)',
+                  padding: '4px 14px',
+                  borderRadius: '100px',
+                  marginBottom: '16px',
+                }}
+              >
                 {member.designation}
-              </p>
+              </span>
 
               {member.contact && (
-                <div className="mt-auto pt-3 border-t border-slate-800/80 w-full flex items-center justify-center gap-2 text-slate-400 text-xs hover:text-white transition-colors">
-                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                <div
+                  style={{
+                    marginTop: 'auto',
+                    paddingTop: '16px',
+                    borderTop: '1px solid var(--border)',
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    color: 'var(--muted)',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                  }}
+                >
+                  <Phone size={14} style={{ color: 'var(--gold)' }} />
                   <span>{member.contact}</span>
                 </div>
               )}

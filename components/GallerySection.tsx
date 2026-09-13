@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Camera, X, Maximize2 } from 'lucide-react';
+import { Camera, X, Maximize2, Loader2 } from 'lucide-react';
 import { kplApi, GalleryPhoto } from '@/lib/api';
 
 export function GallerySection() {
@@ -29,12 +29,9 @@ export function GallerySection() {
 
   if (loading) {
     return (
-      <section className="py-20 bg-black text-white relative">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-emerald-800/30 rounded w-1/4 mx-auto"></div>
-            <div className="h-4 bg-emerald-800/20 rounded w-1/2 mx-auto"></div>
-          </div>
+      <section className="section-pad" id="gallery" style={{ background: 'var(--navy)' }}>
+        <div className="page-width" style={{ textAlign: 'center' }}>
+          <Loader2 className="spin" style={{ color: 'var(--gold)', margin: '0 auto' }} size={32} />
         </div>
       </section>
     );
@@ -45,37 +42,78 @@ export function GallerySection() {
   }
 
   return (
-    <section id="gallery" className="py-24 bg-black text-white relative overflow-hidden border-t border-emerald-900/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-4">
-            <Camera className="w-3.5 h-3.5" />
-            Photo Gallery
-          </div>
-          <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white mb-4">
-            Tournament <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-green-500">Moments</span>
-          </h2>
-          <p className="text-slate-400 text-base sm:text-lg">
-            Capturing high-voltage hard tennis cricket action, crowds, and celebrations.
+    <section id="gallery" className="section-pad" style={{ background: 'var(--navy)' }}>
+      <div className="page-width">
+        {/* Symmetrical Header */}
+        <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 56px' }}>
+          <span className="section-label" style={{ justifyContent: 'center' }}>Action & Passion</span>
+          <h2 className="sport-heading">Photo <em>Gallery</em></h2>
+          <p className="lead" style={{ margin: '16px auto 0' }}>
+            Capturing high-voltage hard tennis cricket action, crowds, and tournament celebrations.
           </p>
         </div>
 
-        {/* Gallery Masonry / Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+        {/* Gallery Grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+            gap: '20px',
+          }}
+        >
           {photos.map((photo) => (
             <div
               key={photo.id}
               onClick={() => setSelectedPhoto(photo.photo_url)}
-              className="group relative aspect-square bg-slate-900 rounded-xl overflow-hidden cursor-pointer border border-slate-800/80 hover:border-emerald-500/60 transition-all duration-300 hover:scale-[1.02] shadow-lg"
+              style={{
+                position: 'relative',
+                aspectRatio: '4 / 3',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                border: '1px solid var(--border)',
+                background: 'var(--navy-light)',
+                transition: 'transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease',
+              }}
+              className="gallery-item-card"
             >
               <img
                 src={photo.photo_url}
                 alt="KPL Gallery Photo"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  transition: 'transform 0.5s ease',
+                }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <div className="p-2.5 rounded-full bg-emerald-500 text-black shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                  <Maximize2 className="w-5 h-5" />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to top, rgba(9, 19, 37, 0.85) 0%, transparent 60%)',
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                className="gallery-item-overlay"
+              >
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '50%',
+                    background: 'var(--gold)',
+                    color: '#000',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 8px 20px rgba(0, 0, 0, 0.5)',
+                  }}
+                >
+                  <Maximize2 size={20} />
                 </div>
               </div>
             </div>
@@ -87,19 +125,20 @@ export function GallerySection() {
       {selectedPhoto && (
         <div
           onClick={() => setSelectedPhoto(null)}
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-fadeIn"
+          className="image-modal-overlay"
         >
           <button
             onClick={() => setSelectedPhoto(null)}
-            className="absolute top-6 right-6 p-2 rounded-full bg-slate-800/80 hover:bg-emerald-500 text-white hover:text-black transition-colors"
+            className="image-modal-close"
           >
-            <X className="w-6 h-6" />
+            <X size={24} />
           </button>
-          <img
-            src={selectedPhoto}
-            alt="Enlarged KPL Photo"
-            className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-slate-800"
-          />
+          <div className="image-modal-content">
+            <img
+              src={selectedPhoto}
+              alt="Enlarged KPL Photo"
+            />
+          </div>
         </div>
       )}
     </section>
