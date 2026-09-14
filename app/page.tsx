@@ -862,7 +862,13 @@ export default function Home() {
                 players.map((player) => (
                   <div className="player-card" key={player.id}>
                     {player.photo ? (
-                      <img src={getImageUrl(player.photo)} alt={player.player_name} className="player-photo" />
+                      <img
+                        src={getImageUrl(player.photo)}
+                        alt={player.player_name}
+                        className="player-photo"
+                        loading="lazy"
+                        decoding="async"
+                      />
                     ) : (
                       <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: 'var(--bg-subtle)' }}>
                         <Users size={48} color="var(--green-mint)" />

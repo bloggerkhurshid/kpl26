@@ -9,7 +9,7 @@ import {
   X, Loader2, CheckCircle2, AlertCircle, Users,
   UserCheck, UserX, Gavel, FileText, Printer,
   Phone, Mail, MapPin, Calendar, Hash, User, Shield, Target, Zap,
-  Check, Clock, XCircle, ArrowRight, ShieldCheck
+  Check, Clock, XCircle, ArrowRight, ShieldCheck, CreditCard, Image as ImageIcon
 } from 'lucide-react';
 
 interface Team { id: string; name: string; short_code: string; accent_color: string; }
@@ -63,6 +63,7 @@ const ROLES = ['Batsman', 'Bowler', 'All-rounder', 'Wicket-keeper'];
 export default function PlayersPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<'create' | 'edit' | 'delete' | 'view' | null>(null);
   const [selected, setSelected] = useState<Player | null>(null);
@@ -74,11 +75,42 @@ export default function PlayersPage() {
   const [filterSource, setFilterSource] = useState('');
   const [filterApproval, setFilterApproval] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [proofModal, setProofModal] = useState<{ url: string; title: string } | null>(null);
+  const [proofModal, setProofModal] = useState<{ url: string; title: string; meta?: string } | null>(null);
 
   function openAddressProof(proofUrl: string | null | undefined, title: string = 'Address Proof') {
     if (!proofUrl) return;
     setProofModal({ url: proofUrl, title });
+  }
+
+  function getPlayerPayment(p: Player) {
+    if (!payments.length) return null;
+    const cleanPhone = (p.contact_number || '').replace(/\D/g, '').slice(-10);
+    const cleanReg = (p.registration_number || '').trim().toLowerCase();
+    return payments.find(pay => {
+      const payReg = (pay.registration_id || '').trim().toLowerCase();
+      const payPhone = (pay.phone || '').replace(/\D/g, '').slice(-10);
+      if (cleanReg && payReg && (payReg === cleanReg || payReg.includes(cleanReg) || cleanReg.includes(payReg))) return true;
+      if (cleanPhone && payPhone && cleanPhone === payPhone) return true;
+      return false;
+    }) || null;
+  }
+
+  function openPaymentProof(p: Player) {
+    const pay = getPlayerPayment(p);
+    if (!pay) {
+      showToast('No payment record found for this player yet.', 'error');
+      return;
+    }
+    const screenshot = pay.screenshot || pay.payment_proof || pay.proof_url;
+    if (!screenshot) {
+      showToast(`Payment recorded (UTR: ${pay.payment_id || 'N/A'}) but no screenshot uploaded.`, 'error');
+      return;
+    }
+    setProofModal({
+      url: screenshot,
+      title: `Payment Proof — ${p.player_name}`,
+      meta: `UTR / Ref: ${pay.payment_id || 'N/A'} • Amount: ₹${pay.amount || '—'} • Status: ${pay.status || 'Pending'}`
+    });
   }
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
@@ -86,24 +118,52 @@ export default function PlayersPage() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  async function loadData() {
-    setLoading(true);
+  async function loadData(silent: boolean = false) {
+    if (!silent) setLoading(true);
     try {
-      const [pRes, tRes] = await Promise.all([
+      const [pRes, tRes, payRes] = await Promise.all([
         kplApi.getPlayers({ limit: 1000 }),
         kplApi.getTeams('active'),
+        kplApi.getPayments(500).catch(() => []),
       ]);
-      setPlayers(pRes?.data || pRes || []);
-      setTeams(tRes?.data || tRes || []);
+      const pList = pRes?.data || pRes || [];
+      const tList = tRes?.data || tRes || [];
+      const payList = payRes?.data || payRes || [];
+
+      setPlayers(pList);
+      setTeams(tList);
+      setPayments(Array.isArray(payList) ? payList : []);
+
+      // Cache data locally so subsequent visits load instantly
+      try {
+        localStorage.setItem('kpl_admin_players_cache', JSON.stringify({ p: pList, t: tList, pay: payList }));
+      } catch (e) {}
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Failed to load players data', 'error');
+      if (!silent) showToast(err.message || 'Failed to load players data', 'error');
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    // 1. Instant cache load (Zero waiting time on initial render)
+    try {
+      const cached = localStorage.getItem('kpl_admin_players_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.p && parsed.p.length > 0) {
+          setPlayers(parsed.p);
+          if (parsed.t) setTeams(parsed.t);
+          if (parsed.pay) setPayments(parsed.pay);
+          setLoading(false);
+          loadData(true); // Revalidate in background
+          return;
+        }
+      }
+    } catch (e) {}
+    loadData(false);
+  }, []);
 
   function openCreate() { setForm(EMPTY_FORM); setSelected(null); setModal('create'); }
   function openEdit(p: Player) {
@@ -423,6 +483,25 @@ export default function PlayersPage() {
                 <MapPin size={14} />
               </button>
             )}
+            {/* View Payment Proof button */}
+            {(() => {
+              const pay = getPlayerPayment(p);
+              const hasProof = !!(pay && (pay.screenshot || pay.payment_proof || pay.proof_url));
+              return (
+                <button
+                  className={`dt-btn dt-btn-icon ${hasProof ? 'dt-btn-payment-active' : ''}`}
+                  title={hasProof ? `View Payment Proof (UTR: ${pay.payment_id || 'N/A'})` : pay ? `Payment: ${pay.payment_id || 'No proof image'}` : 'No payment proof recorded'}
+                  onClick={() => openPaymentProof(p)}
+                  style={{
+                    color: hasProof ? '#10b981' : undefined,
+                    borderColor: hasProof ? 'rgba(16, 185, 129, 0.4)' : undefined,
+                    background: hasProof ? 'rgba(16, 185, 129, 0.1)' : undefined,
+                  }}
+                >
+                  <CreditCard size={14} />
+                </button>
+              );
+            })()}
             <button className="dt-btn dt-btn-icon" title="Edit" onClick={() => openEdit(p)}><Edit2 size={14} /></button>
             {p.team_id && (
               <button className="dt-btn dt-btn-icon" title="Unassign from team" onClick={() => unassignPlayer(p)}><UserX size={14} /></button>
@@ -881,9 +960,9 @@ export default function PlayersPage() {
                     </div>
                   </div>
 
-                  {/* Documents */}
+                  {/* Documents & Payment */}
                   <div className="player-detail-section player-detail-docs">
-                    <h4><FileText size={14} color="var(--adm-gold)" /> Documents</h4>
+                    <h4><FileText size={14} color="var(--adm-gold)" /> Verification Documents & Payment</h4>
                     <div className="player-detail-doc-row">
                       {selected.address_proof ? (
                         <div className="player-detail-doc-thumb" onClick={() => openAddressProof(selected.address_proof, `${selected.player_name} - Address Proof`)} style={{ cursor: 'pointer' }}>
@@ -898,12 +977,43 @@ export default function PlayersPage() {
                           <span>Address Proof ↗</span>
                         </div>
                       ) : <span className="player-detail-no-doc">No address proof uploaded</span>}
+
+                      {/* Payment Proof Tile */}
+                      {(() => {
+                        const pay = getPlayerPayment(selected);
+                        const proof = pay?.screenshot || pay?.payment_proof || pay?.proof_url;
+                        if (proof) {
+                          return (
+                            <div
+                              className="player-detail-doc-thumb"
+                              onClick={() => openPaymentProof(selected)}
+                              style={{ cursor: 'pointer', borderColor: 'rgba(16, 185, 129, 0.4)' }}
+                            >
+                              <img src={getImageUrl(proof)} alt="Payment Screenshot" />
+                              <span style={{ color: '#10b981' }}>Payment Proof ↗</span>
+                            </div>
+                          );
+                        }
+                        if (pay) {
+                          return (
+                            <div className="player-detail-doc-thumb" style={{ background: 'rgba(16, 185, 129, 0.05)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                              <div style={{ width: '100%', height: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                <CreditCard size={26} color="#10b981" />
+                                <span style={{ fontSize: '10px', color: '#10b981', fontWeight: 700 }}>₹{pay.amount || 'Paid'}</span>
+                              </div>
+                              <span style={{ fontSize: '10px' }}>UTR: {pay.payment_id?.slice(-8) || 'Paid'}</span>
+                            </div>
+                          );
+                        }
+                        return <span className="player-detail-no-doc">No payment proof uploaded</span>;
+                      })()}
+
                       {selected.player_signature ? (
                         <div className="player-detail-doc-thumb player-detail-sig">
                           <img src={getImageUrl(selected.player_signature)} alt="Signature" />
                           <span>Signature</span>
                         </div>
-                      ) : <span className="player-detail-no-doc">No signature uploaded</span>}
+                      ) : null}
                     </div>
                     <div className="player-detail-row" style={{ marginTop: '10px' }}>
                       <span><CheckCircle2 size={13}/>Declaration</span>
@@ -945,10 +1055,21 @@ export default function PlayersPage() {
           <div className="admin-modal-overlay" onClick={() => setProofModal(null)}>
             <div className="admin-modal" style={{ maxWidth: '800px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
               <div className="admin-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--adm-border)' }}>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FileText size={18} color="var(--adm-gold)" />
-                  {proofModal.title}
-                </h3>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {proofModal.title.toLowerCase().includes('payment') ? (
+                      <CreditCard size={18} color="#10b981" />
+                    ) : (
+                      <FileText size={18} color="var(--adm-gold)" />
+                    )}
+                    {proofModal.title}
+                  </h3>
+                  {proofModal.meta && (
+                    <p style={{ margin: '4px 0 0 26px', fontSize: '12px', color: '#10b981', fontWeight: 600 }}>
+                      {proofModal.meta}
+                    </p>
+                  )}
+                </div>
                 <button onClick={() => setProofModal(null)} style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer' }}>
                   <X size={20} />
                 </button>
