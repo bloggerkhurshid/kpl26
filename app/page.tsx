@@ -798,8 +798,8 @@ export default function Home() {
                 <div className="league-card-v2-icon" style={{ background: 'rgba(250, 204, 21, 0.12)', color: '#facc15' }}>
                   <Radio size={22} />
                 </div>
-                <h4>Live Coverage</h4>
-                <p>HD YouTube & Facebook live streaming with commentary.</p>
+                <h4>Live Score</h4>
+                <p>Live score on CricHeroes with ball-by-ball match updates.</p>
               </div>
 
               <div className="league-card-v2">
