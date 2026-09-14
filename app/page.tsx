@@ -42,12 +42,18 @@ import { UpiPaymentModal } from '@/components/UpiPaymentModal';
 type Team = {
   id: string;
   name: string;
-  owner_name: string;
-  captain_name: string;
-  home_location: string;
+  owner_name?: string;
+  owner?: string;
+  captain_name?: string;
+  captain?: string;
+  home_location?: string;
   short_code: string;
-  accent_color: string;
+  accent_color?: string;
+  color?: string;
   logo_url?: string;
+  squad_count?: number;
+  squad_limit?: number;
+  budget?: number;
   status: string;
 };
 
@@ -815,42 +821,129 @@ export default function Home() {
       {content.show_teams === 'true' && (
         <section className="section-pad" id="teams">
           <div className="page-width">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
               <div>
-                <span className="section-label">Meet the contenders</span>
-                <h2 className="sport-heading">Franchises</h2>
+                <span className="section-label">Franchise Battle</span>
+                <h2 className="sport-heading">Franchises & Contenders</h2>
+                <p className="lead" style={{ margin: '8px 0 0', maxWidth: '640px' }}>
+                  Official franchise teams competing for championship glory, cash prizes, and the prestigious KPL trophy in Khoraghat.
+                </p>
               </div>
-              <a className="text-link" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20own%20a%20franchise%20in%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Own a franchise <ArrowRight size={14} /></a>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button
+                  onClick={() => setModal('team')}
+                  className="button button-primary"
+                  style={{ padding: '10px 20px', fontSize: '12.5px' }}
+                >
+                  <Users size={15} />
+                  <span>Register Franchise</span>
+                </button>
+                <a
+                  className="button button-outline"
+                  style={{ padding: '10px 18px', fontSize: '12.5px' }}
+                  href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20own%20a%20franchise%20in%20KPL%20Season%203."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span>Enquire Ownership</span>
+                  <ArrowRight size={14} />
+                </a>
+              </div>
             </div>
             
             <div className="teams-grid">
               {teams.length === 0 ? (
-                <p className="lead">Teams will be revealed soon...</p>
+                <div className="teams-empty-state">
+                  <div className="teams-empty-icon">
+                    <Shield size={36} className="text-emerald-400" />
+                  </div>
+                  <h3 className="sport-heading" style={{ fontSize: '22px', color: '#fff', marginTop: '12px' }}>
+                    Franchises Being Unveiled
+                  </h3>
+                  <p className="lead" style={{ maxWidth: '480px', margin: '8px auto 20px' }}>
+                    Franchise registrations are currently underway. Be the first to register your team for KPL Season 3!
+                  </p>
+                  <button onClick={() => setModal('team')} className="button button-primary">
+                    <Users size={16} />
+                    <span>Register Your Franchise Now</span>
+                  </button>
+                </div>
               ) : (
-                teams.map((team, i) => (
-                  <article className="team-card" key={team.id}>
-                    <div className="team-card-top">
-                      {team.logo_url ? (
-                        <img src={getImageUrl(team.logo_url)} alt={team.name} className="team-logo-avatar" />
-                      ) : (
-                        <span className="sport-heading" style={{ fontSize: '20px', color: 'var(--green-mint)' }}>0{i + 1}</span>
-                      )}
-                      <span className="team-short">{team.short_code}</span>
-                    </div>
-                    <h3 className="sport-heading">{team.name}</h3>
-                    <p>{team.owner_name}</p>
-                    <div className="team-meta">
-                      <div>
-                        <span>Captain</span>
-                        {team.captain_name || 'TBA'}
+                teams.map((team, i) => {
+                  const teamOwner = team.owner_name || team.owner || 'Franchise Management';
+                  const teamCaptain = team.captain_name || team.captain || 'TBA';
+                  const teamLocation = team.home_location || 'Khoraghat / Dhubri';
+                  const teamAccent = team.accent_color || team.color || '#22c55e';
+                  const teamShort = team.short_code || team.name.slice(0, 3).toUpperCase();
+                  const squadCount = team.squad_count || 0;
+                  const squadLimit = team.squad_limit || 15;
+
+                  return (
+                    <article
+                      className="team-card"
+                      key={team.id}
+                      style={{ '--team-accent': teamAccent } as React.CSSProperties}
+                    >
+                      {/* Top Team Ribbon & Crest */}
+                      <div className="team-card-top">
+                        <div className="team-logo-wrapper">
+                          {team.logo_url ? (
+                            <img
+                              src={getImageUrl(team.logo_url)}
+                              alt={team.name}
+                              className="team-logo-avatar"
+                            />
+                          ) : (
+                            <div className="team-crest-fallback" style={{ borderColor: teamAccent, color: teamAccent }}>
+                              {teamShort.slice(0, 2)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="team-top-info">
+                          <span className="team-tag-badge">Franchise #{String(i + 1).padStart(2, '0')}</span>
+                          <span className="team-short">{teamShort}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span>Home Base</span>
-                        {team.home_location || 'TBA'}
+
+                      {/* Team Name & Owner Header */}
+                      <div className="team-card-header">
+                        <h3 className="sport-heading team-card-title">{team.name}</h3>
+                        <p className="team-owner-sub">
+                          <span className="team-owner-label">Owner:</span> {teamOwner}
+                        </p>
                       </div>
-                    </div>
-                  </article>
-                ))
+
+                      {/* Team Meta Grid */}
+                      <div className="team-meta">
+                        <div className="team-meta-cell">
+                          <span>Captain</span>
+                          <div>{teamCaptain}</div>
+                        </div>
+                        <div className="team-meta-cell">
+                          <span>Home Base</span>
+                          <div>{teamLocation}</div>
+                        </div>
+                        <div className="team-meta-cell">
+                          <span>Squad Size</span>
+                          <div className="team-squad-stat">
+                            <span className="team-squad-active">{squadCount}</span>
+                            <span className="team-squad-max">/{squadLimit} Players</span>
+                          </div>
+                        </div>
+                        <div className="team-meta-cell">
+                          <span>Status</span>
+                          <div className="team-status-tag">
+                            <span className="team-status-dot" />
+                            <span>{team.status === 'active' ? 'Confirmed' : 'Pending'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bottom Accent Glow Line */}
+                      <div className="team-accent-line" style={{ background: teamAccent }} />
+                    </article>
+                  );
+                })
               )}
             </div>
           </div>

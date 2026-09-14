@@ -13,12 +13,15 @@ interface Team {
   id: string;
   name: string;
   short_code: string;
-  owner: string;
-  captain: string;
-  color: string;
-  accent_color: string;
-  home_location: string;
-  logo_url: string;
+  owner?: string;
+  owner_name?: string;
+  captain?: string;
+  captain_name?: string;
+  color?: string;
+  accent_color?: string;
+  home_location?: string;
+  logo_url?: string;
+  squad_count?: number;
   status: string;
   created_at: string;
 }
@@ -56,7 +59,18 @@ export default function TeamsPage() {
   useEffect(() => { loadTeams(); }, []);
 
   function openCreate() { setForm(EMPTY_FORM); setSelected(null); setModal('create'); }
-  function openEdit(t: Team) { setForm({ name: t.name, short_code: t.short_code, owner: t.owner, captain: t.captain, home_location: t.home_location, logo_url: t.logo_url || '' }); setSelected(t); setModal('edit'); }
+  function openEdit(t: Team) {
+    setForm({
+      name: t.name,
+      short_code: t.short_code,
+      owner: t.owner_name || t.owner || '',
+      captain: t.captain_name || t.captain || '',
+      home_location: t.home_location || '',
+      logo_url: t.logo_url || ''
+    });
+    setSelected(t);
+    setModal('edit');
+  }
   function openDelete(t: Team) { setSelected(t); setModal('delete'); }
 
   async function saveTeam(e: React.FormEvent) {
@@ -117,13 +131,27 @@ export default function TeamsPage() {
           )}
           <div>
             <div className="dt-team-name">{t.name}</div>
-            <div className="dt-team-owner">{t.owner}</div>
+            <div className="dt-team-owner">{t.owner_name || t.owner || 'No Owner Listed'}</div>
           </div>
         </div>
       ),
     },
-    { key: 'captain', label: 'Captain', sortable: true },
-    { key: 'home_location', label: 'Location' },
+    {
+      key: 'captain',
+      label: 'Captain',
+      sortable: true,
+      render: t => t.captain_name || t.captain || 'TBA',
+    },
+    {
+      key: 'squad_count',
+      label: 'Squad',
+      render: t => (
+        <span style={{ fontWeight: 600, color: '#10b981', fontSize: '12px' }}>
+          {t.squad_count || 0} / 15
+        </span>
+      ),
+    },
+    { key: 'home_location', label: 'Location', render: t => t.home_location || 'Khoraghat' },
     {
       key: 'status', label: 'Status',
       render: t => (

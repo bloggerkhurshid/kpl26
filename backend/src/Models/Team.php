@@ -21,15 +21,20 @@ class Team {
     }
 
     public static function all(?string $status = null): array {
-        $sql = "SELECT * FROM teams";
+        $sql = "
+            SELECT t.*, 
+                   COUNT(p.id) as squad_count
+            FROM teams t
+            LEFT JOIN players p ON p.team_id = t.id AND p.status = 'active'
+        ";
         $params = [];
 
         if ($status !== null && $status !== 'all') {
-            $sql .= " WHERE status = :status";
+            $sql .= " WHERE t.status = :status";
             $params[':status'] = $status;
         }
 
-        $sql .= " ORDER BY created_at DESC";
+        $sql .= " GROUP BY t.id ORDER BY t.created_at DESC";
 
         $stmt = self::getDb()->prepare($sql);
         $stmt->execute($params);
@@ -58,9 +63,9 @@ class Team {
             ':id' => $id,
             ':name' => $data['name'],
             ':short_code' => $data['short_code'],
-            ':owner_name' => $data['owner_name'] ?? '',
+            ':owner_name' => $data['owner_name'] ?? ($data['owner'] ?? ''),
             ':owner_contact' => $data['owner_contact'] ?? '',
-            ':accent_color' => $data['accent_color'] ?? '#22c55e',
+            ':accent_color' => $data['accent_color'] ?? ($data['color'] ?? '#22c55e'),
             ':logo_url' => $data['logo_url'] ?? null,
             ':squad_limit' => isset($data['squad_limit']) ? (int)$data['squad_limit'] : 15,
             ':budget' => isset($data['budget']) ? (float)$data['budget'] : 100000.00,
@@ -74,6 +79,14 @@ class Team {
     public static function update(string $id, array $data): bool {
         $fields = [];
         $params = [':id' => $id];
+
+        // Harmonize field aliases
+        if (isset($data['owner']) && !isset($data['owner_name'])) {
+            $data['owner_name'] = $data['owner'];
+        }
+        if (isset($data['color']) && !isset($data['accent_color'])) {
+            $data['accent_color'] = $data['color'];
+        }
 
         $allowed = ['name', 'short_code', 'owner_name', 'owner_contact', 'accent_color', 'logo_url', 'squad_limit', 'budget', 'spent', 'status'];
 
