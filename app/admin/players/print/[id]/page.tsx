@@ -1,19 +1,22 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { getImageUrl } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import '@/app/register/player/paper.css';
 
-export default function PrintPlayerReceipt({ params }: { params: { id: string } }) {
+export default function PrintPlayerReceipt({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  const resolvedParams = typeof (params as any).then === 'function' ? use(params as Promise<{ id: string }>) : (params as { id: string });
+  const playerId = resolvedParams?.id;
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [cashierName, setCashierName] = useState('Anisur Rahman');
 
   useEffect(() => {
+    if (!playerId) return; // Guard: don't fetch if id is not yet resolved
     async function load() {
       try {
         // Try fetching player directly by ID first (fast path)
-        const res = await fetch(`/api/players.php?id=${params.id}`);
+        const res = await fetch(`/api/players.php?id=${playerId}`);
         if (res.ok) {
           const data = await res.json();
           const found = data?.data || data;
@@ -27,7 +30,7 @@ export default function PrintPlayerReceipt({ params }: { params: { id: string } 
         if (res2.ok) {
           const data2 = await res2.json();
           const list = data2?.data || data2 || [];
-          const found2 = list.find((p: any) => String(p.id) === String(params.id));
+          const found2 = list.find((p: any) => String(p.id) === String(playerId));
           if (found2) setPlayer(found2);
         }
       } catch (err) {
@@ -37,7 +40,7 @@ export default function PrintPlayerReceipt({ params }: { params: { id: string } 
       }
     }
     load();
-  }, [params.id]);
+  }, [playerId]);
 
   useEffect(() => {
     if (!loading && player) {
@@ -61,7 +64,7 @@ export default function PrintPlayerReceipt({ params }: { params: { id: string } 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: '16px', fontFamily: 'sans-serif', color: '#374151', background: '#f9fafb' }}>
         <div style={{ fontSize: '48px' }}>🏏</div>
         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#111827' }}>Player Not Found</h2>
-        <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>No player record exists for ID: <strong>{params.id}</strong></p>
+        <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>No player record exists for ID: <strong>{playerId}</strong></p>
         <button
           onClick={() => window.history.back()}
           style={{ marginTop: '8px', padding: '8px 20px', background: '#1e40af', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
