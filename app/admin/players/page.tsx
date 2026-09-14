@@ -9,7 +9,7 @@ import {
   X, Loader2, CheckCircle2, AlertCircle, Users,
   UserCheck, UserX, Gavel, FileText, Printer,
   Phone, Mail, MapPin, Calendar, Hash, User, Shield, Target, Zap,
-  Check, Clock, XCircle, ArrowRight, ShieldCheck, CreditCard, Image as ImageIcon
+  Check, Clock, XCircle, ArrowRight, ShieldCheck, CreditCard, Image as ImageIcon, Upload
 } from 'lucide-react';
 
 interface Team { id: string; name: string; short_code: string; accent_color: string; }
@@ -75,11 +75,27 @@ export default function PlayersPage() {
   const [filterSource, setFilterSource] = useState('');
   const [filterApproval, setFilterApproval] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [proofModal, setProofModal] = useState<{ url: string; title: string; meta?: string } | null>(null);
+  const [proofModal, setProofModal] = useState<{
+    url: string;
+    title: string;
+    meta?: string;
+    player?: Player;
+    payment?: any;
+    activeTab?: 'payment' | 'address' | 'photo';
+  } | null>(null);
+  const [attachingScreenshot, setAttachingScreenshot] = useState(false);
 
-  function openAddressProof(proofUrl: string | null | undefined, title: string = 'Address Proof') {
+  function openAddressProof(proofUrl: string | null | undefined, title: string = 'Address Proof', player?: Player) {
     if (!proofUrl) return;
-    setProofModal({ url: proofUrl, title });
+    const pay = player ? getPlayerPayment(player) : null;
+    setProofModal({
+      url: proofUrl,
+      title: title,
+      player: player,
+      payment: pay,
+      activeTab: 'address',
+      meta: player ? `Reg: ${player.registration_number || 'N/A'} • ${player.player_name}` : undefined,
+    });
   }
 
   function getPlayerPayment(p: Player) {
@@ -97,17 +113,92 @@ export default function PlayersPage() {
 
   function openPaymentProof(p: Player) {
     const pay = getPlayerPayment(p);
-    if (!pay) {
-      showToast('No payment record found for this player yet.', 'error');
-      return;
-    }
-    const screenshot = pay.screenshot || pay.payment_proof || pay.proof_url;
+    const screenshot = pay?.screenshot || pay?.payment_proof || pay?.proof_url || '';
+    
+    // Determine the most accurate image to display:
+    // If payment screenshot is present, show it.
+    // Otherwise fallback to player's uploaded address proof or photo so the user ALWAYS sees the image!
+    const effectiveUrl = screenshot || p.address_proof || p.photo || '';
+    const initialTab: 'payment' | 'address' | 'photo' = screenshot ? 'payment' : (p.address_proof ? 'address' : 'photo');
+
     setProofModal({
-      url: screenshot || '',
-      title: `Payment Proof — ${p.player_name}`,
-      meta: `UTR / Ref: ${pay.payment_id || 'N/A'} • Amount: ₹${pay.amount || '—'} • Status: ${pay.status || 'Pending'}`
+      url: effectiveUrl,
+      title: `Payment & Documents — ${p.player_name}`,
+      meta: pay ? `UTR / Ref: ${pay.payment_id || 'N/A'} • Amount: ₹${pay.amount || '—'} • Status: ${pay.status || 'Pending'}` : `Reg: ${p.registration_number || 'N/A'} • ${p.player_name}`,
+      player: p,
+      payment: pay,
+      activeTab: initialTab,
     });
   }
+
+  const handleAttachScreenshotToPayment = async (e: React.ChangeEvent<HTMLInputElement>, paymentId?: string, player?: Player) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target?.result as string;
+      if (!dataUrl) return;
+
+      const img = new Image();
+      img.onload = async () => {
+        const MAX_DIM = 900;
+        let { width, height } = img;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        let compressed = dataUrl;
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          compressed = canvas.toDataURL('image/jpeg', 0.72);
+        }
+
+        setAttachingScreenshot(true);
+        try {
+          if (paymentId) {
+            await kplApi.updatePaymentStatus(paymentId, 'pending_verification', compressed);
+          } else if (player) {
+            await kplApi.createPayment({
+              registration_type: 'player',
+              registration_id: player.registration_number || player.id,
+              name: player.player_name,
+              phone: player.contact_number,
+              amount: player.player_category === 'Foreign' ? 250 : 200,
+              payment_gateway: 'upi_direct',
+              payment_id: `UPI-SHOT-${player.registration_number || player.id}`,
+              screenshot: compressed,
+              payment_proof: compressed,
+              status: 'pending_verification',
+            });
+          }
+          showToast('Payment screenshot attached successfully!');
+          await loadData(true);
+          setProofModal(prev => prev ? {
+            ...prev,
+            url: compressed,
+            activeTab: 'payment',
+            payment: prev.payment ? { ...prev.payment, screenshot: compressed } : { screenshot: compressed }
+          } : null);
+        } catch (err: any) {
+          showToast(err.message || 'Failed to attach screenshot', 'error');
+        } finally {
+          setAttachingScreenshot(false);
+        }
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
     setToast({ msg, type });
@@ -415,7 +506,7 @@ export default function PlayersPage() {
       key: 'payment', label: 'Payment Proof',
       render: p => {
         const pay = getPlayerPayment(p);
-        const screenshot = pay?.screenshot || pay?.payment_proof || pay?.proof_url;
+        const screenshot = pay?.screenshot || pay?.payment_proof || pay?.proof_url || p.address_proof;
         if (screenshot) {
           return (
             <button
@@ -435,12 +526,12 @@ export default function PlayersPage() {
                 borderRadius: '8px',
                 cursor: 'pointer',
               }}
-              title="Click to view payment screenshot image"
+              title="Click to view payment proof / documents"
             >
               <img
                 src={getImageUrl(screenshot)}
                 alt="Receipt"
-                style={{ width: 20, height: 20, borderRadius: 4, objectFit: 'cover' }}
+                style={{ width: 22, height: 22, borderRadius: 4, objectFit: 'cover' }}
               />
               <span>View Proof ↗</span>
             </button>
@@ -468,7 +559,7 @@ export default function PlayersPage() {
               title="Click to view recorded payment details"
             >
               <CreditCard size={12} />
-              <span>UTR Details</span>
+              <span>UTR: {pay.payment_id?.slice(-8) || 'Details'}</span>
             </button>
           );
         }
@@ -1025,7 +1116,7 @@ export default function PlayersPage() {
                     <h4><FileText size={14} color="var(--adm-gold)" /> Verification Documents & Payment</h4>
                     <div className="player-detail-doc-row">
                       {selected.address_proof ? (
-                        <div className="player-detail-doc-thumb" onClick={() => openAddressProof(selected.address_proof, `${selected.player_name} - Address Proof`)} style={{ cursor: 'pointer' }}>
+                        <div className="player-detail-doc-thumb" onClick={() => openAddressProof(selected.address_proof, `${selected.player_name} - Address Proof`, selected)} style={{ cursor: 'pointer' }}>
                           {selected.address_proof.toLowerCase().includes('.pdf') || selected.address_proof.startsWith('data:application/pdf') ? (
                             <div style={{ width: '100%', height: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', background: 'var(--adm-panel)' }}>
                               <FileText size={28} color="var(--adm-gold)" />
@@ -1041,7 +1132,7 @@ export default function PlayersPage() {
                       {/* Payment Proof Tile */}
                       {(() => {
                         const pay = getPlayerPayment(selected);
-                        const proof = pay?.screenshot || pay?.payment_proof || pay?.proof_url;
+                        const proof = pay?.screenshot || pay?.payment_proof || pay?.proof_url || selected.address_proof;
                         if (proof) {
                           return (
                             <div
@@ -1115,18 +1206,14 @@ export default function PlayersPage() {
           </div>
         )}
 
-        {/* Address Proof Viewer Modal */}
+        {/* Document & Payment Proof Viewer Modal */}
         {proofModal && (
           <div className="admin-modal-overlay" style={{ zIndex: 9999 }} onClick={() => setProofModal(null)}>
-            <div className="admin-modal" style={{ maxWidth: '800px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div className="admin-modal" style={{ maxWidth: '850px', width: '92%', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
               <div className="admin-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--adm-border)' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {proofModal.title.toLowerCase().includes('payment') ? (
-                      <CreditCard size={18} color="#10b981" />
-                    ) : (
-                      <FileText size={18} color="var(--adm-gold)" />
-                    )}
+                    <CreditCard size={18} color="#10b981" />
                     {proofModal.title}
                   </h3>
                   {proofModal.meta && (
@@ -1139,22 +1226,98 @@ export default function PlayersPage() {
                   <X size={20} />
                 </button>
               </div>
-              <div className="admin-modal-body" style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--adm-input-bg)', minHeight: '300px' }}>
+
+              {/* Multi-document Navigation Tabs */}
+              {(proofModal.player || proofModal.payment) && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 20px', background: 'rgba(0,0,0,0.25)', borderBottom: '1px solid var(--adm-border)', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const payImg = proofModal.payment?.screenshot || proofModal.player?.address_proof || proofModal.player?.photo || '';
+                        setProofModal({ ...proofModal, activeTab: 'payment', url: payImg });
+                      }}
+                      className={`admin-btn ${proofModal.activeTab === 'payment' ? 'admin-btn-primary' : 'admin-btn-ghost'}`}
+                      style={{ fontSize: '12px', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <CreditCard size={14} />
+                      <span>Payment Proof {proofModal.payment?.screenshot ? '✓' : '(Fallback Doc)'}</span>
+                    </button>
+
+                    {proofModal.player?.address_proof && (
+                      <button
+                        type="button"
+                        onClick={() => setProofModal({ ...proofModal, activeTab: 'address', url: proofModal.player!.address_proof! })}
+                        className={`admin-btn ${proofModal.activeTab === 'address' ? 'admin-btn-primary' : 'admin-btn-ghost'}`}
+                        style={{ fontSize: '12px', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <FileText size={14} />
+                        <span>Address Proof / ID</span>
+                      </button>
+                    )}
+
+                    {proofModal.player?.photo && (
+                      <button
+                        type="button"
+                        onClick={() => setProofModal({ ...proofModal, activeTab: 'photo', url: proofModal.player!.photo! })}
+                        className={`admin-btn ${proofModal.activeTab === 'photo' ? 'admin-btn-primary' : 'admin-btn-ghost'}`}
+                        style={{ fontSize: '12px', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <ImageIcon size={14} />
+                        <span>Player Photo</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Direct Attach / Change Button */}
+                  <label className="admin-btn admin-btn-outline" style={{ cursor: 'pointer', padding: '5px 12px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <Upload size={13} />
+                    <span>{attachingScreenshot ? 'Attaching...' : 'Attach / Change Screenshot'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      disabled={attachingScreenshot}
+                      onChange={(e) => handleAttachScreenshotToPayment(e, proofModal.payment?.id, proofModal.player)}
+                    />
+                  </label>
+                </div>
+              )}
+
+              {/* Informative notification if viewing fallback document */}
+              {proofModal.activeTab === 'payment' && !proofModal.payment?.screenshot && proofModal.url && (
+                <div style={{ padding: '8px 20px', background: 'rgba(234, 179, 8, 0.1)', borderBottom: '1px solid rgba(234, 179, 8, 0.25)', fontSize: '12px', color: '#facc15', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertCircle size={14} style={{ flexShrink: 0 }} />
+                  <span>
+                    No separate UPI payment slip was attached to the payment record. Showing player&apos;s submitted verification document ({proofModal.player?.player_name}&apos;s proof/photo). You can attach a UPI screenshot anytime using the button above.
+                  </span>
+                </div>
+              )}
+
+              <div className="admin-modal-body" style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--adm-input-bg)', minHeight: '320px' }}>
                 {!proofModal.url ? (
-                  <div style={{ textAlign: 'center', padding: '30px 20px', maxWidth: '420px' }}>
+                  <div style={{ textAlign: 'center', padding: '30px 20px', maxWidth: '440px' }}>
                     <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#eab308' }}>
                       <CreditCard size={28} />
                     </div>
                     <h4 style={{ margin: '0 0 8px', color: '#f8fafc', fontSize: '16px', fontWeight: 700 }}>Direct UPI Payment Recorded</h4>
                     <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
-                      The player completed the registration with transaction reference:
+                      Transaction reference:
                     </p>
                     <div style={{ margin: '14px 0', padding: '10px 14px', background: 'rgba(0,0,0,0.4)', borderRadius: '8px', border: '1px solid var(--adm-border)', fontFamily: 'monospace', fontSize: '13px', color: '#10b981', fontWeight: 700 }}>
                       {proofModal.meta || 'Pending manual verification'}
                     </div>
-                    <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
-                      Note: The player submitted their UPI reference number without uploading an image receipt. You can cross-verify this UTR in your UPI bank app or account statement.
-                    </p>
+                    <label className="admin-btn admin-btn-primary" style={{ cursor: 'pointer', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
+                      <Upload size={16} />
+                      <span>{attachingScreenshot ? 'Attaching...' : 'Upload Payment Screenshot'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        disabled={attachingScreenshot}
+                        onChange={(e) => handleAttachScreenshotToPayment(e, proofModal.payment?.id, proofModal.player)}
+                      />
+                    </label>
                   </div>
                 ) : proofModal.url.startsWith('data:application/pdf') || proofModal.url.toLowerCase().endsWith('.pdf') ? (
                   <iframe src={proofModal.url} title={proofModal.title} style={{ width: '100%', height: '65vh', border: 'none', borderRadius: '8px' }} />
@@ -1162,36 +1325,55 @@ export default function PlayersPage() {
                   <img src={getImageUrl(proofModal.url)} alt={proofModal.title} style={{ maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }} />
                 )}
               </div>
-              <div className="admin-modal-footer" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                {proofModal.url && (
-                  <button
-                    type="button"
-                    className="admin-btn admin-btn-ghost"
-                    onClick={() => {
-                      if (proofModal.url.startsWith('data:')) {
-                        try {
-                          const arr = proofModal.url.split(',');
-                          const mimeMatch = arr[0].match(/:(.*?);/);
-                          const mime = mimeMatch ? mimeMatch[1] : 'image/png';
-                          const bstr = atob(arr[1]);
-                          let n = bstr.length;
-                          const u8arr = new Uint8Array(n);
-                          while (n--) { u8arr[n] = bstr.charCodeAt(n); }
-                          const blob = new Blob([u8arr], { type: mime });
-                          const blobUrl = URL.createObjectURL(blob);
-                          window.open(blobUrl, '_blank');
-                        } catch (e) {
+
+              <div className="admin-modal-footer" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                <div>
+                  {proofModal.player && (proofModal.player.status === 'pending' || proofModal.player.approval === 'pending') && (
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-primary"
+                      style={{ fontSize: '12px', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      onClick={async () => {
+                        await handleApprove(proofModal.player!);
+                        setProofModal(null);
+                      }}
+                    >
+                      <UserCheck size={14} />
+                      <span>Approve Player &amp; Payment</span>
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {proofModal.url && (
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-ghost"
+                      onClick={() => {
+                        if (proofModal.url.startsWith('data:')) {
+                          try {
+                            const arr = proofModal.url.split(',');
+                            const mimeMatch = arr[0].match(/:(.*?);/);
+                            const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+                            const bstr = atob(arr[1]);
+                            let n = bstr.length;
+                            const u8arr = new Uint8Array(n);
+                            while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+                            const blob = new Blob([u8arr], { type: mime });
+                            const blobUrl = URL.createObjectURL(blob);
+                            window.open(blobUrl, '_blank');
+                          } catch (e) {
+                            window.open(proofModal.url, '_blank');
+                          }
+                        } else {
                           window.open(proofModal.url, '_blank');
                         }
-                      } else {
-                        window.open(proofModal.url, '_blank');
-                      }
-                    }}
-                  >
-                    Open in New Tab ↗
-                  </button>
-                )}
-                <button type="button" className="admin-btn admin-btn-primary" onClick={() => setProofModal(null)}>Close</button>
+                      }}
+                    >
+                      Open in New Tab ↗
+                    </button>
+                  )}
+                  <button type="button" className="admin-btn admin-btn-primary" onClick={() => setProofModal(null)}>Close</button>
+                </div>
               </div>
             </div>
           </div>

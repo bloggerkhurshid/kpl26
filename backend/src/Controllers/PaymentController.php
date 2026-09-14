@@ -54,7 +54,13 @@ class PaymentController {
             Response::error("Payment ID and status are required", 400);
         }
 
-        $success = Payment::updateStatus($id, $status);
+        $screenshot = $input['screenshot'] ?? ($input['payment_proof'] ?? null);
+        if (!empty($screenshot) && str_starts_with($screenshot, 'data:')) {
+            $uploadedUrl = \Kpl\Utils\FileUploader::uploadBase64($screenshot, 'payments');
+            $screenshot = $uploadedUrl ?: $screenshot;
+        }
+
+        $success = Payment::updateStatus($id, $status, $screenshot);
         if (!$success) {
             Response::error("Failed to update payment status", 400);
         }

@@ -7,7 +7,10 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../src/Autoloader.php';
 
 use Kpl\Controllers\PaymentController;
+use Kpl\Models\Payment;
 use Kpl\Utils\Response;
+
+Payment::ensureSchema();
 
 $method = $_SERVER['REQUEST_METHOD'];
 $controller = new PaymentController();

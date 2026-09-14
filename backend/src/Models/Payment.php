@@ -13,6 +13,21 @@ class Payment {
         return Database::getConnection();
     }
 
+    public static function ensureSchema(): void {
+        static $ensured = false;
+        if ($ensured) return;
+        $ensured = true;
+        try {
+            $db = self::getDb();
+            $cols = $db->query("SHOW COLUMNS FROM payments LIKE 'screenshot'")->fetchAll();
+            if (empty($cols)) {
+                $db->exec("ALTER TABLE payments ADD COLUMN screenshot LONGTEXT DEFAULT NULL AFTER payment_id");
+            }
+        } catch (\Throwable $t) {
+            // Ignore if already exists or restricted
+        }
+    }
+
     public static function count(string $status = 'completed'): int {
         $stmt = self::getDb()->prepare("SELECT COUNT(*) as count FROM payments WHERE status = :status");
         $stmt->execute([':status' => $status]);
@@ -28,12 +43,14 @@ class Payment {
     }
 
     public static function all(int $limit = 500): array {
+        self::ensureSchema();
         $stmt = self::getDb()->prepare("SELECT * FROM payments ORDER BY created_at DESC LIMIT " . (int)$limit);
         $stmt->execute();
         return $stmt->fetchAll() ?: [];
     }
 
     public static function create(array $data): string {
+        self::ensureSchema();
         $id = $data['id'] ?? sprintf(
             '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
             mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff),
@@ -89,12 +106,19 @@ class Payment {
         }
     }
 
-    public static function updateStatus(string $id, string $status): bool {
+    public static function updateStatus(string $id, string $status, ?string $screenshot = null): bool {
+        self::ensureSchema();
         $db = self::getDb();
-        $stmt = $db->prepare("UPDATE payments SET status = :status WHERE id = :id");
-        $success = $stmt->execute([':status' => $status, ':id' => $id]);
 
-        if ($success && $status === 'completed') {
+        if ($screenshot !== null && $screenshot !== '') {
+            $stmt = $db->prepare("UPDATE payments SET status = :status, screenshot = :screenshot WHERE id = :id");
+            $success = $stmt->execute([':status' => $status, ':screenshot' => $screenshot, ':id' => $id]);
+        } else {
+            $stmt = $db->prepare("UPDATE payments SET status = :status WHERE id = :id");
+            $success = $stmt->execute([':status' => $status, ':id' => $id]);
+        }
+
+        if ($success && ($status === 'completed' || $status === 'success')) {
             // Find payment record to activate matching registration
             $payStmt = $db->prepare("SELECT * FROM payments WHERE id = :id LIMIT 1");
             $payStmt->execute([':id' => $id]);

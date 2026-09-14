@@ -248,10 +248,15 @@ export const kplApi = {
     });
   },
 
-  async updatePaymentStatus(id: string, status: string) {
+  async updatePaymentStatus(id: string, status: string, screenshot?: string | null) {
+    const payload: any = { status };
+    if (screenshot) {
+      payload.screenshot = screenshot;
+      payload.payment_proof = screenshot;
+    }
     return fetchFromPhpApi(`api/payments.php?id=${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(payload),
     });
   },
 
