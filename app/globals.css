@@ -1416,8 +1416,292 @@ h2 em {
 .form-row select option { background: #0b1a2d; color: #ffffff; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
+/* =========================================================
+   YOUR MOMENT IS HERE / REGISTRATION SECTION
+   ========================================================= */
+
+.cta-register-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-banner-card {
+  position: relative;
+  background: radial-gradient(circle at 10% 20%, rgba(34, 197, 94, 0.16), transparent 50%),
+              radial-gradient(circle at 90% 80%, rgba(56, 189, 248, 0.12), transparent 45%),
+              rgba(4, 13, 26, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  border-radius: 32px;
+  padding: 56px 48px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 35px rgba(34, 197, 94, 0.15);
+  overflow: hidden;
+}
+
+.cta-banner-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.8), transparent);
+}
+
+.cta-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 52px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* Left Column */
+.cta-content-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.cta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--green-mint);
+  width: fit-content;
+  margin-bottom: 20px;
+}
+
+.cta-title {
+  font-size: clamp(38px, 4.5vw, 56px);
+  line-height: 1.08;
+  margin: 0 0 16px;
+}
+
+.cta-subtitle {
+  font-size: 16px;
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0 0 26px;
+  max-width: 540px;
+}
+
+.cta-perks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 34px;
+}
+
+.cta-perk-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.cta-perk-icon {
+  color: var(--green-mint);
+  flex-shrink: 0;
+}
+
+.cta-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.cta-btn-team {
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.38);
+}
+
+.cta-btn-player {
+  cursor: pointer;
+}
+
+/* Right Column: Deadline Showcase Ticket */
+.cta-deadline-col {
+  display: flex;
+  justify-content: center;
+}
+
+.deadline-glass-card {
+  width: 100%;
+  max-width: 440px;
+  background: rgba(8, 20, 37, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 34px 30px;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.deadline-glass-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(34, 197, 94, 0.45);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 30px rgba(34, 197, 94, 0.18);
+}
+
+.deadline-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.deadline-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: 5px 12px;
+  border-radius: 9999px;
+}
+
+.deadline-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 10px #fbbf24;
+  animation: wa-ring 1.8s ease-out infinite;
+}
+
+.deadline-year-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--green-mint);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: rgba(34, 197, 94, 0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.deadline-counter-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.deadline-number {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: clamp(64px, 7.5vw, 86px);
+  font-weight: 900;
+  line-height: 0.95;
+  color: var(--green-mint);
+  letter-spacing: -2px;
+  text-shadow: 0 0 35px rgba(34, 197, 94, 0.4);
+}
+
+.deadline-unit {
+  display: flex;
+  flex-direction: column;
+}
+
+.deadline-unit-main {
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.deadline-unit-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.deadline-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.deadline-progress-fill {
+  width: 78%;
+  height: 100%;
+  background: linear-gradient(90deg, #15803d, #22c55e, #4ade80);
+  border-radius: 9999px;
+  box-shadow: 0 0 12px var(--green-mint);
+}
+
+.deadline-card-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.deadline-calendar-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.deadline-cal-icon {
+  color: var(--green-mint);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.deadline-notice-text {
+  font-size: 13.5px;
+  color: #cbd5e1;
+  line-height: 1.5;
+  margin: 0;
+  font-weight: 500;
+}
+
+.deadline-slots-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 6px 12px;
+  border-radius: 8px;
+  width: fit-content;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 900px) {
+  .cta-banner-card { padding: 40px 24px; border-radius: 24px; }
+  .cta-grid { grid-template-columns: 1fr; gap: 40px; }
+  .cta-subtitle { max-width: 100%; }
+  .deadline-glass-card { max-width: 100%; }
   .gallery-grid { grid-template-columns: repeat(2, 1fr); }
   .gallery-wide, .gallery-tall { grid-column: span 1; grid-row: span 1; }
   .prizes-grid-3 { grid-template-columns: 1fr; gap: 20px; }

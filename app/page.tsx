@@ -931,29 +931,110 @@ export default function Home() {
       )}
 
       {content.show_register === 'true' && (
-        <section className="section-pad" id="register" style={{ position: 'relative', overflow: 'hidden' }}>
-          <div className="page-width split-layout">
-            <div>
-              <span className="section-label">Your moment is here</span>
-              <h2 className="sport-heading">Season 3 is calling.</h2>
-              <p className="lead" style={{ marginTop: '16px' }}>Join the biggest hard tennis ball cricket league in the region and compete for glory.</p>
-              <div className="hero-actions" style={{ marginTop: '32px' }}>
-                <a className="button button-primary" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20a%20team%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register a team <ArrowRight size={16} /></a>
-                <a className="button button-outline" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register as player <Users size={16} /></a>
+        <section className="section-pad cta-register-section" id="register">
+          <div className="page-width">
+            <div className="cta-banner-card">
+              <div className="cta-grid">
+                {/* Left Column: Call to Action */}
+                <div className="cta-content-col">
+                  <div className="cta-badge">
+                    <Sparkles size={13} />
+                    <span>Your moment is here</span>
+                  </div>
+
+                  <h2 className="sport-heading cta-title">
+                    Season 3 is <em>calling.</em>
+                  </h2>
+
+                  <p className="lead cta-subtitle">
+                    Join the biggest hard tennis ball cricket league in the region and compete for glory.
+                  </p>
+
+                  <div className="cta-perks-list">
+                    <div className="cta-perk-item">
+                      <CheckCircle2 size={16} className="cta-perk-icon" />
+                      <span>Official Franchise Auction & Player Draft</span>
+                    </div>
+                    <div className="cta-perk-item">
+                      <CheckCircle2 size={16} className="cta-perk-icon" />
+                      <span>Custom Squad Kits & Championship Trophies</span>
+                    </div>
+                    <div className="cta-perk-item">
+                      <CheckCircle2 size={16} className="cta-perk-icon" />
+                      <span>Ball-by-Ball Live Scoring on CricHeroes</span>
+                    </div>
+                  </div>
+
+                  <div className="cta-actions-row">
+                    <a
+                      className="button button-primary cta-btn-team"
+                      href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20a%20team%20for%20KPL%20Season%203."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span>Register a Team</span>
+                      <ArrowRight size={16} />
+                    </a>
+                    <button
+                      type="button"
+                      className="button button-outline cta-btn-player"
+                      onClick={() => setModal('player')}
+                    >
+                      <Users size={16} />
+                      <span>Register as Player</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right Column: Deadline Showcase */}
+                <div className="cta-deadline-col">
+                  <div className="deadline-glass-card">
+                    <div className="deadline-card-top">
+                      <span className="deadline-status-pill">
+                        <span className="deadline-pulse-dot" />
+                        <span>Registration Deadline</span>
+                      </span>
+                      <span className="deadline-year-badge">KPL Season 3</span>
+                    </div>
+
+                    <div className="deadline-counter-wrap">
+                      {(() => {
+                        const target = content.deadline_date ? new Date(content.deadline_date) : null;
+                        const diff = target ? Math.max(0, target.getTime() - Date.now()) : null;
+                        const days = diff !== null ? Math.floor(diff / 86400000) : (content.deadline_days ? parseInt(content.deadline_days) : null);
+                        return (
+                          <>
+                            <div className="deadline-number">
+                              {days !== null ? days : '12'}
+                            </div>
+                            <div className="deadline-unit">
+                              <span className="deadline-unit-main">Days Left</span>
+                              <span className="deadline-unit-sub">Before slots lock</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="deadline-progress-bar">
+                      <div className="deadline-progress-fill" />
+                    </div>
+
+                    <div className="deadline-card-footer">
+                      <div className="deadline-calendar-row">
+                        <CalendarDays size={18} className="deadline-cal-icon" />
+                        <p className="deadline-notice-text">
+                          {content.deadline_text || 'Secure your franchise or player spot before the registration closes.'}
+                        </p>
+                      </div>
+                      <div className="deadline-slots-tag">
+                        <Shield size={13} />
+                        <span>Limited Franchise & Player Slots</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="register-deadline" style={{ borderLeft: '2px solid var(--green)', paddingLeft: '40px' }}>
-              <span className="section-label">Registration Deadline</span>
-              <strong className="sport-heading" style={{ fontSize: 'clamp(56px, 9vw, 88px)', color: 'var(--green-mint)', letterSpacing: '-0.05em', lineHeight: 1 }}>
-                {(() => {
-                  const target = content.deadline_date ? new Date(content.deadline_date) : null;
-                  if (!target) return '—';
-                  const diff = Math.max(0, target.getTime() - Date.now());
-                  const days = Math.floor(diff / 86400000);
-                  return <>{days} <span style={{ fontSize: 'clamp(18px, 4vw, 24px)', color: '#ffffff', fontStyle: 'normal', fontFamily: 'Inter', letterSpacing: 'normal', marginLeft: '8px' }}>Days left</span></>;
-                })()}
-              </strong>
-              <p className="lead" style={{ marginTop: '16px' }}>{content.deadline_text || 'Secure your spot before the registration closes.'}</p>
             </div>
           </div>
         </section>
