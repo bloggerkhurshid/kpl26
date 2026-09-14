@@ -13,7 +13,29 @@ class Player {
         return Database::getConnection();
     }
 
+    public static function ensureSchema(): void {
+        static $ensured = false;
+        if ($ensured) return;
+        $ensured = true;
+        try {
+            $db = self::getDb();
+            // Add sold_price if missing
+            $cols = $db->query("SHOW COLUMNS FROM players LIKE 'sold_price'")->fetchAll();
+            if (empty($cols)) {
+                $db->exec("ALTER TABLE players ADD COLUMN sold_price DECIMAL(10,2) DEFAULT NULL");
+            }
+            // Add notes if missing
+            $cols2 = $db->query("SHOW COLUMNS FROM players LIKE 'notes'")->fetchAll();
+            if (empty($cols2)) {
+                $db->exec("ALTER TABLE players ADD COLUMN notes TEXT DEFAULT NULL");
+            }
+        } catch (\Throwable $t) {
+            // Ignore — column may already exist or ALTER may be restricted
+        }
+    }
+
     public static function findById(string $id): ?array {
+        self::ensureSchema();
         $stmt = self::getDb()->prepare("
             SELECT p.*, t.name as team_name, t.short_code as team_short_code, t.accent_color as team_accent_color
             FROM players p
@@ -33,6 +55,7 @@ class Player {
     }
 
     public static function all(array $filters = [], int $limit = 500): array {
+        self::ensureSchema();
         $sql = "
             SELECT p.*, 
                    t.name as team_name, 
