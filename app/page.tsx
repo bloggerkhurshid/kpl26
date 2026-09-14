@@ -603,82 +603,83 @@ export default function Home() {
               />
             );
           })}
-          <div className="hero-content page-width">
-            {/* Live Status Ribbon */}
-            <div className="hero-badge-row">
-              <div className="hero-live-pill">
-                <span className="hero-live-dot" />
-                <span>Season 3 · 2026 Registration Open</span>
+          <div className="page-width hero-wrapper">
+            <div className="hero-content">
+              {/* Live Status Ribbon */}
+              <div className="hero-badge-row">
+                <div className="hero-live-pill">
+                  <span className="hero-live-dot" />
+                  <span>Season 3 · 2026 Registration Open</span>
+                </div>
+                <div className="hero-venue-pill">
+                  <MapPin size={13} className="text-emerald-400" />
+                  <span>Khoraghat High School Ground, Assam</span>
+                </div>
               </div>
-              <div className="hero-venue-pill">
-                <MapPin size={13} className="text-emerald-400" />
-                <span>Khoraghat High School Ground, Assam</span>
-              </div>
-            </div>
 
-            {/* Headline Title */}
-            <h1
-              className="sport-heading"
-              dangerouslySetInnerHTML={{
-                __html: content.hero_title || 'ASSAM’S PREMIER <em>HARD TENNIS</em> CRICKET CHAMPIONSHIP'
-              }}
-            />
+              {/* Headline Title */}
+              <h1
+                className="sport-heading hero-title"
+                dangerouslySetInnerHTML={{
+                  __html: content.hero_title || 'ASSAM’S PREMIER <em>HARD TENNIS</em> CRICKET CHAMPIONSHIP'
+                }}
+              />
 
-            {/* Subtitle */}
-            <p className="lead">
-              {content.hero_subtitle || 'Eight elite franchises. High-voltage auction draft. Massive cash prizes & trophies live under floodlights from Khoraghat, Bilasipara, Dhubri, Assam.'}
-            </p>
+              {/* Subtitle */}
+              <p className="lead hero-lead">
+                {content.hero_subtitle || 'Eight elite franchises. High-voltage auction draft. Massive cash prizes & trophies live under floodlights from Khoraghat, Bilasipara, Dhubri, Assam.'}
+              </p>
 
-            {/* Tournament Highlights Ribbon */}
-            <div className="hero-highlights-strip">
-              <div className="hero-highlight-card">
-                <span className="highlight-label">1st Champions</span>
-                <strong className="highlight-value text-emerald-400">₹1,00,000 + 🏆</strong>
+              {/* Tournament Highlights Ribbon */}
+              <div className="hero-highlights-strip">
+                <div className="hero-highlight-card">
+                  <span className="highlight-label">1st Champions</span>
+                  <strong className="highlight-value text-emerald-400">₹1,00,000 + 🏆</strong>
+                </div>
+                <div className="hero-highlight-card">
+                  <span className="highlight-label">Runners-Up</span>
+                  <strong className="highlight-value text-amber-300">₹50,000 + 🥈</strong>
+                </div>
+                <div className="hero-highlight-card">
+                  <span className="highlight-label">Franchises</span>
+                  <strong className="highlight-value text-sky-400">8 Squads</strong>
+                </div>
+                <div className="hero-highlight-card">
+                  <span className="highlight-label">Tournament Ball</span>
+                  <strong className="highlight-value text-green-300">Hard Tennis</strong>
+                </div>
               </div>
-              <div className="hero-highlight-card">
-                <span className="highlight-label">Runners-Up</span>
-                <strong className="highlight-value text-amber-300">₹50,000 + 🥈</strong>
-              </div>
-              <div className="hero-highlight-card">
-                <span className="highlight-label">Franchises</span>
-                <strong className="highlight-value text-sky-400">8 Squads</strong>
-              </div>
-              <div className="hero-highlight-card">
-                <span className="highlight-label">Tournament Ball</span>
-                <strong className="highlight-value text-green-300">Hard Tennis</strong>
-              </div>
-            </div>
 
-            {/* Scoreboard Countdown Timer */}
-            <div className="hero-timer-box">
-              <div className="hero-timer-header">
-                <Clock3 size={15} />
-                <span>{content.deadline_text || 'Registration Window Closes In'}</span>
+              {/* Scoreboard Countdown Timer */}
+              <div className="hero-timer-box">
+                <div className="hero-timer-header">
+                  <Clock3 size={15} />
+                  <span>{content.deadline_text || 'Registration Window Closes In'}</span>
+                </div>
+                <CountdownTimer deadlineDate={content.deadline_date || '2026-09-20'} />
               </div>
-              <CountdownTimer deadlineDate={content.deadline_date || '2026-09-20'} />
-            </div>
 
-            {/* Action Buttons */}
-            <div className="hero-actions">
-              <button
-                className="button button-primary"
-                onClick={() => setModal('player')}
-              >
-                <span>Register Player <ArrowRight size={18} strokeWidth={3} /></span>
-              </button>
-              <button
-                className="button button-outline"
-                onClick={() => setModal('team')}
-              >
-                <span>Register Franchise <Users size={18} /></span>
-              </button>
-              <button
-                className="text-link"
-                onClick={(e) => scrollTo('prizes', e)}
-                style={{ marginLeft: '4px' }}
-              >
-                Explore Prizes <Trophy size={16} />
-              </button>
+              {/* Action Buttons */}
+              <div className="hero-actions">
+                <button
+                  className="button button-primary"
+                  onClick={() => setModal('player')}
+                >
+                  <span>Register Player <ArrowRight size={18} strokeWidth={3} /></span>
+                </button>
+                <button
+                  className="button button-outline"
+                  onClick={() => setModal('team')}
+                >
+                  <span>Register Franchise <Users size={18} /></span>
+                </button>
+                <button
+                  className="text-link hero-prizes-link"
+                  onClick={(e) => scrollTo('prizes', e)}
+                >
+                  Explore Prizes <Trophy size={16} />
+                </button>
+              </div>
             </div>
           </div>
         </section>
