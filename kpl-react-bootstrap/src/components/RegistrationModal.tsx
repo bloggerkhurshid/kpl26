@@ -49,6 +49,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   const [battingHand, setBattingHand] = useState('Right-hand Bat');
   const [bowlingStyle, setBowlingStyle] = useState('Right-arm Medium');
   const [photoBase64, setPhotoBase64] = useState<string>('');
+  const [declarationAccepted, setDeclarationAccepted] = useState(false);
 
   // Team state
   const [teamName, setTeamName] = useState('');
@@ -116,6 +117,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
           player_category: category,
           batting_hand: battingHand,
           bowling_type: bowlingStyle,
+          declaration_accepted: declarationAccepted ? 1 : 0,
           status: 'pending',
           base_price: 500,
         };
@@ -451,6 +453,25 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                             style={{ width: '48px', height: '48px', objectFit: 'cover' }}
                           />
                         )}
+                      </div>
+                    </div>
+
+                    <div className="col-12">
+                      <div className="p-3 rounded-3 border bg-light">
+                        <div className="form-check">
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            id="bootstrapPlayerDeclaration"
+                            required
+                            checked={declarationAccepted}
+                            onChange={(e) => setDeclarationAccepted(e.target.checked)}
+                          />
+                          <label className="form-check-label small text-dark" htmlFor="bootstrapPlayerDeclaration">
+                            <strong>Player Declaration &amp; Undertaking *</strong><br />
+                            I declare that all information provided is true and correct. I agree to abide by the rules and code of conduct of Khoraghat Premier League (KPL) Season 3.
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </div>

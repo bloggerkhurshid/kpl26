@@ -186,6 +186,7 @@ export default function Home() {
     bowler: false,
     bowling_arm: '',
     bowling_style: '',
+    declaration_accepted: false,
   });
 
   const [registeredId, setRegisteredId] = useState('');
@@ -407,6 +408,7 @@ export default function Home() {
         bowler: playerForm.bowler ? 1 : 0,
         bowling_type: playerForm.bowler ? `${playerForm.bowling_arm} ${playerForm.bowling_style}`.trim() : null,
         registered_by: 'Self Registration',
+        declaration_accepted: playerForm.declaration_accepted ? 1 : 0,
         status: 'pending',
         approval: 'pending',
         auction_eligible: 0,
@@ -1258,6 +1260,34 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {/* Player Declaration */}
+                  <div
+                    style={{
+                      margin: '16px 0 6px',
+                      padding: '14px 16px',
+                      borderRadius: '12px',
+                      border: `1px solid ${playerForm.declaration_accepted ? 'rgba(34, 197, 94, 0.5)' : 'rgba(255, 255, 255, 0.12)'}`,
+                      background: playerForm.declaration_accepted ? 'rgba(34, 197, 94, 0.08)' : 'rgba(4, 13, 26, 0.6)',
+                      transition: 'all 0.25s ease',
+                    }}
+                  >
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', margin: 0 }}>
+                      <input
+                        type="checkbox"
+                        required
+                        checked={playerForm.declaration_accepted}
+                        onChange={(e) => setPlayerForm({ ...playerForm, declaration_accepted: e.target.checked })}
+                        style={{ marginTop: '3px', width: '18px', height: '18px', accentColor: 'var(--green-mint)', flexShrink: 0, cursor: 'pointer' }}
+                      />
+                      <span style={{ fontSize: '12.5px', lineHeight: 1.55, color: '#cbd5e1' }}>
+                        <strong style={{ display: 'block', color: '#ffffff', marginBottom: '3px', fontSize: '13px' }}>
+                          Player Declaration &amp; Undertaking *
+                        </strong>
+                        I hereby declare that all the information provided above is true and correct to the best of my knowledge. I agree to abide by the rules, code of conduct, and regulations of Khoraghat Premier League (KPL) Season 3.
+                      </span>
+                    </label>
+                  </div>
+
                   <button className="button button-primary" type="submit" disabled={status === 'submitting'} style={{ marginTop: '16px', width: '100%' }}>
                     {status === 'submitting' ? <><Loader2 size={16} className="spin" /> Processing...</> : <>Pay ₹{playerForm.player_category === 'Foreign' ? fees.fee_foreign_player : fees.fee_player} & Register <ArrowRight size={16} /></>}
                   </button>
@@ -1289,7 +1319,7 @@ export default function Home() {
           if (upiModalData.type === 'team') {
             setTeamForm({ team_name: '', owner_name: '', captain_name: '', contact_number: '', email: '', home_location: '', message: '' });
           } else {
-            setPlayerForm({ player_name: '', father_name: '', age_input: '', contact_number: '', present_address: '', address_proof: '', photo: '', batsman: false, batting_hand: '', wicket_keeper: false, previously_played: false, player_category: 'local', bowler: false, bowling_arm: '', bowling_style: '' });
+            setPlayerForm({ player_name: '', father_name: '', age_input: '', contact_number: '', present_address: '', address_proof: '', photo: '', batsman: false, batting_hand: '', wicket_keeper: false, previously_played: false, player_category: 'local', bowler: false, bowling_arm: '', bowling_style: '', declaration_accepted: false });
           }
         }}
       />
