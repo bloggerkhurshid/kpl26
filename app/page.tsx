@@ -679,45 +679,85 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="prizes-grid-3">
-              {/* Champions */}
-              <div className="prize-card-v2 featured">
-                <div className="prize-v2-icon" style={{ background: 'rgba(34, 197, 94, 0.12)', color: 'var(--green-mint)' }}>
-                  <Trophy size={32} />
-                </div>
-                <span className="prize-v2-badge" style={{ background: 'rgba(250, 204, 21, 0.15)', color: '#facc15' }}>
-                  Champions
+            <div className="prizes-podium-grid">
+              {/* Runners Up (Silver - 2nd Place, Left on Desktop) */}
+              <div className="podium-card podium-card-runner">
+                <span className="podium-badge podium-badge-silver">
+                  <Medal size={13} /> 2nd Place · Finalist
                 </span>
-                <h3 className="prize-v2-title">Champions</h3>
-                <div className="prize-v2-amount" style={{ color: 'var(--green-mint)' }}>₹27,000</div>
-                <p className="prize-v2-sub">Grand Trophy + Winner Medals</p>
+                <div className="podium-icon-wrap podium-icon-runner">
+                  <Award size={34} />
+                </div>
+                <h3 className="podium-title">Runners Up</h3>
+                <div className="podium-amount podium-amount-medium">₹17,000</div>
+                <div className="podium-reward">Runner-Up Trophy + Medals</div>
+                <ul className="podium-checklist">
+                  <li className="podium-check-item">
+                    <span className="podium-check-icon podium-check-silver"><Check size={11} strokeWidth={3} /></span>
+                    <span>Official KPL Runner-Up Silver Trophy</span>
+                  </li>
+                  <li className="podium-check-item">
+                    <span className="podium-check-icon podium-check-silver"><Check size={11} strokeWidth={3} /></span>
+                    <span>16x Squad Finalist Medals</span>
+                  </li>
+                </ul>
               </div>
 
-              {/* Runners Up */}
-              <div className="prize-card-v2">
-                <div className="prize-v2-icon" style={{ background: 'rgba(148, 163, 184, 0.12)', color: '#cbd5e1' }}>
-                  <Award size={32} />
-                </div>
-                <span className="prize-v2-badge" style={{ background: 'rgba(226, 232, 240, 0.1)', color: '#cbd5e1' }}>
-                  Runners Up
+              {/* Champions (Gold/Emerald Spotlight - Center on Desktop, Top on Mobile) */}
+              <div className="podium-card podium-card-champion">
+                <span className="podium-badge podium-badge-gold">
+                  <Crown size={13} /> 1st Place · Grand Champions
                 </span>
-                <h3 className="prize-v2-title">Runners Up</h3>
-                <div className="prize-v2-amount" style={{ color: '#ffffff' }}>₹17,000</div>
-                <p className="prize-v2-sub">Runner-Up Trophy + Medals</p>
+                <div className="podium-icon-wrap podium-icon-champion">
+                  <Trophy size={36} />
+                </div>
+                <h3 className="podium-title" style={{ color: 'var(--green-mint)' }}>Champions</h3>
+                <div className="podium-amount podium-amount-large">₹27,000</div>
+                <div className="podium-reward" style={{ color: '#ffffff' }}>Grand Trophy + Winner Medals</div>
+                <ul className="podium-checklist">
+                  <li className="podium-check-item">
+                    <span className="podium-check-icon"><Check size={11} strokeWidth={3} /></span>
+                    <span>Grand KPL Championship Cup</span>
+                  </li>
+                  <li className="podium-check-item">
+                    <span className="podium-check-icon"><Check size={11} strokeWidth={3} /></span>
+                    <span>16x Squad Winner Medals</span>
+                  </li>
+                </ul>
               </div>
 
-              {/* Player of Series */}
-              <div className="prize-card-v2">
-                <div className="prize-v2-icon" style={{ background: 'rgba(250, 204, 21, 0.12)', color: '#facc15' }}>
-                  <Star size={32} />
-                </div>
-                <span className="prize-v2-badge" style={{ background: 'rgba(250, 204, 21, 0.12)', color: '#facc15' }}>
-                  Special Award
+              {/* Player of Series (MVP - Right on Desktop) */}
+              <div className="podium-card podium-card-mvp">
+                <span className="podium-badge podium-badge-mvp">
+                  <Star size={13} /> Tournament MVP
                 </span>
-                <h3 className="prize-v2-title">Player of Series</h3>
-                <div className="prize-v2-amount" style={{ color: '#ffffff' }}>₹500</div>
-                <p className="prize-v2-sub">MOM Trophy & Cap Awards</p>
+                <div className="podium-icon-wrap podium-icon-mvp">
+                  <Star size={34} />
+                </div>
+                <h3 className="podium-title">Player of Series</h3>
+                <div className="podium-amount podium-amount-gold">₹500</div>
+                <div className="podium-reward">MOM Trophy & Cap Awards</div>
+                <ul className="podium-checklist">
+                  <li className="podium-check-item">
+                    <span className="podium-check-icon podium-check-gold"><Check size={11} strokeWidth={3} /></span>
+                    <span>Player of the Series Trophy</span>
+                  </li>
+                  <li className="podium-check-item">
+                    <span className="podium-check-icon podium-check-gold"><Check size={11} strokeWidth={3} /></span>
+                    <span>Official Cap & Match Awards</span>
+                  </li>
+                </ul>
               </div>
+            </div>
+
+            {/* Bottom Summary Strip */}
+            <div className="podium-summary-strip">
+              <span className="podium-summary-dot" />
+              <span>Total Cash Purse: ₹44,500</span>
+              <span className="podium-summary-dot" />
+              <span>3 Official Championship Trophies</span>
+              <span className="podium-summary-dot" />
+              <span>32 Finalist Medals</span>
             </div>
           </div>
         </section>

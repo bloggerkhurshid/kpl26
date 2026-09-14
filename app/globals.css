@@ -786,102 +786,289 @@ h2 em {
 .split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
 
 /* =========================================================
-   ULTIMATE GLORY / PRIZE POOL SECTION (Clean 3-Card Grid)
+   ULTIMATE GLORY / PRIZE POOL SECTION (World-Class Podium)
    ========================================================= */
+
+.prizes-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.prizes-section::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 650px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
 
 .section-header-center {
   text-align: center;
   max-width: 680px;
-  margin: 0 auto 48px;
+  margin: 0 auto 52px;
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.prizes-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  align-items: stretch;
-}
-
-.prize-card-v2 {
   position: relative;
-  background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 34px 28px;
+  z-index: 1;
+}
+
+.prizes-podium-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.08fr 1fr;
+  gap: 24px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.podium-card {
+  position: relative;
+  background: rgba(4, 13, 26, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 36px 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
   overflow: hidden;
 }
 
-.prize-card-v2:hover {
-  transform: translateY(-5px);
-  border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+.podium-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
 }
 
-.prize-card-v2.featured {
-  border: 1.5px solid rgba(34, 197, 94, 0.45);
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.08) 0%, rgba(4, 13, 26, 0.88) 100%);
-  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.55), 0 0 30px rgba(34, 197, 94, 0.18);
+/* Champions Spotlight (Center Card) */
+.podium-card-champion {
+  border: 1.5px solid rgba(34, 197, 94, 0.55);
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.14) 0%, rgba(4, 13, 26, 0.94) 100%);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 35px rgba(34, 197, 94, 0.22);
+  padding: 44px 32px;
+  transform: translateY(-12px);
 }
 
-.prize-card-v2.featured:hover {
-  border-color: var(--green);
-  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.65), 0 0 40px rgba(34, 197, 94, 0.32);
+.podium-card-champion:hover {
+  transform: translateY(-16px);
+  border-color: var(--green-mint);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.75), 0 0 45px rgba(34, 197, 94, 0.38);
 }
 
-.prize-v2-icon {
-  width: 58px;
-  height: 58px;
-  border-radius: 16px;
-  display: flex;
+/* Runners Up Card (Left) */
+.podium-card-runner {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.07) 0%, rgba(4, 13, 26, 0.88) 100%);
+}
+
+.podium-card-runner:hover {
+  border-color: rgba(226, 232, 240, 0.45);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6), 0 0 25px rgba(148, 163, 184, 0.18);
+}
+
+/* Player of Series Card (Right) */
+.podium-card-mvp {
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  background: linear-gradient(180deg, rgba(250, 204, 21, 0.07) 0%, rgba(4, 13, 26, 0.88) 100%);
+}
+
+.podium-card-mvp:hover {
+  border-color: rgba(250, 204, 21, 0.5);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6), 0 0 25px rgba(250, 204, 21, 0.2);
+}
+
+/* Podium Header Badges */
+.podium-badge {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 18px;
-}
-
-.prize-v2-badge {
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: 9999px;
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  padding: 5px 12px;
-  border-radius: 9999px;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
-.prize-v2-title {
-  font-size: 22px;
+.podium-badge-gold {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.35);
+}
+
+.podium-badge-silver {
+  background: rgba(226, 232, 240, 0.12);
+  color: #e2e8f0;
+  border: 1px solid rgba(226, 232, 240, 0.28);
+}
+
+.podium-badge-mvp {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.35);
+}
+
+/* Glowing Icon Auras */
+.podium-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.podium-icon-champion {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1.5px solid rgba(34, 197, 94, 0.4);
+  color: var(--green-mint);
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.3);
+}
+
+.podium-icon-runner {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1.5px solid rgba(148, 163, 184, 0.3);
+  color: #e2e8f0;
+  box-shadow: 0 0 20px rgba(148, 163, 184, 0.18);
+}
+
+.podium-icon-mvp {
+  background: rgba(250, 204, 21, 0.12);
+  border: 1.5px solid rgba(250, 204, 21, 0.35);
+  color: #facc15;
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.22);
+}
+
+.podium-title {
+  font-size: 20px;
   font-weight: 800;
   color: #ffffff;
   margin: 0;
   letter-spacing: -0.3px;
 }
 
-.prize-v2-amount {
-  font-size: clamp(38px, 4vw, 48px);
+.podium-amount {
   font-weight: 900;
-  line-height: 1.1;
+  line-height: 1.05;
+  letter-spacing: -0.8px;
   margin: 12px 0 10px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  letter-spacing: -0.5px;
 }
 
-.prize-v2-sub {
+.podium-amount-large {
+  font-size: clamp(42px, 4.5vw, 54px);
+  color: var(--green-mint);
+  text-shadow: 0 0 30px rgba(34, 197, 94, 0.45);
+}
+
+.podium-amount-medium {
+  font-size: clamp(34px, 3.8vw, 44px);
+  color: #ffffff;
+}
+
+.podium-amount-gold {
+  font-size: clamp(34px, 3.8vw, 44px);
+  color: #facc15;
+  text-shadow: 0 0 20px rgba(250, 204, 21, 0.3);
+}
+
+.podium-reward {
   font-size: 13.5px;
+  font-weight: 700;
+  color: #cbd5e1;
+  margin: 0 0 18px;
+}
+
+/* Inclusion Items Checklist */
+.podium-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 18px;
+  text-align: left;
+}
+
+.podium-check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
   color: #94a3b8;
-  font-weight: 600;
-  margin: 0;
-  line-height: 1.5;
+  line-height: 1.4;
+}
+
+.podium-check-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--green-mint);
+  flex-shrink: 0;
+}
+
+.podium-check-silver {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+}
+
+.podium-check-gold {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+}
+
+/* Bottom Podium Summary Pill */
+.podium-summary-strip {
+  margin-top: 36px;
+  background: rgba(4, 13, 26, 0.65);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.podium-summary-strip span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #cbd5e1;
+  letter-spacing: 0.3px;
+}
+
+.podium-summary-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green-mint);
+  box-shadow: 0 0 8px var(--green-mint);
 }
 
 /* =========================================================
@@ -1234,6 +1421,12 @@ h2 em {
   .gallery-grid { grid-template-columns: repeat(2, 1fr); }
   .gallery-wide, .gallery-tall { grid-column: span 1; grid-row: span 1; }
   .prizes-grid-3 { grid-template-columns: 1fr; gap: 20px; }
+  .prizes-podium-grid { grid-template-columns: 1fr; gap: 20px; }
+  .podium-card-champion { transform: none; order: -1; }
+  .podium-card-champion:hover { transform: translateY(-4px); }
+  .podium-card-runner { order: 2; }
+  .podium-card-mvp { order: 3; }
+  .podium-summary-strip { flex-wrap: wrap; border-radius: 18px; padding: 12px 18px; gap: 10px; }
   .league-cards-grid { grid-template-columns: 1fr; gap: 14px; }
 }
 
