@@ -665,19 +665,22 @@ export default function Home() {
                   className="button button-primary"
                   onClick={() => setModal('player')}
                 >
-                  <span>Register Player <ArrowRight size={18} strokeWidth={3} /></span>
+                  <span>Register Player</span>
+                  <ArrowRight size={17} strokeWidth={2.8} />
                 </button>
                 <button
                   className="button button-outline"
                   onClick={() => setModal('team')}
                 >
-                  <span>Register Franchise <Users size={18} /></span>
+                  <Users size={17} />
+                  <span>Register Franchise</span>
                 </button>
                 <button
-                  className="text-link hero-prizes-link"
+                  className="hero-prizes-link"
                   onClick={(e) => scrollTo('prizes', e)}
                 >
-                  Explore Prizes <Trophy size={16} />
+                  <Trophy size={16} />
+                  <span>Explore Prizes</span>
                 </button>
               </div>
             </div>
