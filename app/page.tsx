@@ -283,8 +283,48 @@ export default function Home() {
   const handlePlayerFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Use FileReader and Canvas to compress image to max 800px width/height and JPEG 0.7 quality (< 150KB)
     const reader = new FileReader();
-    reader.onload = (event) => setPlayerForm(prev => ({ ...prev, [field]: event.target?.result as string }));
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (!dataUrl) return;
+
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.72);
+          setPlayerForm(prev => ({ ...prev, [field]: compressed }));
+        } else {
+          setPlayerForm(prev => ({ ...prev, [field]: dataUrl }));
+        }
+      };
+      img.onerror = () => {
+        setPlayerForm(prev => ({ ...prev, [field]: dataUrl }));
+      };
+      img.src = dataUrl;
+    };
     reader.readAsDataURL(file);
   };
 

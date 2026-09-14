@@ -17,6 +17,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Razorpay credentials not configured. Please add them in Admin → Settings.' }, { status: 500 });
     }
 
+    if (keyId.includes('XXXXX') || keySecret.includes('XXXXX')) {
+      return NextResponse.json({ 
+        error: 'Razorpay keys are not configured. Please use UPI Direct payment or configure active Razorpay keys in Admin Settings.' 
+      }, { status: 400 });
+    }
+
     const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
 
     const order = await razorpay.orders.create({
@@ -32,8 +38,9 @@ export async function POST(req: NextRequest) {
       currency: order.currency,
       keyId, // Pass keyId to frontend
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Razorpay create-order error:', err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    const msg = err?.error?.description || err?.message || 'Failed to initiate Razorpay order';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

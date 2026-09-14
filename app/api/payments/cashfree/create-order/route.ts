@@ -17,6 +17,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cashfree credentials not configured. Please add them in Admin → Settings.' }, { status: 500 });
     }
 
+    if (appId.includes('XXXXX') || secretKey.includes('XXXXX')) {
+      return NextResponse.json({ 
+        error: 'Cashfree keys are not configured. Please use UPI Direct payment or configure active Cashfree keys in Admin Settings.' 
+      }, { status: 400 });
+    }
+
     const isProd = isProductionMode(settings);
     const baseUrl = isProd
       ? 'https://api.cashfree.com/pg/orders'
@@ -61,8 +67,8 @@ export async function POST(req: NextRequest) {
       orderStatus: data.order_status,
       mode: isProd ? 'production' : 'sandbox',
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Cashfree create-order error:', err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: err?.message || 'Cashfree server error' }, { status: 500 });
   }
 }
