@@ -412,6 +412,70 @@ export default function PlayersPage() {
       render: p => p.base_price > 0 ? `₹${Number(p.base_price).toLocaleString('en-IN')}` : '—',
     },
     {
+      key: 'payment', label: 'Payment Proof',
+      render: p => {
+        const pay = getPlayerPayment(p);
+        const screenshot = pay?.screenshot || pay?.payment_proof || pay?.proof_url;
+        if (screenshot) {
+          return (
+            <button
+              type="button"
+              onClick={() => openPaymentProof(p)}
+              className="admin-btn"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 8px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                color: '#10b981',
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+              }}
+              title="Click to view payment screenshot image"
+            >
+              <img
+                src={getImageUrl(screenshot)}
+                alt="Receipt"
+                style={{ width: 20, height: 20, borderRadius: 4, objectFit: 'cover' }}
+              />
+              <span>View Proof ↗</span>
+            </button>
+          );
+        }
+        if (pay) {
+          return (
+            <button
+              type="button"
+              onClick={() => openPaymentProof(p)}
+              className="admin-btn"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '4px 8px',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#eab308',
+                background: 'rgba(234, 179, 8, 0.08)',
+                border: '1px solid rgba(234, 179, 8, 0.25)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+              }}
+              title="Click to view recorded payment details"
+            >
+              <CreditCard size={12} />
+              <span>UTR Details</span>
+            </button>
+          );
+        }
+        return <span style={{ color: '#64748b', fontSize: '11px' }}>—</span>;
+      },
+    },
+    {
       key: 'status', label: 'Status & Approval', sortable: true,
       render: p => {
         const isPending = p.status === 'pending' || p.approval === 'pending';
@@ -992,12 +1056,17 @@ export default function PlayersPage() {
                         }
                         if (pay) {
                           return (
-                            <div className="player-detail-doc-thumb" style={{ background: 'rgba(16, 185, 129, 0.05)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                            <div
+                              className="player-detail-doc-thumb"
+                              onClick={() => openPaymentProof(selected)}
+                              style={{ background: 'rgba(16, 185, 129, 0.05)', borderColor: 'rgba(16, 185, 129, 0.3)', cursor: 'pointer' }}
+                              title="Click to view payment UTR details"
+                            >
                               <div style={{ width: '100%', height: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                                 <CreditCard size={26} color="#10b981" />
                                 <span style={{ fontSize: '10px', color: '#10b981', fontWeight: 700 }}>₹{pay.amount || 'Paid'}</span>
                               </div>
-                              <span style={{ fontSize: '10px' }}>UTR: {pay.payment_id?.slice(-8) || 'Paid'}</span>
+                              <span style={{ fontSize: '10px', color: '#10b981' }}>UTR: {pay.payment_id?.slice(-8) || 'Paid'} ↗</span>
                             </div>
                           );
                         }
