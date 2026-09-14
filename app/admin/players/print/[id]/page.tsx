@@ -24,13 +24,17 @@ export default function PrintPlayerReceipt({ params }: { params: Promise<{ id: s
             return;
           }
         } catch (_) {
-          // If show() returns 500/404, fall through to scan
+          // show() endpoint unavailable, fall through to scan
         }
-        // Fallback: scan all players
-        const data2 = await fetchFromPhpApi(`api/players.php?limit=2000`);
-        const list = data2?.data || data2 || [];
-        const found2 = list.find((p: any) => String(p.id) === String(playerId));
-        if (found2) setPlayer(found2);
+        // Fallback: scan all players list
+        try {
+          const data2 = await fetchFromPhpApi(`api/players.php?limit=2000`);
+          const list = Array.isArray(data2) ? data2 : (data2?.data || []);
+          const found2 = list.find((p: any) => String(p.id) === String(playerId));
+          if (found2) setPlayer(found2);
+        } catch (_) {
+          // Both attempts failed
+        }
       } catch (err) {
         console.error('Failed to load player print data:', err);
       } finally {
