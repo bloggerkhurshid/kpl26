@@ -20,6 +20,7 @@ import {
   Play,
   Radio,
   Shield,
+  ShieldCheck,
   Sparkles,
   Star,
   Trophy,
@@ -27,6 +28,9 @@ import {
   Clock,
   X,
   Zap,
+  Target,
+  Activity,
+  Swords,
 } from 'lucide-react';
 import { kplApi, getImageUrl } from '@/lib/api';
 import { ManagementSection } from '@/components/ManagementSection';
@@ -673,33 +677,92 @@ export default function Home() {
 
       {content.show_about === 'true' && (
         <section className="section-pad league-section" id="league">
-          <div className="page-width split-layout" style={{ alignItems: 'flex-start' }}>
-            <div>
-              <span className="section-label">The League</span>
-              <h2 className="sport-heading">{content.about_title || 'Assam’s Premier Cricket League'}</h2>
-              <p className="lead" style={{ marginTop: '20px', whiteSpace: 'pre-wrap' }}>{content.about_text}</p>
-              {content.show_format === 'true' && (
-                <button className="text-link" onClick={(e) => scrollTo('format', e)} style={{ marginTop: '28px' }}>
-                  Discover the format <ArrowRight size={16} strokeWidth={3} />
-                </button>
-              )}
-            </div>
-
-            <div className="league-cards-grid">
-              <div className="league-card-v2">
-                <div className="league-card-v2-icon" style={{ background: 'rgba(250, 204, 21, 0.12)', color: '#facc15' }}>
-                  <Radio size={22} />
+          <div className="page-width">
+            <div className="league-redesign-container">
+              {/* Top Section Header */}
+              <div className="league-redesign-header">
+                <div className="league-badge-pill">
+                  <Flame size={14} className="league-flame-icon" />
+                  <span>KPL 2026 Season Official</span>
                 </div>
-                <h4>Live Score</h4>
-                <p>Live score on CricHeroes with ball-by-ball match updates.</p>
+                <h2 className="league-display-title">
+                  {content.about_title || 'Assam’s Premier Cricket League'}
+                </h2>
+                <p className="league-display-subtitle">
+                  {content.about_text || 'KPL is more than a tournament. It is where the region’s fearless players find their stage, where rivalries become traditions, and every over writes a new story.'}
+                </p>
               </div>
 
-              <div className="league-card-v2">
-                <div className="league-card-v2-icon" style={{ background: 'rgba(168, 85, 247, 0.12)', color: '#c084fc' }}>
-                  <Trophy size={22} />
+              {/* Central Grid with Main Narrative Card & Dynamic Feature Highlights */}
+              <div className="league-redesign-grid">
+                {/* Left: High-Impact Mission Showcase Card */}
+                <div className="league-feature-showcase">
+                  <div className="league-showcase-glow" />
+                  <div className="league-showcase-content">
+                    <span className="league-tag">The Championship Spirit</span>
+                    <h3 className="league-showcase-heading">Built For Real Champions.</h3>
+                    <p className="league-showcase-desc">
+                      Bringing together Khoraghat’s and Assam’s finest cricketing talent under one electrifying stage. High-octane competition, passionate stadium crowds, professional umpiring, and an atmosphere built for legends.
+                    </p>
+
+                    <div className="league-stats-row">
+                      <div className="league-stat-item">
+                        <span className="league-stat-num">100%</span>
+                        <span className="league-stat-label">Fair Play & Rules</span>
+                      </div>
+                      <div className="league-stat-divider" />
+                      <div className="league-stat-item">
+                        <span className="league-stat-num">Live</span>
+                        <span className="league-stat-label">CricHeroes Tracked</span>
+                      </div>
+                      <div className="league-stat-divider" />
+                      <div className="league-stat-item">
+                        <span className="league-stat-num">Grand</span>
+                        <span className="league-stat-label">Podium Awards</span>
+                      </div>
+                    </div>
+
+                    {content.show_format === 'true' && (
+                      <button className="league-cta-btn" onClick={(e) => scrollTo('format', e)}>
+                        <span>Explore Tournament Format</span>
+                        <ArrowRight size={16} strokeWidth={2.5} />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <h4>Grand Finale</h4>
-                <p>Cash rewards, player trophies, and championship glory.</p>
+
+                {/* Right: Key Feature Badges / Pillars */}
+                <div className="league-pillars-column">
+                  <div className="league-pillar-card">
+                    <div className="league-pillar-icon icon-gold">
+                      <Radio size={24} />
+                    </div>
+                    <div className="league-pillar-body">
+                      <h4>Real-time CricHeroes Scoring</h4>
+                      <p>Every ball, boundary, and wicket broadcasted live with detailed bowler & batsman analytics for scouts and fans.</p>
+                    </div>
+                  </div>
+
+                  <div className="league-pillar-card">
+                    <div className="league-pillar-icon icon-purple">
+                      <Trophy size={24} />
+                    </div>
+                    <div className="league-pillar-body">
+                      <h4>Championship Honors</h4>
+                      <p>₹44,500 total cash rewards, winner and runner-up cups, tournament MVP honors, and 32 squad medals.</p>
+                    </div>
+                  </div>
+
+                  <div className="league-pillar-card">
+                    <div className="league-pillar-icon icon-green">
+                      <ShieldCheck size={24} />
+                    </div>
+                    <div className="league-pillar-body">
+                      <h4>Certified Officiating</h4>
+                      <p>Certified umpires and strict tournament bylaws ensuring pure cricket integrity and sportsmanship throughout.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
