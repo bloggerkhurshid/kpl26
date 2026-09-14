@@ -10,19 +10,21 @@ const GATEWAY_KEYS = [
   'fee_player',
   'fee_foreign_player',
   'fee_team',
-  'active_gateway', // 'razorpay' | 'cashfree'
+  'active_gateway', // 'razorpay' | 'cashfree' | 'upi_direct'
+  'upi_id',
+  'upi_payee_name',
 ];
 
 // GET — fetch current gateway settings (secrets are masked)
 export async function GET() {
   try {
     const res = await kplApi.getFeeSettings();
-    const settings: Record<string, string> = res?.data || res || {};
+    const settings: Record<string, any> = res?.data || res || {};
 
     // Mask secret values in response
     const masked: Record<string, string> = {};
     GATEWAY_KEYS.forEach(k => {
-      const val = settings[k] || '';
+      const val = settings[k] !== undefined && settings[k] !== null ? String(settings[k]) : '';
       if (k.includes('secret') || k.includes('key_secret')) {
         masked[k] = val ? `${'•'.repeat(Math.min(val.length - 4, 20))}${val.slice(-4)}` : '';
       } else {
@@ -41,13 +43,20 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { settings } = body as { settings: Record<string, string> };
+    const { settings } = body as { settings?: Record<string, any> };
+
+    if (!settings || typeof settings !== 'object') {
+      return NextResponse.json({ error: 'Invalid settings payload' }, { status: 400 });
+    }
 
     // Only save known gateway keys; skip masked values (•••)
     const payloadToSave: Record<string, string> = {};
     GATEWAY_KEYS.forEach(k => {
-      if (settings[k] !== undefined && !settings[k].includes('•')) {
-        payloadToSave[k] = settings[k];
+      if (settings[k] !== undefined && settings[k] !== null) {
+        const valStr = String(settings[k]).trim();
+        if (!valStr.includes('•')) {
+          payloadToSave[k] = valStr;
+        }
       }
     });
 
