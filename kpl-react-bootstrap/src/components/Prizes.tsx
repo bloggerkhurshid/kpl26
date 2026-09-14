@@ -14,12 +14,12 @@ export const Prizes: React.FC = () => {
         <div className="row g-4 justify-content-center">
           {/* Champions */}
           <div className="col-md-6 col-lg-5">
-            <div className="kpl-card p-4 text-center h-100 position-relative border-success border-2 shadow-sm" style={{ background: 'linear-gradient(180deg, rgba(34, 197, 94, 0.05) 0%, #ffffff 100%)' }}>
-              <span className="badge bg-success text-white mb-3 px-3 py-2 rounded-pill fw-bold">1ST PLACE CHAMPIONS</span>
+            <div className="kpl-card p-4 text-center h-100 position-relative border-warning border-2 shadow-sm">
+              <span className="badge bg-warning text-dark mb-3 px-3 py-2 rounded-pill fw-bold">1ST PLACE CHAMPIONS</span>
               <div className="my-3">
-                <Trophy size={64} className="text-success mb-2" />
+                <Trophy size={64} className="text-warning mb-2" />
                 <h3 className="sport-heading display-5 mb-1 text-dark">₹ 1,00,000</h3>
-                <p className="text-success fw-bold">Grand Cash Prize + Championship Trophy</p>
+                <p className="text-warning fw-bold">Grand Cash Prize + Championship Trophy</p>
               </div>
               <p className="text-muted small">
                 Winner of KPL Season 3 Grand Finale receives the championship trophy, winner medals, and ₹1,00,000 cash prize.

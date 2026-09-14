@@ -786,346 +786,152 @@ h2 em {
 .split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
 
 /* =========================================================
-   ULTIMATE GLORY / PRIZE POOL SECTION
+   ULTIMATE GLORY / PRIZE POOL SECTION (Clean 3-Card Grid)
    ========================================================= */
 
 .section-header-center {
   text-align: center;
   max-width: 680px;
-  margin: 0 auto 52px;
+  margin: 0 auto 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.prizes-podium-grid {
+.prizes-grid-3 {
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  gap: 28px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
   align-items: stretch;
-  margin-bottom: 28px;
 }
 
-.prize-card {
+.prize-card-v2 {
   position: relative;
   background: var(--bg-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 36px 32px;
+  border-radius: 20px;
+  padding: 34px 28px;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+  align-items: center;
+  text-align: center;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   overflow: hidden;
 }
 
-.prize-card:hover {
+.prize-card-v2:hover {
   transform: translateY(-5px);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
 
-.prize-card-champion {
+.prize-card-v2.featured {
   border: 1.5px solid rgba(34, 197, 94, 0.45);
   background: linear-gradient(180deg, rgba(34, 197, 94, 0.08) 0%, rgba(4, 13, 26, 0.88) 100%);
   box-shadow: 0 16px 45px rgba(0, 0, 0, 0.55), 0 0 30px rgba(34, 197, 94, 0.18);
 }
 
-.prize-card-champion:hover {
+.prize-card-v2.featured:hover {
   border-color: var(--green);
-  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.65), 0 0 45px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.65), 0 0 40px rgba(34, 197, 94, 0.32);
 }
 
-.prize-card-runner {
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: linear-gradient(180deg, rgba(148, 163, 184, 0.06) 0%, rgba(4, 13, 26, 0.85) 100%);
-}
-
-.prize-card-runner:hover {
-  border-color: rgba(203, 213, 225, 0.4);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 25px rgba(148, 163, 184, 0.15);
-}
-
-.prize-card-header {
+.prize-v2-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  justify-content: center;
+  margin-bottom: 18px;
 }
 
-.prize-badge-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 9999px;
+.prize-v2-badge {
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.8px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
 }
 
-.prize-badge-gold {
-  background: rgba(250, 204, 21, 0.12);
-  color: #facc15;
-  border: 1px solid rgba(250, 204, 21, 0.35);
-}
-
-.prize-badge-silver {
-  background: rgba(226, 232, 240, 0.1);
-  color: #e2e8f0;
-  border: 1px solid rgba(226, 232, 240, 0.25);
-}
-
-.prize-icon-glow {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
-}
-
-.prize-icon-silver {
-  background: rgba(148, 163, 184, 0.12);
-  border-color: rgba(148, 163, 184, 0.3);
-  box-shadow: 0 0 20px rgba(148, 163, 184, 0.15);
-}
-
-.prize-sub-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  display: block;
-}
-
-.prize-amount {
-  font-size: clamp(38px, 4.5vw, 54px);
-  font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -0.5px;
-  margin: 10px 0 12px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-.prize-amount-gold {
-  color: var(--green-mint);
-  text-shadow: 0 0 25px rgba(34, 197, 94, 0.35);
-}
-
-.prize-amount-silver {
-  color: #f8fafc;
-}
-
-.prize-desc {
-  font-size: 13.5px;
-  color: #94a3b8;
-  line-height: 1.6;
-  margin: 0;
-}
-
-.prize-perks-list {
-  list-style: none;
-  padding: 0;
-  margin: 24px 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 20px;
-}
-
-.prize-perk-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 13.5px;
-  color: #cbd5e1;
-}
-
-.prize-perk-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(34, 197, 94, 0.15);
-  color: var(--green-mint);
-  flex-shrink: 0;
-}
-
-.prize-perk-silver {
-  background: rgba(148, 163, 184, 0.15);
-  color: #cbd5e1;
-}
-
-/* Individual Awards 4-Column Grid */
-.prizes-individual-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-}
-
-.award-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 24px 20px;
-  text-align: center;
-  transition: all 0.25s ease;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
-}
-
-.award-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(34, 197, 94, 0.4);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 197, 94, 0.15);
-}
-
-.award-icon-wrap {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  margin: 0 auto 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.award-title {
-  font-size: 14px;
+.prize-v2-title {
+  font-size: 22px;
   font-weight: 800;
   color: #ffffff;
-  margin: 0 0 6px;
-  letter-spacing: -0.2px;
-}
-
-.award-cash {
-  font-size: 22px;
-  font-weight: 900;
-  margin-bottom: 6px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-.award-meta {
-  font-size: 12px;
-  color: var(--muted);
   margin: 0;
-  line-height: 1.4;
+  letter-spacing: -0.3px;
+}
+
+.prize-v2-amount {
+  font-size: clamp(38px, 4vw, 48px);
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 12px 0 10px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.prize-v2-sub {
+  font-size: 13.5px;
+  color: #94a3b8;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.5;
 }
 
 /* =========================================================
-   THE LEAGUE SECTION (Redesigned Split Bento Layout)
+   THE LEAGUE SECTION (Clean Modern Cards)
    ========================================================= */
 
-.league-grid-layout {
-  display: grid;
-  grid-template-columns: 1fr 1.15fr;
-  gap: 56px;
-  align-items: center;
-}
-
-.league-info-col {
-  display: flex;
-  flex-direction: column;
-}
-
-.league-lead {
-  margin-top: 18px;
-  line-height: 1.7;
-}
-
-.league-metrics-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin: 32px 0;
-  padding: 22px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.league-metric-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.league-metric-number {
-  font-size: 28px;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: -0.5px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  line-height: 1.1;
-}
-
-.league-metric-number span {
-  color: var(--green-mint);
-}
-
-.league-metric-label {
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  font-weight: 700;
-  margin-top: 4px;
-}
-
-.league-bento-grid {
+.league-cards-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 18px;
 }
 
-.league-bento-card {
+.league-card-v2 {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 18px;
   padding: 24px;
   display: flex;
   flex-direction: column;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-.league-bento-card:hover {
+.league-card-v2:hover {
   transform: translateY(-4px);
   border-color: rgba(34, 197, 94, 0.4);
-  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 197, 94, 0.15);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 197, 94, 0.15);
 }
 
-.league-bento-icon {
+.league-card-v2-icon {
   width: 44px;
   height: 44px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
-.league-bento-card h4 {
-  font-size: 16px;
+.league-card-v2 h4 {
+  font-size: 17px;
   font-weight: 800;
   color: #ffffff;
   margin: 0 0 8px;
   letter-spacing: -0.2px;
 }
 
-.league-bento-card p {
+.league-card-v2 p {
   font-size: 13px;
   color: #94a3b8;
   line-height: 1.55;
@@ -1427,16 +1233,11 @@ h2 em {
 @media (max-width: 900px) {
   .gallery-grid { grid-template-columns: repeat(2, 1fr); }
   .gallery-wide, .gallery-tall { grid-column: span 1; grid-row: span 1; }
-  .split-layout, .format-grid, .form-grid, .footer-top { grid-template-columns: 1fr; gap: 32px; }
-  .prizes-podium-grid { grid-template-columns: 1fr; gap: 20px; }
-  .prizes-individual-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
-  .league-grid-layout { grid-template-columns: 1fr; gap: 36px; }
-  .league-metrics-row { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .prizes-grid-3 { grid-template-columns: 1fr; gap: 20px; }
+  .league-cards-grid { grid-template-columns: 1fr; gap: 14px; }
 }
 
 @media (max-width: 768px) {
-  .prize-card { padding: 28px 20px; border-radius: 20px; }
-  .league-bento-grid { grid-template-columns: 1fr; gap: 14px; }
   .site-nav { padding: 0 16px; top: 10px; height: 58px; width: calc(100% - 20px); border-radius: 18px; }
   .nav-links { 
     display: none; 
@@ -1498,7 +1299,6 @@ h2 em {
 
 @media (max-width: 480px) {
   .players-grid { grid-template-columns: 1fr; }
-  .prizes-individual-grid { grid-template-columns: 1fr; }
   .brand-text { font-size: 13.5px !important; }
   .brand-logo { height: 34px; width: 34px; }
   .countdown-cell { min-width: 60px; padding: 8px 10px; }

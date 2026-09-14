@@ -21,6 +21,7 @@ import {
   Radio,
   Shield,
   Sparkles,
+  Star,
   Trophy,
   Twitter,
   Users,
@@ -671,127 +672,51 @@ export default function Home() {
         <section className="section-pad prizes-section" id="prizes">
           <div className="page-width">
             <div className="section-header-center">
-              <span className="section-label">
-                <Trophy size={14} className="text-emerald-400" />
-                Championship Honors · Season 03
-              </span>
-              <h2 className="sport-heading">Ultimate <em>Glory</em></h2>
+              <span className="section-label">Ultimate Glory</span>
+              <h2 className="sport-heading">Prize <em>Pool</em></h2>
               <p className="lead" style={{ margin: '16px auto 0', maxWidth: '640px' }}>
-                High-stakes cash prizes, prestigious rotating championship trophies, and individual player honors under the Khoraghat floodlights.
+                Compete for major cash prizes and prestigious trophies in KPL Season 3.
               </p>
             </div>
 
-            {/* Podium Top 2 Showcase */}
-            <div className="prizes-podium-grid">
-              {/* Grand Champions Card */}
-              <div className="prize-card prize-card-champion">
-                <div className="prize-card-header">
-                  <span className="prize-badge-pill prize-badge-gold">
-                    <Crown size={13} className="text-amber-400" />
-                    Grand Champions · 1st Place
-                  </span>
-                  <div className="prize-icon-glow">
-                    <Trophy size={36} className="text-emerald-400" />
-                  </div>
+            <div className="prizes-grid-3">
+              {/* Champions */}
+              <div className="prize-card-v2 featured">
+                <div className="prize-v2-icon" style={{ background: 'rgba(34, 197, 94, 0.12)', color: 'var(--green-mint)' }}>
+                  <Trophy size={32} />
                 </div>
-
-                <div className="prize-info">
-                  <span className="prize-sub-title">Winner of KPL Season 3 Finale</span>
-                  <div className="prize-amount prize-amount-gold">₹1,00,000</div>
-                  <p className="prize-desc">
-                    The victorious franchise hoists the prestigious KPL rolling championship trophy, gold winner medals, and ₹1,00,000 cash purse.
-                  </p>
-                </div>
-
-                <ul className="prize-perks-list">
-                  <li className="prize-perk-item">
-                    <span className="prize-perk-icon"><Check size={12} strokeWidth={3} /></span>
-                    <span>Grand KPL Championship Silver/Gold Cup</span>
-                  </li>
-                  <li className="prize-perk-item">
-                    <span className="prize-perk-icon"><Check size={12} strokeWidth={3} /></span>
-                    <span>16x Customized Gold Medals for Full Squad & Staff</span>
-                  </li>
-                  <li className="prize-perk-item">
-                    <span className="prize-perk-icon"><Check size={12} strokeWidth={3} /></span>
-                    <span>Official Champions Board Citation & Rolling Trophy Defense</span>
-                  </li>
-                </ul>
+                <span className="prize-v2-badge" style={{ background: 'rgba(250, 204, 21, 0.15)', color: '#facc15' }}>
+                  Champions
+                </span>
+                <h3 className="prize-v2-title">Champions</h3>
+                <div className="prize-v2-amount" style={{ color: 'var(--green-mint)' }}>₹27,000</div>
+                <p className="prize-v2-sub">Grand Trophy + Winner Medals</p>
               </div>
 
-              {/* Runners-Up Card */}
-              <div className="prize-card prize-card-runner">
-                <div className="prize-card-header">
-                  <span className="prize-badge-pill prize-badge-silver">
-                    <Medal size={13} className="text-slate-300" />
-                    Finalists · Runners-Up
-                  </span>
-                  <div className="prize-icon-glow prize-icon-silver">
-                    <Award size={36} className="text-slate-200" />
-                  </div>
+              {/* Runners Up */}
+              <div className="prize-card-v2">
+                <div className="prize-v2-icon" style={{ background: 'rgba(148, 163, 184, 0.12)', color: '#cbd5e1' }}>
+                  <Award size={32} />
                 </div>
-
-                <div className="prize-info">
-                  <span className="prize-sub-title">Grand Finale Finalist Franchise</span>
-                  <div className="prize-amount prize-amount-silver">₹50,000</div>
-                  <p className="prize-desc">
-                    The tournament finalist is awarded the official KPL runner-up silver cup, squad medals, and ₹50,000 cash purse.
-                  </p>
-                </div>
-
-                <ul className="prize-perks-list">
-                  <li className="prize-perk-item">
-                    <span className="prize-perk-icon prize-perk-silver"><Check size={12} strokeWidth={3} /></span>
-                    <span>Official KPL Runners-Up Silver Trophy</span>
-                  </li>
-                  <li className="prize-perk-item">
-                    <span className="prize-perk-icon prize-perk-silver"><Check size={12} strokeWidth={3} /></span>
-                    <span>16x Finalist Silver Medals for Squad & Coach</span>
-                  </li>
-                  <li className="prize-perk-item">
-                    <span className="prize-perk-icon prize-perk-silver"><Check size={12} strokeWidth={3} /></span>
-                    <span>Runners-Up Citation & Official Podium Presentation</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Individual Honors Grid (4 Cards) */}
-            <div className="prizes-individual-grid">
-              <div className="award-card">
-                <div className="award-icon-wrap" style={{ background: 'rgba(250, 204, 21, 0.12)', color: '#facc15' }}>
-                  <Sparkles size={22} />
-                </div>
-                <h4 className="award-title">Player of Tournament</h4>
-                <div className="award-cash" style={{ color: '#facc15' }}>₹10,000</div>
-                <p className="award-meta">Mega Trophy + Elite Player Citation</p>
+                <span className="prize-v2-badge" style={{ background: 'rgba(226, 232, 240, 0.1)', color: '#cbd5e1' }}>
+                  Runners Up
+                </span>
+                <h3 className="prize-v2-title">Runners Up</h3>
+                <div className="prize-v2-amount" style={{ color: '#ffffff' }}>₹17,000</div>
+                <p className="prize-v2-sub">Runner-Up Trophy + Medals</p>
               </div>
 
-              <div className="award-card">
-                <div className="award-icon-wrap" style={{ background: 'rgba(249, 115, 22, 0.12)', color: '#fb923c' }}>
-                  <Flame size={22} />
+              {/* Player of Series */}
+              <div className="prize-card-v2">
+                <div className="prize-v2-icon" style={{ background: 'rgba(250, 204, 21, 0.12)', color: '#facc15' }}>
+                  <Star size={32} />
                 </div>
-                <h4 className="award-title">Orange Cap (Top Batsman)</h4>
-                <div className="award-cash" style={{ color: '#fb923c' }}>₹5,000</div>
-                <p className="award-meta">Golden Willow Trophy + Cap Award</p>
-              </div>
-
-              <div className="award-card">
-                <div className="award-icon-wrap" style={{ background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8' }}>
-                  <Zap size={22} />
-                </div>
-                <h4 className="award-title">Purple Cap (Top Bowler)</h4>
-                <div className="award-cash" style={{ color: '#38bdf8' }}>₹5,000</div>
-                <p className="award-meta">Golden Ball Trophy + Cap Award</p>
-              </div>
-
-              <div className="award-card">
-                <div className="award-icon-wrap" style={{ background: 'rgba(34, 197, 94, 0.12)', color: 'var(--green-mint)' }}>
-                  <Medal size={22} />
-                </div>
-                <h4 className="award-title">Man of the Match</h4>
-                <div className="award-cash" style={{ color: 'var(--green-mint)' }}>Per Match</div>
-                <p className="award-meta">MOM Trophy & Cash Award Every Game</p>
+                <span className="prize-v2-badge" style={{ background: 'rgba(250, 204, 21, 0.12)', color: '#facc15' }}>
+                  Special Award
+                </span>
+                <h3 className="prize-v2-title">Player of Series</h3>
+                <div className="prize-v2-amount" style={{ color: '#ffffff' }}>₹500</div>
+                <p className="prize-v2-sub">MOM Trophy & Cap Awards</p>
               </div>
             </div>
           </div>
@@ -800,91 +725,49 @@ export default function Home() {
 
       {content.show_about === 'true' && (
         <section className="section-pad league-section" id="league">
-          <div className="page-width">
-            <div className="league-grid-layout">
-              {/* Left Column: Narrative & Quick Metrics */}
-              <div className="league-info-col">
-                <span className="section-label">
-                  <Shield size={14} className="text-emerald-400" />
-                  The League · Khoraghat Cricket Association
-                </span>
-                <h2 className="sport-heading">
-                  {content.about_title || 'Assam’s Premier Cricket League'}
-                </h2>
-                <p className="lead league-lead">
-                  {content.about_text || 'Born on the revered grounds of Khoraghat, the Khoraghat Premier League (KPL) represents the pinnacle of competitive hard tennis ball cricket in Lower Assam. Bringing together 8 powerhouse franchises, an intense player auction draft, floodlit night games, and passionate spectators, KPL is the ultimate proving ground for regional talent.'}
-                </p>
+          <div className="page-width split-layout" style={{ alignItems: 'flex-start' }}>
+            <div>
+              <span className="section-label">The League</span>
+              <h2 className="sport-heading">{content.about_title || 'Assam’s Premier Cricket League'}</h2>
+              <p className="lead" style={{ marginTop: '20px', whiteSpace: 'pre-wrap' }}>{content.about_text}</p>
+              {content.show_format === 'true' && (
+                <button className="text-link" onClick={(e) => scrollTo('format', e)} style={{ marginTop: '28px' }}>
+                  Discover the format <ArrowRight size={16} strokeWidth={3} />
+                </button>
+              )}
+            </div>
 
-                {/* Quick League Metrics */}
-                <div className="league-metrics-row">
-                  <div className="league-metric-item">
-                    <div className="league-metric-number">08<span>.</span></div>
-                    <div className="league-metric-label">Franchises</div>
-                  </div>
-                  <div className="league-metric-item">
-                    <div className="league-metric-number">120<span>+</span></div>
-                    <div className="league-metric-label">Drafted Athletes</div>
-                  </div>
-                  <div className="league-metric-item">
-                    <div className="league-metric-number">15<span>ov</span></div>
-                    <div className="league-metric-label">High-Voltage T15</div>
-                  </div>
-                  <div className="league-metric-item">
-                    <div className="league-metric-number">HD<span>.</span></div>
-                    <div className="league-metric-label">Live Broadcast</div>
-                  </div>
+            <div className="league-cards-grid">
+              <div className="league-card-v2">
+                <div className="league-card-v2-icon" style={{ background: 'rgba(34, 197, 94, 0.12)', color: 'var(--green-mint)' }}>
+                  <Flame size={22} />
                 </div>
-
-                {content.show_format === 'true' && (
-                  <div>
-                    <button className="text-link" onClick={(e) => scrollTo('format', e)}>
-                      Discover Tournament Format <ArrowRight size={16} strokeWidth={3} />
-                    </button>
-                  </div>
-                )}
+                <h4>Hard Tennis</h4>
+                <p>High-voltage hard tennis cricket with professional gear.</p>
               </div>
 
-              {/* Right Column: 4 Bento Cards */}
-              <div className="league-bento-grid">
-                <div className="league-bento-card">
-                  <div className="league-bento-icon" style={{ background: 'rgba(34, 197, 94, 0.12)', color: 'var(--green-mint)' }}>
-                    <Flame size={22} />
-                  </div>
-                  <h4>Hard Tennis Ball Warfare</h4>
-                  <p>
-                    Engineered heavy tennis balls tested for explosive 140+ km/h pace, immense boundary velocity, and thrilling swing under floodlights.
-                  </p>
+              <div className="league-card-v2">
+                <div className="league-card-v2-icon" style={{ background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8' }}>
+                  <Users size={22} />
                 </div>
+                <h4>8 Franchises</h4>
+                <p>Top team owners competing in an official auction draft.</p>
+              </div>
 
-                <div className="league-bento-card">
-                  <div className="league-bento-icon" style={{ background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8' }}>
-                    <Users size={22} />
-                  </div>
-                  <h4>8 Elite Franchises</h4>
-                  <p>
-                    Corporate team owners bidding live in high-stakes auction drafts to assemble balanced 15-player championship rosters.
-                  </p>
+              <div className="league-card-v2">
+                <div className="league-card-v2-icon" style={{ background: 'rgba(250, 204, 21, 0.12)', color: '#facc15' }}>
+                  <Radio size={22} />
                 </div>
+                <h4>Live Coverage</h4>
+                <p>HD YouTube & Facebook live streaming with commentary.</p>
+              </div>
 
-                <div className="league-bento-card">
-                  <div className="league-bento-icon" style={{ background: 'rgba(250, 204, 21, 0.12)', color: '#facc15' }}>
-                    <Radio size={22} />
-                  </div>
-                  <h4>Live HD Broadcast</h4>
-                  <p>
-                    Multi-camera live broadcast on YouTube and Facebook featuring multi-angle replays and professional Bengali & Assamese commentary.
-                  </p>
+              <div className="league-card-v2">
+                <div className="league-card-v2-icon" style={{ background: 'rgba(168, 85, 247, 0.12)', color: '#c084fc' }}>
+                  <Trophy size={22} />
                 </div>
-
-                <div className="league-bento-card">
-                  <div className="league-bento-icon" style={{ background: 'rgba(168, 85, 247, 0.12)', color: '#c084fc' }}>
-                    <Sparkles size={22} />
-                  </div>
-                  <h4>Electrifying Atmosphere</h4>
-                  <p>
-                    Packed spectator stands at Khoraghat High School Ground with DJ music, boundary fireworks, and electric local roar.
-                  </p>
-                </div>
+                <h4>Grand Finale</h4>
+                <p>Cash rewards, player trophies, and championship glory.</p>
               </div>
             </div>
           </div>
