@@ -59,6 +59,22 @@ class Player {
             $params[':auction_eligible'] = ($filters['auction_eligible'] === 'true' || $filters['auction_eligible'] === '1' || $filters['auction_eligible'] === 1) ? 1 : 0;
         }
 
+        if (!empty($filters['approval']) && $filters['approval'] !== 'all') {
+            $sql .= " AND p.approval = :approval";
+            $params[':approval'] = $filters['approval'];
+        }
+
+        if (!empty($filters['registered_by'])) {
+            if ($filters['registered_by'] === 'self') {
+                $sql .= " AND (p.registered_by LIKE '%self%' OR p.registered_by = 'Self Registration')";
+            } elseif ($filters['registered_by'] === 'admin') {
+                $sql .= " AND (p.registered_by = 'admin' OR p.registered_by = '' OR p.registered_by IS NULL)";
+            } else {
+                $sql .= " AND p.registered_by = :registered_by";
+                $params[':registered_by'] = $filters['registered_by'];
+            }
+        }
+
         $sql .= " ORDER BY p.created_at DESC LIMIT " . (int)$limit;
 
         $stmt = self::getDb()->prepare($sql);
@@ -74,6 +90,8 @@ class Player {
             mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000,
             mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
         );
+
+        $isSelf = !empty($data['registered_by']) && (stripos($data['registered_by'], 'self') !== false);
 
         $stmt = $db->prepare("
             INSERT INTO players (
@@ -113,13 +131,13 @@ class Player {
             ':bowling_type' => $data['bowling_type'] ?? null,
             ':player_signature' => $data['player_signature'] ?? null,
             ':declaration_accepted' => !empty($data['declaration_accepted']) ? 1 : 0,
-            ':approval' => $data['approval'] ?? 'pending',
+            ':approval' => $data['approval'] ?? ($isSelf ? 'pending' : 'approved'),
             ':registration_number' => $data['registration_number'] ?? ('KPL-P' . rand(1000, 9999)),
-            ':registered_by' => $data['registered_by'] ?? 'self',
+            ':registered_by' => $data['registered_by'] ?? ($isSelf ? 'Self Registration' : 'admin'),
             ':team_id' => !empty($data['team_id']) ? $data['team_id'] : null,
-            ':auction_eligible' => isset($data['auction_eligible']) ? (!empty($data['auction_eligible']) ? 1 : 0) : 1,
+            ':auction_eligible' => isset($data['auction_eligible']) ? (!empty($data['auction_eligible']) ? 1 : 0) : ($isSelf ? 0 : 1),
             ':base_price' => isset($data['base_price']) ? (float)$data['base_price'] : 500.00,
-            ':status' => $data['status'] ?? 'active',
+            ':status' => $data['status'] ?? ($isSelf ? 'pending' : 'active'),
             ':notes' => $data['notes'] ?? ''
         ]);
 
@@ -135,7 +153,7 @@ class Player {
             'address_proof', 'role', 'contact_number', 'email', 'photo', 'batsman',
             'batting_hand', 'wicket_keeper', 'player_category', 'previously_played',
             'all_rounder', 'bowler', 'bowling_type', 'player_signature',
-            'declaration_accepted', 'approval', 'registration_number', 'team_id',
+            'declaration_accepted', 'approval', 'registration_number', 'registered_by', 'team_id',
             'auction_eligible', 'base_price', 'sold_price', 'status', 'notes'
         ];
 

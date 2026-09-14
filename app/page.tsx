@@ -23,8 +23,8 @@ import {
   Sparkles,
   Star,
   Trophy,
-  Twitter,
   Users,
+  Clock,
   X,
   Zap,
 } from 'lucide-react';
@@ -322,6 +322,8 @@ export default function Home() {
       const teamId = res.id || res.data?.id || newRegNum;
 
       if (fees.active_gateway === 'upi_direct' || !fees.active_gateway) {
+        setModal(null);
+        setStatus('idle');
         setUpiModalData({
           isOpen: true,
           type: 'team',
@@ -432,7 +434,8 @@ export default function Home() {
         bowling_type: playerForm.bowler ? `${playerForm.bowling_arm} ${playerForm.bowling_style}`.trim() : null,
         registered_by: 'Self Registration',
         status: 'pending',
-        auction_eligible: 1,
+        approval: 'pending',
+        auction_eligible: 0,
         base_price: 50
       });
 
@@ -442,6 +445,8 @@ export default function Home() {
       const paymentAmount = playerForm.player_category === 'Foreign' ? Number(fees.fee_foreign_player) : Number(fees.fee_player);
 
       if (fees.active_gateway === 'upi_direct' || !fees.active_gateway) {
+        setModal(null);
+        setStatus('idle');
         setUpiModalData({
           isOpen: true,
           type: 'player',
@@ -470,7 +475,8 @@ export default function Home() {
           description: 'Player Registration Fee',
           order_id: data.orderId,
           handler: async function (response: any) {
-            await kplApi.updatePlayer(playerId, { status: 'active' });
+            // Payment successful; registration remains pending admin approval
+            await kplApi.updatePlayer(playerId, { status: 'pending', approval: 'pending' });
             setStatus('success');
             setRegisteredId(newRegNum);
             setPlayerForm({ player_name: '', father_name: '', age_input: '', contact_number: '', present_address: '', address_proof: '', photo: '', batsman: false, batting_hand: '', wicket_keeper: false, previously_played: false, player_category: 'local', bowler: false, bowling_arm: '', bowling_style: '' });
@@ -509,7 +515,8 @@ export default function Home() {
             setErrorMsg(result.error.message);
           }
           if (result.paymentDetails) {
-            await kplApi.updatePlayer(playerId, { status: 'active' });
+            // Payment successful; registration remains pending admin approval
+            await kplApi.updatePlayer(playerId, { status: 'pending', approval: 'pending' });
             setStatus('success');
             setRegisteredId(newRegNum);
             setPlayerForm({ player_name: '', father_name: '', age_input: '', contact_number: '', present_address: '', address_proof: '', photo: '', batsman: false, batting_hand: '', wicket_keeper: false, previously_played: false, player_category: 'local', bowler: false, bowling_arm: '', bowling_style: '' });
@@ -778,22 +785,6 @@ export default function Home() {
             </div>
 
             <div className="league-cards-grid">
-              <div className="league-card-v2">
-                <div className="league-card-v2-icon" style={{ background: 'rgba(34, 197, 94, 0.12)', color: 'var(--green-mint)' }}>
-                  <Flame size={22} />
-                </div>
-                <h4>Hard Tennis</h4>
-                <p>High-voltage hard tennis cricket with professional gear.</p>
-              </div>
-
-              <div className="league-card-v2">
-                <div className="league-card-v2-icon" style={{ background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8' }}>
-                  <Users size={22} />
-                </div>
-                <h4>8 Franchises</h4>
-                <p>Top team owners competing in an official auction draft.</p>
-              </div>
-
               <div className="league-card-v2">
                 <div className="league-card-v2-icon" style={{ background: 'rgba(250, 204, 21, 0.12)', color: '#facc15' }}>
                   <Radio size={22} />
@@ -1108,7 +1099,38 @@ export default function Home() {
                 <CheckCircle2 size={64} color="#22c55e" style={{ margin: '0 auto 24px' }} />
                 <h3 className="sport-heading">Registration received!</h3>
                 <p className="lead" style={{ margin: '16px auto', fontSize: '15px' }}>Your {modal === 'team' ? 'team' : 'player'} registration for KPL Season 3 has been submitted.</p>
-                {modal === 'player' && registeredId && <p style={{ marginBottom: '32px' }}>Your Registration ID is <strong>{registeredId}</strong></p>}
+                {modal === 'player' && registeredId && (
+                  <>
+                    <p style={{ marginBottom: '16px', fontSize: '15px' }}>
+                      Your Registration ID is <strong style={{ color: 'var(--green-mint)' }}>{registeredId}</strong>
+                    </p>
+                    <div style={{
+                      background: 'rgba(234, 179, 8, 0.12)',
+                      border: '1px solid rgba(234, 179, 8, 0.35)',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      maxWidth: '440px',
+                      margin: '0 auto 28px',
+                      textAlign: 'left',
+                      fontSize: '13px',
+                      lineHeight: '1.6',
+                      color: '#fef08a'
+                    }}>
+                      <div style={{
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '6px',
+                        color: '#facc15',
+                        fontSize: '14px'
+                      }}>
+                        <Clock size={16} /> Pending Admin Approval
+                      </div>
+                      Your self-registration and uploaded documents are currently pending verification by the KPL Committee. Once approved by the administrator, your profile will be officially activated in the player pool.
+                    </div>
+                  </>
+                )}
                 <button className="button button-primary" onClick={closeModal} style={{ width: '100%', maxWidth: '240px', margin: '0 auto' }}>Done</button>
               </div>
             ) : modal === 'team' ? (
@@ -1286,7 +1308,10 @@ export default function Home() {
       {/* Free Direct UPI Payment Modal */}
       <UpiPaymentModal
         isOpen={upiModalData.isOpen}
-        onClose={() => setUpiModalData(prev => ({ ...prev, isOpen: false }))}
+        onClose={() => {
+          setUpiModalData(prev => ({ ...prev, isOpen: false }));
+          setStatus('idle');
+        }}
         registrationType={upiModalData.type}
         registrationId={upiModalData.regId}
         payerName={upiModalData.name}
@@ -1297,6 +1322,7 @@ export default function Home() {
         onSuccess={(utr) => {
           setUpiModalData(prev => ({ ...prev, isOpen: false }));
           setRegisteredId(upiModalData.regId);
+          setModal(upiModalData.type);
           setStatus('success');
           if (upiModalData.type === 'team') {
             setTeamForm({ team_name: '', owner_name: '', captain_name: '', contact_number: '', email: '', home_location: '', message: '' });

@@ -178,6 +178,36 @@
 .dt-btn-danger:hover { background: rgba(239, 68, 68, 0.1); color: #f87171; border-color: rgba(239, 68, 68, 0.2); }
 .text-green { color: #4ade80; }
 
+/* ---- Source Badges & Approval UI ---- */
+.admin-source-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 7px; border-radius: 12px; }
+.admin-source-badge.self { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+.admin-source-badge.admin { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.25); }
+
+.dt-btn-approve { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.35); color: #4ade80; }
+.dt-btn-approve:hover { background: rgba(34, 197, 94, 0.28); color: #86efac; border-color: rgba(34, 197, 94, 0.6); transform: translateY(-1px); }
+.dt-btn-reject { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; }
+.dt-btn-reject:hover { background: rgba(239, 68, 68, 0.25); color: #fca5a5; border-color: rgba(239, 68, 68, 0.5); }
+
+.admin-approval-banner { background: linear-gradient(135deg, rgba(234, 179, 8, 0.12) 0%, rgba(217, 119, 6, 0.08) 100%); border: 1px solid rgba(234, 179, 8, 0.35); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.admin-approval-banner-info { display: flex; align-items: center; gap: 12px; }
+.admin-approval-banner-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(234, 179, 8, 0.2); color: #facc15; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.admin-approval-banner-text h4 { margin: 0; font-size: 14px; font-weight: 700; color: #fef08a; }
+.admin-approval-banner-text p { margin: 2px 0 0; font-size: 12px; color: #cbd5e1; }
+.admin-approval-banner-btn { background: #eab308; color: #0f172a; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 8px; border: none; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 6px; }
+.admin-approval-banner-btn:hover { background: #facc15; transform: translateY(-1px); }
+
+.admin-quick-tabs { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+.admin-tab-btn { background: var(--adm-panel); border: 1px solid var(--adm-border); color: var(--adm-text); padding: 7px 13px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.admin-tab-btn:hover { background: var(--adm-border); color: var(--adm-text-strong); }
+.admin-tab-btn.active { background: var(--adm-border-focus); border-color: var(--adm-gold); color: var(--adm-text-strong); }
+.admin-tab-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; background: var(--adm-border); color: var(--adm-text-muted); }
+.admin-tab-badge.pending { background: rgba(234, 179, 8, 0.25); color: #facc15; }
+
+.player-review-box { background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 10px; padding: 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.player-review-box-title { font-size: 13px; font-weight: 700; color: #facc15; display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.player-review-box-sub { font-size: 12px; color: var(--adm-text); margin: 0; }
+.player-review-actions { display: flex; align-items: center; gap: 8px; }
+
 /* ---- Modals ---- */
 .admin-modal-overlay { position: fixed; inset: 0; background: var(--adm-input-bg); backdrop-filter: blur(8px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .admin-modal { background: var(--adm-panel-solid); border: 1px solid var(--adm-border-focus); border-radius: 14px; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; animation: revealUp .2s both; box-shadow: 0 25px 50px -12px var(--adm-shadow); }

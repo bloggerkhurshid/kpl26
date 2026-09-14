@@ -8,7 +8,8 @@ import {
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight,
   X, Loader2, CheckCircle2, AlertCircle, Users,
   UserCheck, UserX, Gavel, FileText, Printer,
-  Phone, Mail, MapPin, Calendar, Hash, User, Shield, Target, Zap
+  Phone, Mail, MapPin, Calendar, Hash, User, Shield, Target, Zap,
+  Check, Clock, XCircle, ArrowRight, ShieldCheck
 } from 'lucide-react';
 
 interface Team { id: string; name: string; short_code: string; accent_color: string; }
@@ -53,7 +54,7 @@ const EMPTY_FORM = {
   contact_number: '', email: '', present_address: '', address_proof: '', photo: '', batsman: false, batting_hand: '', wicket_keeper: false,
   player_category: '', previously_played: false, all_rounder: false, bowler: false,
   bowling_arm: '', bowling_style: '', bowling_type: '', player_signature: '', registration_number: '', registered_by: 'admin',
-  team_id: '', auction_eligible: true, base_price: '50', status: 'active', notes: '',
+  team_id: '', auction_eligible: true, base_price: '50', status: 'active', approval: 'approved', notes: '',
   declaration_accepted: false,
 };
 
@@ -67,8 +68,11 @@ export default function PlayersPage() {
   const [selected, setSelected] = useState<Player | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'self' | 'active'>('all');
   const [filterTeam, setFilterTeam] = useState('');
   const [filterAuction, setFilterAuction] = useState('');
+  const [filterSource, setFilterSource] = useState('');
+  const [filterApproval, setFilterApproval] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [proofModal, setProofModal] = useState<{ url: string; title: string } | null>(null);
 
@@ -118,13 +122,45 @@ export default function PlayersPage() {
       player_signature: p.player_signature || '', registration_number: p.registration_number || '',
       registered_by: p.registered_by || 'admin', team_id: p.team_id || '',
       auction_eligible: p.auction_eligible, base_price: p.base_price?.toString() || '0',
-      status: p.status, notes: p.notes || '',
+      status: p.status, approval: p.approval || (p.status === 'active' ? 'approved' : 'pending'), notes: p.notes || '',
       declaration_accepted: p.declaration_accepted || false,
     });
     setSelected(p); setModal('edit');
   }
   function openView(p: Player) { setSelected(p); setModal('view'); }
   function openDelete(p: Player) { setSelected(p); setModal('delete'); }
+
+  async function handleApprove(p: Player) {
+    setSaving(true);
+    try {
+      await kplApi.approvePlayer(p.id);
+      showToast(`Player "${p.player_name}" approved successfully!`);
+      if (selected && selected.id === p.id) {
+        setSelected({ ...selected, status: 'active', approval: 'approved', auction_eligible: true });
+      }
+      await loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to approve player', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleReject(p: Player, reason?: string) {
+    setSaving(true);
+    try {
+      await kplApi.rejectPlayer(p.id, reason || 'Registration rejected by committee');
+      showToast(`Player "${p.player_name}" application rejected.`);
+      if (selected && selected.id === p.id) {
+        setSelected({ ...selected, status: 'disabled', approval: 'rejected', auction_eligible: false });
+      }
+      await loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to reject player', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function savePlayer(e: React.FormEvent) {
     e.preventDefault();
@@ -174,6 +210,7 @@ export default function PlayersPage() {
       auction_eligible: form.auction_eligible,
       base_price: parseFloat(form.base_price) || 0,
       status: form.status,
+      approval: form.approval || (form.status === 'active' ? 'approved' : 'pending'),
       notes: form.notes || null,
     };
     
@@ -247,11 +284,25 @@ export default function PlayersPage() {
     reader.readAsDataURL(file);
   };
 
+  const pendingPlayers = players.filter(p => p.status === 'pending' || p.approval === 'pending');
+  const pendingCount = pendingPlayers.length;
+  const selfCount = players.filter(p => p.registered_by?.toLowerCase().includes('self')).length;
+  const activeCount = players.filter(p => p.status === 'active' && p.approval !== 'rejected').length;
+
   const filtered = players.filter(p => {
+    if (activeTab === 'pending' && p.status !== 'pending' && p.approval !== 'pending') return false;
+    if (activeTab === 'self' && !p.registered_by?.toLowerCase().includes('self')) return false;
+    if (activeTab === 'active' && (p.status !== 'active' || p.approval === 'rejected')) return false;
+
     if (filterTeam && p.team_id !== filterTeam) return false;
     if (filterAuction === 'eligible' && !p.auction_eligible) return false;
     if (filterAuction === 'ineligible' && p.auction_eligible) return false;
     if (filterAuction === 'unassigned' && p.team_id) return false;
+    if (filterSource === 'self' && !p.registered_by?.toLowerCase().includes('self')) return false;
+    if (filterSource === 'admin' && p.registered_by?.toLowerCase().includes('self')) return false;
+    if (filterApproval === 'pending' && p.status !== 'pending' && p.approval !== 'pending') return false;
+    if (filterApproval === 'approved' && p.status !== 'active') return false;
+    if (filterApproval === 'rejected' && p.approval !== 'rejected') return false;
     return true;
   });
 
@@ -260,9 +311,22 @@ export default function PlayersPage() {
       key: 'player_name', label: 'Player', sortable: true,
       render: p => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {p.photo ? <img src={getImageUrl(p.photo)} alt={p.player_name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} /> : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />}
+          {p.photo ? (
+            <img src={getImageUrl(p.photo)} alt={p.player_name} style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover' }} />
+          ) : (
+            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '11px', fontWeight: 700 }}>
+              {p.player_name?.slice(0, 2).toUpperCase() || 'PL'}
+            </div>
+          )}
           <div>
-            <div className="dt-player-name">{p.player_name}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="dt-player-name">{p.player_name}</span>
+              {p.registered_by?.toLowerCase().includes('self') ? (
+                <span className="admin-source-badge self" title="Self-registered from website">Self Reg</span>
+              ) : (
+                <span className="admin-source-badge admin" title="Registered by admin">Admin</span>
+              )}
+            </div>
             <div className="dt-player-meta" style={{ fontSize: '11px', color: '#64748b' }}>
               {p.registration_number || 'No Reg #'} • {p.role || p.batting_hand || 'Unknown Role'}
             </div>
@@ -292,34 +356,84 @@ export default function PlayersPage() {
       render: p => p.base_price > 0 ? `₹${Number(p.base_price).toLocaleString('en-IN')}` : '—',
     },
     {
-      key: 'status', label: 'Status',
-      render: p => <span className={`admin-status-badge admin-status-${p.status}`}>{p.status === 'pending' ? 'Pending' : p.status}</span>,
+      key: 'status', label: 'Status & Approval', sortable: true,
+      render: p => {
+        const isPending = p.status === 'pending' || p.approval === 'pending';
+        const isRejected = p.approval === 'rejected' || p.status === 'rejected';
+        const isActive = p.status === 'active';
+        if (isPending) {
+          return (
+            <span className="admin-status-badge admin-status-pending" title="Awaiting admin approval">
+              <Clock size={11} /> Pending Review
+            </span>
+          );
+        }
+        if (isRejected) {
+          return (
+            <span className="admin-status-badge admin-status-disabled" title="Rejected application">
+              <XCircle size={11} /> Rejected
+            </span>
+          );
+        }
+        if (isActive) {
+          return (
+            <span className="admin-status-badge admin-status-approved" title="Approved and active">
+              <CheckCircle2 size={11} /> Approved
+            </span>
+          );
+        }
+        return <span className={`admin-status-badge admin-status-${p.status}`}>{p.status}</span>;
+      },
     },
     {
       key: 'actions', label: 'Actions',
-      render: p => (
-        <div className="dt-actions no-print">
-          <button className="dt-btn dt-btn-icon" title="View details" onClick={() => openView(p)}><FileText size={14} /></button>
-          <button className="dt-btn dt-btn-icon" title="Print details" onClick={() => window.open(`/admin/players/print/${p.id}`, '_blank')}><Printer size={14} /></button>
-          {p.address_proof ? (
-            <button className="dt-btn dt-btn-icon" title="View Address Proof" onClick={() => openAddressProof(p.address_proof, `${p.player_name} - Address Proof`)} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-              <MapPin size={14} />
+      render: p => {
+        const isPending = p.status === 'pending' || p.approval === 'pending';
+        return (
+          <div className="dt-actions no-print">
+            {isPending && (
+              <>
+                <button
+                  className="dt-btn dt-btn-approve"
+                  title="Approve Player"
+                  onClick={() => handleApprove(p)}
+                  disabled={saving}
+                  style={{ height: '30px', padding: '0 8px', gap: '4px', fontSize: '11px', fontWeight: 700 }}
+                >
+                  <Check size={13} /> Approve
+                </button>
+                <button
+                  className="dt-btn dt-btn-reject dt-btn-icon"
+                  title="Reject Application"
+                  onClick={() => handleReject(p)}
+                  disabled={saving}
+                >
+                  <X size={14} />
+                </button>
+              </>
+            )}
+            <button className="dt-btn dt-btn-icon" title="View details" onClick={() => openView(p)}><FileText size={14} /></button>
+            <button className="dt-btn dt-btn-icon" title="Print details" onClick={() => window.open(`/admin/players/print/${p.id}`, '_blank')}><Printer size={14} /></button>
+            {p.address_proof ? (
+              <button className="dt-btn dt-btn-icon" title="View Address Proof" onClick={() => openAddressProof(p.address_proof, `${p.player_name} - Address Proof`)} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <MapPin size={14} />
+              </button>
+            ) : (
+              <button className="dt-btn dt-btn-icon" title="No address proof uploaded" style={{ opacity: 0.35, cursor: 'not-allowed' }} disabled>
+                <MapPin size={14} />
+              </button>
+            )}
+            <button className="dt-btn dt-btn-icon" title="Edit" onClick={() => openEdit(p)}><Edit2 size={14} /></button>
+            {p.team_id && (
+              <button className="dt-btn dt-btn-icon" title="Unassign from team" onClick={() => unassignPlayer(p)}><UserX size={14} /></button>
+            )}
+            <button className="dt-btn dt-btn-icon" title={p.status === 'active' ? 'Disable' : 'Enable'} onClick={() => toggleStatus(p)}>
+              {p.status === 'active' ? <ToggleRight size={16} className="text-green" /> : <ToggleLeft size={16} />}
             </button>
-          ) : (
-            <button className="dt-btn dt-btn-icon" title="No address proof uploaded" style={{ opacity: 0.35, cursor: 'not-allowed' }} disabled>
-              <MapPin size={14} />
-            </button>
-          )}
-          <button className="dt-btn dt-btn-icon" title="Edit" onClick={() => openEdit(p)}><Edit2 size={14} /></button>
-          {p.team_id && (
-            <button className="dt-btn dt-btn-icon" title="Unassign from team" onClick={() => unassignPlayer(p)}><UserX size={14} /></button>
-          )}
-          <button className="dt-btn dt-btn-icon" title={p.status === 'active' ? 'Disable' : 'Enable'} onClick={() => toggleStatus(p)}>
-            {p.status === 'active' ? <ToggleRight size={16} className="text-green" /> : <ToggleLeft size={16} />}
-          </button>
-          <button className="dt-btn dt-btn-icon dt-btn-danger" title="Delete" onClick={() => openDelete(p)}><Trash2 size={14} /></button>
-        </div>
-      ),
+            <button className="dt-btn dt-btn-icon dt-btn-danger" title="Delete" onClick={() => openDelete(p)}><Trash2 size={14} /></button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -336,10 +450,44 @@ export default function PlayersPage() {
         <div className="admin-page-header">
           <div>
             <h1><Users size={22} /> Players</h1>
-            <p>Manage player pool, detailed profiles, and team assignments.</p>
+            <p>Review self-registrations, manage player approvals, detailed profiles, and auction pool.</p>
           </div>
           <button className="admin-btn admin-btn-primary" onClick={openCreate}>
             <Plus size={16} /> Add Player
+          </button>
+        </div>
+
+        {/* Pending Approvals Notice Banner */}
+        {pendingCount > 0 && activeTab !== 'pending' && (
+          <div className="admin-approval-banner">
+            <div className="admin-approval-banner-info">
+              <div className="admin-approval-banner-icon">
+                <Clock size={20} />
+              </div>
+              <div className="admin-approval-banner-text">
+                <h4>{pendingCount} Self-Registered Player{pendingCount > 1 ? 's' : ''} Awaiting Admin Approval</h4>
+                <p>Review submitted identity proofs, cricket profiles, and approve or reject player applications.</p>
+              </div>
+            </div>
+            <button className="admin-approval-banner-btn" onClick={() => setActiveTab('pending')}>
+              Review Pending Players ({pendingCount}) <ArrowRight size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* Quick Filter Tabs */}
+        <div className="admin-quick-tabs">
+          <button className={`admin-tab-btn ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>
+            All Players <span className="admin-tab-badge">{players.length}</span>
+          </button>
+          <button className={`admin-tab-btn ${activeTab === 'pending' ? 'active' : ''}`} onClick={() => setActiveTab('pending')}>
+            <Clock size={13} color="#facc15" /> Pending Approval <span className={`admin-tab-badge ${pendingCount > 0 ? 'pending' : ''}`}>{pendingCount}</span>
+          </button>
+          <button className={`admin-tab-btn ${activeTab === 'self' ? 'active' : ''}`} onClick={() => setActiveTab('self')}>
+            Self-Registered <span className="admin-tab-badge">{selfCount}</span>
+          </button>
+          <button className={`admin-tab-btn ${activeTab === 'active' ? 'active' : ''}`} onClick={() => setActiveTab('active')}>
+            Approved / Active <span className="admin-tab-badge">{activeCount}</span>
           </button>
         </div>
 
@@ -355,6 +503,17 @@ export default function PlayersPage() {
             <option value="eligible">Auction Eligible</option>
             <option value="ineligible">Auction Disabled</option>
             <option value="unassigned">Unassigned</option>
+          </select>
+          <select value={filterSource} onChange={e => setFilterSource(e.target.value)}>
+            <option value="">All Sources</option>
+            <option value="self">Self-Registered</option>
+            <option value="admin">Admin Created</option>
+          </select>
+          <select value={filterApproval} onChange={e => setFilterApproval(e.target.value)}>
+            <option value="">All Approvals</option>
+            <option value="pending">Pending Review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
           <div className="admin-filter-count">
             <UserCheck size={14} /> {filtered.length} players
@@ -521,10 +680,32 @@ export default function PlayersPage() {
                   </div>
                   <div className="admin-form-field">
                     <label>Status</label>
-                    <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+                    <select value={form.status} onChange={e => {
+                      const val = e.target.value;
+                      setForm({
+                        ...form,
+                        status: val,
+                        approval: val === 'active' ? 'approved' : val === 'disabled' ? 'rejected' : form.approval
+                      });
+                    }}>
                       <option value="active">Active</option>
                       <option value="pending">Pending (Review)</option>
                       <option value="disabled">Disabled</option>
+                    </select>
+                  </div>
+                  <div className="admin-form-field">
+                    <label>Approval Decision</label>
+                    <select value={form.approval} onChange={e => {
+                      const val = e.target.value;
+                      setForm({
+                        ...form,
+                        approval: val,
+                        status: val === 'approved' ? 'active' : val === 'rejected' ? 'disabled' : form.status
+                      });
+                    }}>
+                      <option value="approved">Approved</option>
+                      <option value="pending">Pending Review</option>
+                      <option value="rejected">Rejected</option>
                     </select>
                   </div>
                   <div className="admin-form-field">
@@ -594,7 +775,14 @@ export default function PlayersPage() {
                 <div className="player-detail-info-header">
                   <div>
                     <h3>Player Details</h3>
-                    <p>Registered by: <strong>{selected.registered_by || '—'}</strong></p>
+                    <p style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                      Registered by: <strong>{selected.registered_by || '—'}</strong>
+                      {selected.registered_by?.toLowerCase().includes('self') ? (
+                        <span className="admin-source-badge self">Self Reg</span>
+                      ) : (
+                        <span className="admin-source-badge admin">Admin</span>
+                      )}
+                    </p>
                   </div>
                   <div className="player-detail-header-actions">
                     <button className="admin-btn admin-btn-ghost admin-btn-sm" onClick={() => window.open(`/admin/players/print/${selected.id}`, '_blank')}><Printer size={14} /> Print</button>
@@ -602,6 +790,69 @@ export default function PlayersPage() {
                     <button className="player-detail-close" onClick={() => setModal(null)}><X size={20} /></button>
                   </div>
                 </div>
+
+                {/* Review / Approval Callout Box */}
+                {(selected.status === 'pending' || selected.approval === 'pending') ? (
+                  <div className="player-review-box" style={{ margin: '16px 20px 0' }}>
+                    <div>
+                      <div className="player-review-box-title">
+                        <Clock size={16} /> Self-Registration Awaiting Admin Approval
+                      </div>
+                      <p className="player-review-box-sub">
+                        Review personal information, address proof, and cricket profile. Approve to activate and make player auction-eligible.
+                      </p>
+                    </div>
+                    <div className="player-review-actions">
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn-sm admin-btn-danger"
+                        onClick={() => handleReject(selected)}
+                        disabled={saving}
+                      >
+                        <X size={14} /> Reject Application
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn-sm admin-btn-primary"
+                        style={{ background: '#16a34a', borderColor: '#16a34a' }}
+                        onClick={() => handleApprove(selected)}
+                        disabled={saving}
+                      >
+                        <Check size={14} /> Approve Player
+                      </button>
+                    </div>
+                  </div>
+                ) : (selected.approval === 'rejected' || selected.status === 'rejected') ? (
+                  <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '10px', padding: '10px 16px', margin: '16px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#f87171', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <XCircle size={15} /> Registration Rejected
+                    </span>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-primary admin-btn-sm"
+                      style={{ fontSize: '11px', height: '26px', background: '#16a34a', borderColor: '#16a34a' }}
+                      onClick={() => handleApprove(selected)}
+                      disabled={saving}
+                    >
+                      Approve Player
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.25)', borderRadius: '10px', padding: '10px 16px', margin: '16px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#4ade80', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <CheckCircle2 size={15} /> Approved by Admin — Active in Tournament Pool
+                    </span>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-ghost admin-btn-sm"
+                      style={{ fontSize: '11px', height: '26px' }}
+                      onClick={() => handleReject(selected)}
+                      disabled={saving}
+                    >
+                      Revoke Approval
+                    </button>
+                  </div>
+                )}
 
                 {/* Details Grid */}
                 <div className="player-detail-grid">

@@ -60,7 +60,7 @@ export interface GalleryPhoto {
 
 export const kplApi = {
   // 1. Players API
-  async getPlayers(params: { status?: string; limit?: number; team_id?: string; count_only?: boolean } = {}) {
+  async getPlayers(params: { status?: string; limit?: number; team_id?: string; count_only?: boolean; approval?: string; registered_by?: string } = {}) {
     if (params.count_only) {
       return fetchFromPhpApi(`api/players.php?count_only=true&status=${params.status || 'active'}`);
     }
@@ -79,6 +79,29 @@ export const kplApi = {
     return fetchFromPhpApi(`api/players.php?id=${id}`, {
       method: 'PUT',
       body: JSON.stringify(playerData),
+    });
+  },
+
+  async approvePlayer(id: string) {
+    return fetchFromPhpApi(`api/players.php?id=${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        approval: 'approved',
+        status: 'active',
+        auction_eligible: 1,
+      }),
+    });
+  },
+
+  async rejectPlayer(id: string, notes?: string) {
+    return fetchFromPhpApi(`api/players.php?id=${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        approval: 'rejected',
+        status: 'disabled',
+        auction_eligible: 0,
+        notes: notes || 'Rejected by admin',
+      }),
     });
   },
 

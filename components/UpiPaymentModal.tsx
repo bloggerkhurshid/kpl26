@@ -81,14 +81,45 @@ export function UpiPaymentModal({
   const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Screenshot file size must be under 10MB.');
+    if (file.size > 15 * 1024 * 1024) {
+      setError('Screenshot file size must be under 15MB.');
       return;
     }
     const reader = new FileReader();
     reader.onload = (event) => {
-      setScreenshot(event.target?.result as string);
-      setError('');
+      const rawUrl = event.target?.result as string;
+      // Compress image using canvas so upload is instant and doesn't get stuck
+      const img = new Image();
+      img.onload = () => {
+        const maxWidth = 1200;
+        const maxHeight = 1200;
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          setScreenshot(canvas.toDataURL('image/jpeg', 0.8));
+        } else {
+          setScreenshot(rawUrl);
+        }
+        setError('');
+      };
+      img.onerror = () => {
+        setScreenshot(rawUrl);
+        setError('');
+      };
+      img.src = rawUrl;
     };
     reader.readAsDataURL(file);
   };
@@ -134,7 +165,10 @@ export function UpiPaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn">
+    <div
+      className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn"
+      style={{ zIndex: 2500 }}
+    >
       <div className="bg-[#081426] border border-slate-700/60 rounded-2xl max-w-lg w-full p-4 sm:p-6 text-white relative shadow-2xl my-auto max-h-[94vh] overflow-y-auto">
         <button
           onClick={onClose}

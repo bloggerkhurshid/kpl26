@@ -244,8 +244,17 @@ export default function PrintPlayerReceipt({ params }: { params: { id: string } 
             <div className="sig-line">Player's Signature</div>
           </div>
           <div className="sig-box">
-            {player.approval && <div className="sig-upload" style={{ color: '#16a34a', fontWeight: 'bold' }}>{player.approval}</div>}
-            <div className="sig-line">Signature Approval</div>
+            {player.approval === 'approved' || player.status === 'active' ? (
+              <div className="sig-upload" style={{ color: '#16a34a', fontWeight: 'bold', fontSize: '13px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <span>✓ APPROVED</span>
+                <span style={{ fontSize: '10px', color: '#15803d', fontWeight: 'normal' }}>KPL Committee</span>
+              </div>
+            ) : player.approval === 'rejected' ? (
+              <div className="sig-upload" style={{ color: '#dc2626', fontWeight: 'bold', fontSize: '13px' }}>REJECTED</div>
+            ) : (
+              <div className="sig-upload" style={{ color: '#d97706', fontWeight: 'bold', fontSize: '12px' }}>PENDING APPROVAL</div>
+            )}
+            <div className="sig-line">Committee Approval</div>
           </div>
         </div>
 

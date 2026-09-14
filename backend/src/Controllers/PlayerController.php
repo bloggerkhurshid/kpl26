@@ -14,6 +14,8 @@ class PlayerController {
     public function index(): void {
         $filters = [
             'status' => $_GET['status'] ?? null,
+            'approval' => $_GET['approval'] ?? null,
+            'registered_by' => $_GET['registered_by'] ?? null,
             'team_id' => $_GET['team_id'] ?? null,
             'auction_eligible' => $_GET['auction_eligible'] ?? null,
         ];
