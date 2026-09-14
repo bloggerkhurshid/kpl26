@@ -77,7 +77,7 @@ class Player {
     }
 
     public static function all(array $filters = [], int $limit = 500): array {
-        self::migrateBase64();
+        // self::migrateBase64();
         $sql = "
             SELECT p.*, 
                    t.name as team_name, 
