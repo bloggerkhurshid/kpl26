@@ -7,7 +7,6 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
-  Clock3,
   Facebook,
   Instagram,
   Loader2,
@@ -629,35 +628,6 @@ export default function Home() {
               <p className="lead hero-lead">
                 {content.hero_subtitle || 'Eight elite franchises. High-voltage auction draft. Massive cash prizes & trophies live under floodlights from Khoraghat, Bilasipara, Dhubri, Assam.'}
               </p>
-
-              {/* Tournament Highlights Ribbon */}
-              <div className="hero-highlights-strip">
-                <div className="hero-highlight-card">
-                  <span className="highlight-label">1st Champions</span>
-                  <strong className="highlight-value text-emerald-400">₹1,00,000 + 🏆</strong>
-                </div>
-                <div className="hero-highlight-card">
-                  <span className="highlight-label">Runners-Up</span>
-                  <strong className="highlight-value text-amber-300">₹50,000 + 🥈</strong>
-                </div>
-                <div className="hero-highlight-card">
-                  <span className="highlight-label">Franchises</span>
-                  <strong className="highlight-value text-sky-400">8 Squads</strong>
-                </div>
-                <div className="hero-highlight-card">
-                  <span className="highlight-label">Tournament Ball</span>
-                  <strong className="highlight-value text-green-300">Hard Tennis</strong>
-                </div>
-              </div>
-
-              {/* Scoreboard Countdown Timer */}
-              <div className="hero-timer-box">
-                <div className="hero-timer-header">
-                  <Clock3 size={15} />
-                  <span>{content.deadline_text || 'Registration Window Closes In'}</span>
-                </div>
-                <CountdownTimer deadlineDate={content.deadline_date || '2026-09-20'} />
-              </div>
 
               {/* Action Buttons */}
               <div className="hero-actions">

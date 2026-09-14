@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Trophy, Sparkles, ChevronRight, Clock } from 'lucide-react';
+import { Calendar, MapPin, Sparkles, ChevronRight } from 'lucide-react';
 import type { ContentSettings } from '../types';
 
 interface HeroProps {
@@ -26,30 +26,6 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister, content }) => {
     }, 4500);
     return () => clearInterval(timer);
   }, []);
-
-  // Countdown timer calculation
-  const targetDateStr = content?.deadline_date || '2026-09-20T23:59:59';
-  const calculateTimeLeft = () => {
-    const target = new Date(targetDateStr).getTime();
-    const now = new Date().getTime();
-    const diff = Math.max(0, target - now);
-
-    return {
-      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((diff / 1000 / 60) % 60),
-      seconds: Math.floor((diff / 1000) % 60),
-    };
-  };
-
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [targetDateStr]);
 
   const scrollToSection = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -91,43 +67,12 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister, content }) => {
 
           <p className="lead">{heroSubtitle}</p>
 
-          {/* Registration Countdown Timer */}
-          <div className="my-2">
-            <div className="d-flex align-items-center gap-2 mb-2 text-dark small fw-bold">
-              <Clock size={15} className="text-warning" />
-              <span>
-                {content?.deadline_text || 'Registration Closes Soon — Secure Your Spot!'}
-              </span>
-            </div>
-            <div className="countdown">
-              <div className="countdown-cell">
-                <strong>{String(timeLeft.days).padStart(2, '0')}</strong>
-                <span>Days</span>
-              </div>
-              <div className="countdown-cell">
-                <strong>{String(timeLeft.hours).padStart(2, '0')}</strong>
-                <span>Hours</span>
-              </div>
-              <div className="countdown-cell">
-                <strong>{String(timeLeft.minutes).padStart(2, '0')}</strong>
-                <span>Mins</span>
-              </div>
-              <div className="countdown-cell">
-                <strong>{String(timeLeft.seconds).padStart(2, '0')}</strong>
-                <span>Secs</span>
-              </div>
-            </div>
-          </div>
-
           <div className="d-flex flex-wrap gap-2 align-items-center pt-2">
             <span className="badge bg-white text-dark border p-2 px-3 rounded-pill fw-bold shadow-sm">
-              <Calendar size={14} className="me-1 text-primary" /> Launch: Summer 2026
+              <Calendar size={14} className="me-1 text-primary" /> Season 3 · 2026 Registration Open
             </span>
             <span className="badge bg-white text-dark border p-2 px-3 rounded-pill fw-bold shadow-sm">
-              <MapPin size={14} className="me-1 text-danger" /> Khoraghat High School Ground
-            </span>
-            <span className="badge bg-white text-dark border p-2 px-3 rounded-pill fw-bold shadow-sm">
-              <Trophy size={14} className="me-1 text-warning" /> ₹1,00,000 Champion Prize
+              <MapPin size={14} className="me-1 text-danger" /> Khoraghat High School Ground, Assam
             </span>
           </div>
 
