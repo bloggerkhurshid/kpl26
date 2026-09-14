@@ -1048,7 +1048,7 @@ export default function PlayersPage() {
 
         {/* Address Proof Viewer Modal */}
         {proofModal && (
-          <div className="admin-modal-overlay" onClick={() => setProofModal(null)}>
+          <div className="admin-modal-overlay" style={{ zIndex: 9999 }} onClick={() => setProofModal(null)}>
             <div className="admin-modal" style={{ maxWidth: '800px', width: '92%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
               <div className="admin-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--adm-border)' }}>
                 <div>
