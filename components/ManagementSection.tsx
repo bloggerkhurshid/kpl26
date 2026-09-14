@@ -42,58 +42,85 @@ export function ManagementSection() {
 
   return (
     <section id="management" className="section-pad management-section">
-      <div className="page-width">
-        {/* Section Header */}
+      {/* Background glow orbs */}
+      <div className="management-bg-glow management-bg-glow-left" />
+      <div className="management-bg-glow management-bg-glow-right" />
+
+      <div className="page-width" style={{ position: 'relative', zIndex: 2 }}>
+        {/* Premium Section Header */}
         <div className="management-header">
-          <span className="section-label" style={{ justifyContent: 'center' }}>
-            <Award size={14} style={{ color: 'var(--green-mint)' }} />
-            Leadership & Committee
-          </span>
-          <h2 className="sport-heading">League <em>Management</em></h2>
-          <p className="lead" style={{ margin: '16px auto 0' }}>
-            The visionary organizers, sports patrons, and executive committee members powering Khoraghat Premier League.
+          <div className="management-badge-pill">
+            <Award size={14} className="management-badge-icon" />
+            <span>Executive Committee</span>
+          </div>
+          <h2 className="management-display-title">
+            Leadership &amp; <em>Committee</em>
+          </h2>
+          <p className="management-display-subtitle">
+            The visionary organizers, patrons, and executive leadership steering Khoraghat Premier League Season 3 with excellence.
           </p>
         </div>
 
         {/* Management Personnel Grid */}
         <div className="management-grid">
-          {members.map((member) => (
+          {members.map((member, idx) => (
             <div key={member.id} className="management-executive-card">
-              {/* Photo Showcase (Large Portrait) */}
+              {/* Top Accent Line */}
+              <div className="management-card-top-bar" />
+
+              {/* Photo Showcase (Strict 3:4 Portrait Ratio) */}
               <div className="management-photo-wrapper">
                 <div className="management-photo-halo" />
+                
                 <div className="management-photo-frame">
                   {member.photo_url ? (
                     <img
                       src={getImageUrl(member.photo_url)}
                       alt={member.name}
                       className="management-photo-img"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <div className="management-photo-fallback">
-                      <UserCheck size={56} style={{ color: 'var(--green-mint)', opacity: 0.8 }} />
+                      <UserCheck size={52} style={{ color: 'var(--green-mint)', opacity: 0.85 }} />
                     </div>
                   )}
                 </div>
-                {/* Official Role Badge Floating on image */}
+
+                {/* Shimmer gradient overlay */}
+                <div className="management-photo-gradient" />
+
+                {/* Floating Designation Pill */}
                 <div className="management-badge-float">
-                  <Shield size={12} />
+                  <Shield size={12} className="management-shield-icon" />
                   <span>{member.designation}</span>
                 </div>
               </div>
 
               {/* Body Content */}
               <div className="management-card-body">
-                <h3 className="management-card-name">{member.name}</h3>
+                <div className="management-card-info">
+                  <h3 className="management-card-name">{member.name}</h3>
+                  <div className="management-role-subtext">Official Governing Body</div>
+                </div>
 
-                {member.contact && (
+                {member.contact ? (
                   <a
                     href={`tel:${member.contact.replace(/\s+/g, '')}`}
                     className="management-contact-btn"
+                    title={`Call ${member.name}`}
                   >
-                    <Phone size={13} className="management-phone-icon" />
+                    <div className="management-phone-circle">
+                      <Phone size={13} />
+                    </div>
                     <span>{member.contact}</span>
                   </a>
+                ) : (
+                  <div className="management-contact-placeholder">
+                    <Shield size={13} style={{ opacity: 0.5 }} />
+                    <span>Honorary Official</span>
+                  </div>
                 )}
               </div>
             </div>
