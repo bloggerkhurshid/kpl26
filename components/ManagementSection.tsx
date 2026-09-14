@@ -61,17 +61,12 @@ export function ManagementSection() {
           </p>
         </div>
 
-        {/* Management Personnel Grid */}
+        {/* Management Personnel Grid - Compact Luxury Cards */}
         <div className="management-grid">
-          {members.map((member, idx) => (
+          {members.map((member) => (
             <div key={member.id} className="management-executive-card">
-              {/* Top Accent Line */}
-              <div className="management-card-top-bar" />
-
               {/* Photo Showcase (Strict 3:4 Portrait Ratio) */}
               <div className="management-photo-wrapper">
-                <div className="management-photo-halo" />
-                
                 <div className="management-photo-frame">
                   {member.photo_url ? (
                     <img
@@ -83,26 +78,25 @@ export function ManagementSection() {
                     />
                   ) : (
                     <div className="management-photo-fallback">
-                      <UserCheck size={52} style={{ color: 'var(--green-mint)', opacity: 0.85 }} />
+                      <UserCheck size={40} style={{ color: 'var(--green-mint)', opacity: 0.8 }} />
                     </div>
                   )}
                 </div>
 
-                {/* Shimmer gradient overlay */}
+                {/* Subtle vignette gradient */}
                 <div className="management-photo-gradient" />
 
-                {/* Floating Designation Pill */}
+                {/* Floating Designation Badge */}
                 <div className="management-badge-float">
-                  <Shield size={12} className="management-shield-icon" />
+                  <Shield size={11} className="management-shield-icon" />
                   <span>{member.designation}</span>
                 </div>
               </div>
 
-              {/* Body Content */}
+              {/* Compact Card Body */}
               <div className="management-card-body">
                 <div className="management-card-info">
                   <h3 className="management-card-name">{member.name}</h3>
-                  <div className="management-role-subtext">Official Governing Body</div>
                 </div>
 
                 {member.contact ? (
@@ -112,16 +106,11 @@ export function ManagementSection() {
                     title={`Call ${member.name}`}
                   >
                     <div className="management-phone-circle">
-                      <Phone size={13} />
+                      <Phone size={12} />
                     </div>
                     <span>{member.contact}</span>
                   </a>
-                ) : (
-                  <div className="management-contact-placeholder">
-                    <Shield size={13} style={{ opacity: 0.5 }} />
-                    <span>Honorary Official</span>
-                  </div>
-                )}
+                ) : null}
               </div>
             </div>
           ))}
