@@ -384,8 +384,27 @@ export default function Home() {
 
   async function submitPlayerRegistration(e: React.FormEvent) {
     e.preventDefault();
-    setStatus('submitting');
     setErrorMsg('');
+
+    if (!playerForm.photo) {
+      setStatus('error');
+      setErrorMsg('Please upload your player photo before submitting registration.');
+      return;
+    }
+
+    if (!playerForm.address_proof) {
+      setStatus('error');
+      setErrorMsg('Please upload your address proof document (Aadhaar, Voter ID, etc.) before submitting.');
+      return;
+    }
+
+    if (!playerForm.declaration_accepted) {
+      setStatus('error');
+      setErrorMsg('Please accept the Player Declaration & Undertaking checkbox to proceed.');
+      return;
+    }
+
+    setStatus('submitting');
     
     const newRegNum = `KPL-PLR-${Date.now().toString().slice(-6)}`;
     const age = parseInt(playerForm.age_input);

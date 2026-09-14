@@ -103,6 +103,18 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
     try {
       if (regType === 'player') {
+        if (!photoBase64) {
+          setErrorMsg('Please upload a passport-size photo of the player.');
+          setSubmitting(false);
+          return;
+        }
+
+        if (!declarationAccepted) {
+          setErrorMsg('Please accept the player declaration & undertaking checkbox.');
+          setSubmitting(false);
+          return;
+        }
+
         const regNum = `KPL-PLR-${Date.now().toString().slice(-6)}`;
         const payload = {
           registration_number: regNum,
