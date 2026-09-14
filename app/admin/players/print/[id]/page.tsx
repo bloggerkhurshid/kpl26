@@ -1,6 +1,6 @@
 'use client';
 import { use, useEffect, useState } from 'react';
-import { getImageUrl } from '@/lib/api';
+import { getImageUrl, fetchFromPhpApi } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import '@/app/register/player/paper.css';
 
@@ -16,23 +16,21 @@ export default function PrintPlayerReceipt({ params }: { params: Promise<{ id: s
     async function load() {
       try {
         // Try fetching player directly by ID first (fast path)
-        const res = await fetch(`/api/players.php?id=${playerId}`);
-        if (res.ok) {
-          const data = await res.json();
+        try {
+          const data = await fetchFromPhpApi(`api/players.php?id=${playerId}`);
           const found = data?.data || data;
           if (found && found.id) {
             setPlayer(found);
             return;
           }
+        } catch (_) {
+          // If show() returns 500/404, fall through to scan
         }
-        // Fallback: scan all players (handles servers where show() returns 500)
-        const res2 = await fetch(`/api/players.php?limit=2000`);
-        if (res2.ok) {
-          const data2 = await res2.json();
-          const list = data2?.data || data2 || [];
-          const found2 = list.find((p: any) => String(p.id) === String(playerId));
-          if (found2) setPlayer(found2);
-        }
+        // Fallback: scan all players
+        const data2 = await fetchFromPhpApi(`api/players.php?limit=2000`);
+        const list = data2?.data || data2 || [];
+        const found2 = list.find((p: any) => String(p.id) === String(playerId));
+        if (found2) setPlayer(found2);
       } catch (err) {
         console.error('Failed to load player print data:', err);
       } finally {
