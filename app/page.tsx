@@ -662,15 +662,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Bottom Summary Strip */}
-            <div className="podium-summary-strip">
-              <span className="podium-summary-dot" />
-              <span>Total Cash Purse: ₹44,500</span>
-              <span className="podium-summary-dot" />
-              <span>3 Official Championship Trophies</span>
-              <span className="podium-summary-dot" />
-              <span>32 Finalist Medals</span>
-            </div>
+
           </div>
         </section>
       )}
