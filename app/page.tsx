@@ -552,7 +552,7 @@ export default function Home() {
       )}
 
       <nav className={`site-nav ${scrolled ? 'is-scrolled' : ''}`}>
-        <div className="max-w-7xl mx-auto w-full" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="nav-container max-w-7xl mx-auto w-full flex items-center justify-between">
           <button className="brand" onClick={scrollToTop} aria-label="KPL home">
             <img src="/kpl-logo.jpg" alt="KPL" className="brand-logo" />
             <span className="brand-text">
@@ -580,7 +580,7 @@ export default function Home() {
               >
                 <span className="nav-cta-pulse" />
                 <span>Register Now</span>
-                <ArrowRight size={15} strokeWidth={2.8} />
+                <ArrowRight size={15} strokeWidth={2.8} className="nav-cta-arrow" />
               </button>
             </div>
           </div>
