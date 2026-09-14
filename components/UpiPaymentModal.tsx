@@ -128,8 +128,9 @@ export function UpiPaymentModal({
     e.preventDefault();
     const cleanUtr = utr.trim();
 
-    if (!cleanUtr && !screenshot) {
-      setError('Please upload a payment screenshot or enter your 12-digit UPI UTR number.');
+    // Screenshot is required for proof verification
+    if (!screenshot) {
+      setError('Please tap "Tap to Upload Payment Screenshot" to attach your payment confirmation screenshot before submitting.');
       return;
     }
 

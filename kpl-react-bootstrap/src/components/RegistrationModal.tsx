@@ -196,9 +196,8 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
   const handleUtrSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanUtr = utrNumber.trim();
-    if (!cleanUtr && !paymentScreenshot) {
-      setErrorMsg('Please upload a payment screenshot or enter your 12-digit UPI UTR number.');
+    if (!paymentScreenshot) {
+      setErrorMsg('Please upload your payment confirmation screenshot before submitting.');
       return;
     }
 

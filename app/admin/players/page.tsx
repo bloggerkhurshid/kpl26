@@ -102,12 +102,8 @@ export default function PlayersPage() {
       return;
     }
     const screenshot = pay.screenshot || pay.payment_proof || pay.proof_url;
-    if (!screenshot) {
-      showToast(`Payment recorded (UTR: ${pay.payment_id || 'N/A'}) but no screenshot uploaded.`, 'error');
-      return;
-    }
     setProofModal({
-      url: screenshot,
+      url: screenshot || '',
       title: `Payment Proof — ${p.player_name}`,
       meta: `UTR / Ref: ${pay.payment_id || 'N/A'} • Amount: ₹${pay.amount || '—'} • Status: ${pay.status || 'Pending'}`
     });
@@ -1075,39 +1071,57 @@ export default function PlayersPage() {
                 </button>
               </div>
               <div className="admin-modal-body" style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--adm-input-bg)', minHeight: '300px' }}>
-                {proofModal.url.startsWith('data:application/pdf') || proofModal.url.toLowerCase().endsWith('.pdf') ? (
+                {!proofModal.url ? (
+                  <div style={{ textAlign: 'center', padding: '30px 20px', maxWidth: '420px' }}>
+                    <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#eab308' }}>
+                      <CreditCard size={28} />
+                    </div>
+                    <h4 style={{ margin: '0 0 8px', color: '#f8fafc', fontSize: '16px', fontWeight: 700 }}>Direct UPI Payment Recorded</h4>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
+                      The player completed the registration with transaction reference:
+                    </p>
+                    <div style={{ margin: '14px 0', padding: '10px 14px', background: 'rgba(0,0,0,0.4)', borderRadius: '8px', border: '1px solid var(--adm-border)', fontFamily: 'monospace', fontSize: '13px', color: '#10b981', fontWeight: 700 }}>
+                      {proofModal.meta || 'Pending manual verification'}
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
+                      Note: The player submitted their UPI reference number without uploading an image receipt. You can cross-verify this UTR in your UPI bank app or account statement.
+                    </p>
+                  </div>
+                ) : proofModal.url.startsWith('data:application/pdf') || proofModal.url.toLowerCase().endsWith('.pdf') ? (
                   <iframe src={proofModal.url} title={proofModal.title} style={{ width: '100%', height: '65vh', border: 'none', borderRadius: '8px' }} />
                 ) : (
                   <img src={getImageUrl(proofModal.url)} alt={proofModal.title} style={{ maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }} />
                 )}
               </div>
               <div className="admin-modal-footer" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button
-                  type="button"
-                  className="admin-btn admin-btn-ghost"
-                  onClick={() => {
-                    if (proofModal.url.startsWith('data:')) {
-                      try {
-                        const arr = proofModal.url.split(',');
-                        const mimeMatch = arr[0].match(/:(.*?);/);
-                        const mime = mimeMatch ? mimeMatch[1] : 'image/png';
-                        const bstr = atob(arr[1]);
-                        let n = bstr.length;
-                        const u8arr = new Uint8Array(n);
-                        while (n--) { u8arr[n] = bstr.charCodeAt(n); }
-                        const blob = new Blob([u8arr], { type: mime });
-                        const blobUrl = URL.createObjectURL(blob);
-                        window.open(blobUrl, '_blank');
-                      } catch (e) {
+                {proofModal.url && (
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn-ghost"
+                    onClick={() => {
+                      if (proofModal.url.startsWith('data:')) {
+                        try {
+                          const arr = proofModal.url.split(',');
+                          const mimeMatch = arr[0].match(/:(.*?);/);
+                          const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+                          const bstr = atob(arr[1]);
+                          let n = bstr.length;
+                          const u8arr = new Uint8Array(n);
+                          while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+                          const blob = new Blob([u8arr], { type: mime });
+                          const blobUrl = URL.createObjectURL(blob);
+                          window.open(blobUrl, '_blank');
+                        } catch (e) {
+                          window.open(proofModal.url, '_blank');
+                        }
+                      } else {
                         window.open(proofModal.url, '_blank');
                       }
-                    } else {
-                      window.open(proofModal.url, '_blank');
-                    }
-                  }}
-                >
-                  Open in New Tab ↗
-                </button>
+                    }}
+                  >
+                    Open in New Tab ↗
+                  </button>
+                )}
                 <button type="button" className="admin-btn admin-btn-primary" onClick={() => setProofModal(null)}>Close</button>
               </div>
             </div>
