@@ -1400,21 +1400,308 @@ h2 em {
 .footer-bottom { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 24px; flex-wrap: wrap; gap: 12px; }
 
 /* Modals */
-.modal-overlay { position: fixed; inset: 0; z-index: 1500; background: rgba(4, 13, 26, 0.88); backdrop-filter: blur(12px); display: grid; place-items: center; padding: 20px; overflow-y: auto; }
-.modal-card { background: #0b1a2d; border: 1px solid var(--border-strong); border-radius: 24px; width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative; padding: 40px; box-shadow: 0 25px 70px rgba(0,0,0,0.8), 0 0 30px var(--green-glow); color: #ffffff; }
-.modal-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, #22c55e, #4ade80);
+.modal-overlay { 
+  position: fixed; 
+  inset: 0; 
+  z-index: 1500; 
+  background: rgba(4, 13, 26, 0.88); 
+  backdrop-filter: blur(14px); 
+  -webkit-backdrop-filter: blur(14px); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 24px 16px; 
+  overflow-y: auto; 
 }
-.modal-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #ffffff; cursor: pointer; padding: 8px; border-radius: 50%; display: grid; place-items: center; transition: all 0.2s; }
-.modal-close:hover { background: var(--green); color: #040d1a; border-color: var(--green); }
-.modal-header { margin-bottom: 28px; }
-.modal-header h3 { font-size: 28px; margin-bottom: 6px; color: #ffffff; }
-.form-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-.form-row label { font-size: 12px; font-weight: 800; color: var(--green-mint); text-transform: uppercase; letter-spacing: 1px; }
-.form-row input, .form-row select, .form-row textarea { padding: 13px 16px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; background: #040d1a; color: #ffffff; transition: border-color 0.2s, background 0.2s; outline: none; }
-.form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-glow); }
-.form-row select option { background: #0b1a2d; color: #ffffff; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.modal-card { 
+  background: #081426; 
+  border: 1px solid rgba(255, 255, 255, 0.12); 
+  border-radius: 28px; 
+  width: 100%; 
+  max-width: 720px; 
+  max-height: 90vh; 
+  overflow-y: auto; 
+  position: relative; 
+  padding: 38px 32px; 
+  box-shadow: 0 25px 70px rgba(0,0,0,0.85), 0 0 35px rgba(34, 197, 94, 0.15); 
+  color: #ffffff; 
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-card::before {
+  content: ''; 
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  right: 0; 
+  height: 4px; 
+  background: linear-gradient(90deg, #15803d, #22c55e, #4ade80);
+}
+
+.modal-close { 
+  position: absolute; 
+  top: 18px; 
+  right: 18px; 
+  background: rgba(255,255,255,0.08); 
+  border: 1px solid rgba(255, 255, 255, 0.12); 
+  color: #ffffff; 
+  cursor: pointer; 
+  width: 38px; 
+  height: 38px; 
+  border-radius: 50%; 
+  display: grid; 
+  place-items: center; 
+  transition: all 0.2s; 
+  z-index: 10;
+}
+.modal-close:hover { 
+  background: var(--green); 
+  color: #040d1a; 
+  border-color: var(--green); 
+}
+
+.modal-header { 
+  margin-bottom: 24px; 
+  padding-right: 40px;
+}
+.modal-header h3 { 
+  font-size: 26px; 
+  margin-bottom: 6px; 
+  color: #ffffff; 
+  letter-spacing: -0.3px;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 16px; 
+  width: 100%;
+}
+
+.form-row { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 7px; 
+  width: 100%;
+}
+
+.form-row label { 
+  font-size: 11.5px; 
+  font-weight: 800; 
+  color: var(--green-mint); 
+  text-transform: uppercase; 
+  letter-spacing: 0.8px; 
+}
+
+.form-row input, 
+.form-row select, 
+.form-row textarea { 
+  width: 100%;
+  padding: 13px 16px; 
+  border: 1px solid rgba(255, 255, 255, 0.12); 
+  border-radius: 12px; 
+  font-size: 15px; 
+  background: rgba(4, 13, 26, 0.7); 
+  color: #ffffff; 
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; 
+  outline: none; 
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.form-row input:focus, 
+.form-row select:focus, 
+.form-row textarea:focus { 
+  border-color: var(--green); 
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25); 
+  background: rgba(4, 13, 26, 0.95);
+}
+
+.form-row select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322c55e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  padding-right: 38px;
+}
+
+.form-row select option { 
+  background: #081426; 
+  color: #ffffff; 
+}
+
+/* Cricket Profile Styles */
+.cricket-profile-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(4, 13, 26, 0.6);
+  padding: 18px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cricket-role-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cricket-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #ffffff;
+  user-select: none;
+}
+
+.cricket-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+
+.cricket-suboptions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-left: 28px;
+}
+
+.cricket-pill-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cricket-pill-option input[type="radio"] {
+  display: none;
+}
+
+.cricket-pill-option:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.cricket-pill-option.active {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: var(--green-mint);
+  color: var(--green-mint);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+}
+
+.cricket-option-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 4px;
+}
+
+/* File Upload Dropzones */
+.file-upload-dropzone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
+  border: 1.5px dashed rgba(250, 204, 21, 0.45);
+  border-radius: 16px;
+  cursor: pointer;
+  background: rgba(4, 13, 26, 0.55);
+  overflow: hidden;
+  transition: all 0.2s ease;
+  padding: 12px;
+}
+
+.file-upload-dropzone:hover {
+  border-color: #facc15;
+  background: rgba(250, 204, 21, 0.06);
+}
+
+.file-upload-dropzone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.file-upload-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.file-upload-icon {
+  color: #facc15;
+}
+
+.file-upload-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.file-upload-sublabel {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.file-upload-preview {
+  position: relative;
+  width: 100%;
+  height: 110px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.file-upload-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-upload-change-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(4, 13, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  backdrop-filter: blur(8px);
+}
 
 /* =========================================================
    YOUR MOMENT IS HERE / REGISTRATION SECTION
@@ -1771,7 +2058,67 @@ h2 em {
   .players-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
   .gallery-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 150px; gap: 10px; }
   
-  .modal-card { padding: 24px 18px; }
+  .modal-overlay {
+    padding: 12px 10px;
+    align-items: center;
+  }
+  
+  .modal-card,
+  .modal-registration-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92vh !important;
+    padding: 24px 18px 20px !important;
+    border-radius: 20px !important;
+    margin: 0 !important;
+  }
+
+  .modal-header {
+    margin-bottom: 20px;
+    padding-right: 36px;
+  }
+
+  .modal-header h3 {
+    font-size: 22px !important;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .form-row input,
+  .form-row select,
+  .form-row textarea {
+    font-size: 16px !important; /* CRITICAL: Prevents iOS Safari auto-zoom on mobile */
+    min-height: 48px;
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  .cricket-suboptions-row {
+    padding-left: 0;
+    gap: 6px;
+  }
+
+  .cricket-pill-option {
+    padding: 6px 12px;
+    font-size: 12.5px;
+  }
+
+  .cricket-option-divider {
+    display: none;
+  }
+
+  .file-upload-dropzone {
+    min-height: 115px;
+  }
+
+  .modal-form .button-primary {
+    min-height: 50px;
+    font-size: 15px;
+    font-weight: 800;
+  }
 }
 
 @media (max-width: 480px) {

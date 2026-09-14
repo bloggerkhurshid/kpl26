@@ -240,7 +240,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       style={{ background: 'rgba(15,23,42,0.7)', backdropFilter: 'blur(10px)', zIndex: 1050 }}
     >
       <div className="modal-dialog modal-dialog-centered modal-lg">
-        <div className="kpl-modal-content p-4">
+        <div className="kpl-modal-content p-3 p-sm-4">
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
             <div>
@@ -268,7 +268,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
           {step === 'form' && (
             <div>
               {/* Switcher */}
-              <div className="d-flex gap-2 mb-4">
+              <div className="d-flex flex-column flex-sm-row gap-2 mb-4">
                 <button
                   type="button"
                   className={`btn flex-grow-1 rounded-pill fw-bold py-2.5 ${

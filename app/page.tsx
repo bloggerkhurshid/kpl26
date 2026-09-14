@@ -1101,22 +1101,22 @@ export default function Home() {
 
       {modal && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: '80%', maxWidth: '80%' }}>
+          <div className="modal-card modal-registration-card" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={closeModal} aria-label="Close"><X size={20} /></button>
             {status === 'success' ? (
-              <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                <CheckCircle2 size={64} color="#D4AF37" style={{ margin: '0 auto 24px' }} />
+              <div style={{ textAlign: 'center', padding: '40px 10px' }}>
+                <CheckCircle2 size={64} color="#22c55e" style={{ margin: '0 auto 24px' }} />
                 <h3 className="sport-heading">Registration received!</h3>
                 <p className="lead" style={{ margin: '16px auto', fontSize: '15px' }}>Your {modal === 'team' ? 'team' : 'player'} registration for KPL Season 3 has been submitted.</p>
                 {modal === 'player' && registeredId && <p style={{ marginBottom: '32px' }}>Your Registration ID is <strong>{registeredId}</strong></p>}
-                <button className="button button-primary" onClick={closeModal}>Done</button>
+                <button className="button button-primary" onClick={closeModal} style={{ width: '100%', maxWidth: '240px', margin: '0 auto' }}>Done</button>
               </div>
             ) : modal === 'team' ? (
               <>
                 <div className="modal-header">
                   <span className="section-label">FRANCHISE REGISTRATION</span>
                   <h3 className="sport-heading">Register your team</h3>
-                  <p className="lead" style={{ fontSize: '15px' }}>Enter your franchise details to join KPL Season 3.</p>
+                  <p className="lead" style={{ fontSize: '14px', marginTop: '6px' }}>Enter your franchise details to join KPL Season 3.</p>
                 </div>
                 {status === 'error' && <div className="status-error">{errorMsg || 'Something went wrong. Please try again.'}</div>}
                 <form className="modal-form" onSubmit={submitTeamRegistration}>
@@ -1124,7 +1124,7 @@ export default function Home() {
                   <div className="form-row"><label>Owner name *</label><input type="text" required value={teamForm.owner_name} onChange={(e) => setTeamForm({ ...teamForm, owner_name: e.target.value })} placeholder="Franchise owner" /></div>
                   
                   <div className="form-grid">
-                    <div className="form-row"><label>Contact number *</label><input type="tel" required value={teamForm.contact_number} onChange={(e) => setTeamForm({ ...teamForm, contact_number: e.target.value })} placeholder="+91 ..." /></div>
+                    <div className="form-row"><label>Contact number *</label><input type="tel" inputMode="tel" required value={teamForm.contact_number} onChange={(e) => setTeamForm({ ...teamForm, contact_number: e.target.value })} placeholder="+91 ..." /></div>
                     <div className="form-row"><label>Home location</label><input type="text" value={teamForm.home_location} onChange={(e) => setTeamForm({ ...teamForm, home_location: e.target.value })} placeholder="City / Town" /></div>
                   </div>
                   
@@ -1140,24 +1140,24 @@ export default function Home() {
                 <div className="modal-header">
                   <span className="section-label">PLAYER REGISTRATION</span>
                   <h3 className="sport-heading">Register as player</h3>
-                  <p className="lead" style={{ fontSize: '15px' }}>Enter your details to join KPL Season 3.</p>
+                  <p className="lead" style={{ fontSize: '14px', marginTop: '6px' }}>Enter your details to join KPL Season 3.</p>
                 </div>
                 {status === 'error' && <div className="status-error">{errorMsg || 'Something went wrong. Please try again.'}</div>}
                 <form className="modal-form" onSubmit={submitPlayerRegistration}>
                   <div className="form-grid">
-                    <div className="form-row"><label>Player Name *</label><input type="text" required value={playerForm.player_name} onChange={(e) => setPlayerForm({ ...playerForm, player_name: e.target.value })} /></div>
-                    <div className="form-row"><label>Father's Name *</label><input type="text" required value={playerForm.father_name} onChange={(e) => setPlayerForm({ ...playerForm, father_name: e.target.value })} /></div>
+                    <div className="form-row"><label>Player Name *</label><input type="text" required value={playerForm.player_name} onChange={(e) => setPlayerForm({ ...playerForm, player_name: e.target.value })} placeholder="Full name" /></div>
+                    <div className="form-row"><label>Father's Name *</label><input type="text" required value={playerForm.father_name} onChange={(e) => setPlayerForm({ ...playerForm, father_name: e.target.value })} placeholder="Father's name" /></div>
                   </div>
                   
                   <div className="form-grid">
-                    <div className="form-row"><label>Age *</label><input type="number" required value={playerForm.age_input} onChange={(e) => setPlayerForm({ ...playerForm, age_input: e.target.value })} /></div>
-                    <div className="form-row"><label>Contact No. *</label><input type="tel" required value={playerForm.contact_number} onChange={(e) => setPlayerForm({ ...playerForm, contact_number: e.target.value })} /></div>
+                    <div className="form-row"><label>Age *</label><input type="number" inputMode="numeric" required value={playerForm.age_input} onChange={(e) => setPlayerForm({ ...playerForm, age_input: e.target.value })} placeholder="e.g. 22" /></div>
+                    <div className="form-row"><label>Contact No. *</label><input type="tel" inputMode="tel" required value={playerForm.contact_number} onChange={(e) => setPlayerForm({ ...playerForm, contact_number: e.target.value })} placeholder="+91 ..." /></div>
                   </div>
                   <div className="form-grid">
                     <div className="form-row">
                       <label>Player Category *</label>
                       <select required value={playerForm.player_category} onChange={(e) => setPlayerForm({ ...playerForm, player_category: e.target.value })}>
-                        <option value="">Select...</option>
+                        <option value="">Select Category...</option>
                         <option value="Local">Local</option>
                         <option value="Foreign">Foreign</option>
                       </select>
@@ -1171,51 +1171,105 @@ export default function Home() {
                     </div>
                   </div>
                   
-                  <div className="form-row"><label>Present Address *</label><input type="text" required value={playerForm.present_address} onChange={(e) => setPlayerForm({ ...playerForm, present_address: e.target.value })} /></div>
+                  <div className="form-row"><label>Present Address *</label><input type="text" required value={playerForm.present_address} onChange={(e) => setPlayerForm({ ...playerForm, present_address: e.target.value })} placeholder="Village / Town / District" /></div>
                   
-                  <div className="form-row" style={{ marginTop: '16px', gap: '12px' }}>
+                  <div className="form-row" style={{ marginTop: '8px' }}>
                     <label>Cricket Profile</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                      
+                    <div className="cricket-profile-container">
                       {/* Batsman */}
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, color: 'var(--text)' }}><input type="checkbox" checked={playerForm.batsman} onChange={(e) => setPlayerForm({ ...playerForm, batsman: e.target.checked })} style={{ width: 'auto' }} /> Batsman</label>
-                      {playerForm.batsman && (
-                        <div style={{ marginLeft: '24px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="batting_hand" checked={playerForm.batting_hand === 'Right Hand'} onChange={() => setPlayerForm({...playerForm, batting_hand: 'Right Hand'})} style={{ width: 'auto' }} /> Right Hand</label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="batting_hand" checked={playerForm.batting_hand === 'Left Hand'} onChange={() => setPlayerForm({...playerForm, batting_hand: 'Left Hand'})} style={{ width: 'auto' }} /> Left Hand</label>
-                        </div>
-                      )}
+                      <div className="cricket-role-card">
+                        <label className="cricket-checkbox-label">
+                          <input type="checkbox" checked={playerForm.batsman} onChange={(e) => setPlayerForm({ ...playerForm, batsman: e.target.checked })} />
+                          <span>Batsman</span>
+                        </label>
+                        {playerForm.batsman && (
+                          <div className="cricket-suboptions-row">
+                            <label className={`cricket-pill-option ${playerForm.batting_hand === 'Right Hand' ? 'active' : ''}`}>
+                              <input type="radio" name="batting_hand" checked={playerForm.batting_hand === 'Right Hand'} onChange={() => setPlayerForm({...playerForm, batting_hand: 'Right Hand'})} />
+                              <span>Right Hand</span>
+                            </label>
+                            <label className={`cricket-pill-option ${playerForm.batting_hand === 'Left Hand' ? 'active' : ''}`}>
+                              <input type="radio" name="batting_hand" checked={playerForm.batting_hand === 'Left Hand'} onChange={() => setPlayerForm({...playerForm, batting_hand: 'Left Hand'})} />
+                              <span>Left Hand</span>
+                            </label>
+                          </div>
+                        )}
+                      </div>
                       
                       {/* Bowler */}
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, color: 'var(--text)', marginTop: '8px' }}><input type="checkbox" checked={playerForm.bowler} onChange={(e) => setPlayerForm({ ...playerForm, bowler: e.target.checked })} style={{ width: 'auto' }} /> Bowler</label>
-                      {playerForm.bowler && (
-                        <div style={{ marginLeft: '24px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="bowling_arm" checked={playerForm.bowling_arm === 'Right Arm'} onChange={() => setPlayerForm({...playerForm, bowling_arm: 'Right Arm'})} style={{ width: 'auto' }} /> Right Arm</label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="bowling_arm" checked={playerForm.bowling_arm === 'Left Arm'} onChange={() => setPlayerForm({...playerForm, bowling_arm: 'Left Arm'})} style={{ width: 'auto' }} /> Left Arm</label>
-                          <span style={{ color: 'var(--muted)' }}>|</span>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="bowling_style" checked={playerForm.bowling_style === 'Pacer'} onChange={() => setPlayerForm({...playerForm, bowling_style: 'Pacer'})} style={{ width: 'auto' }} /> Pacer</label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '14px' }}><input type="radio" name="bowling_style" checked={playerForm.bowling_style === 'Spinner'} onChange={() => setPlayerForm({...playerForm, bowling_style: 'Spinner'})} style={{ width: 'auto' }} /> Spinner</label>
-                        </div>
-                      )}
+                      <div className="cricket-role-card">
+                        <label className="cricket-checkbox-label">
+                          <input type="checkbox" checked={playerForm.bowler} onChange={(e) => setPlayerForm({ ...playerForm, bowler: e.target.checked })} />
+                          <span>Bowler</span>
+                        </label>
+                        {playerForm.bowler && (
+                          <div className="cricket-suboptions-row">
+                            <label className={`cricket-pill-option ${playerForm.bowling_arm === 'Right Arm' ? 'active' : ''}`}>
+                              <input type="radio" name="bowling_arm" checked={playerForm.bowling_arm === 'Right Arm'} onChange={() => setPlayerForm({...playerForm, bowling_arm: 'Right Arm'})} />
+                              <span>Right Arm</span>
+                            </label>
+                            <label className={`cricket-pill-option ${playerForm.bowling_arm === 'Left Arm' ? 'active' : ''}`}>
+                              <input type="radio" name="bowling_arm" checked={playerForm.bowling_arm === 'Left Arm'} onChange={() => setPlayerForm({...playerForm, bowling_arm: 'Left Arm'})} />
+                              <span>Left Arm</span>
+                            </label>
+                            <div className="cricket-option-divider" />
+                            <label className={`cricket-pill-option ${playerForm.bowling_style === 'Pacer' ? 'active' : ''}`}>
+                              <input type="radio" name="bowling_style" checked={playerForm.bowling_style === 'Pacer'} onChange={() => setPlayerForm({...playerForm, bowling_style: 'Pacer'})} />
+                              <span>Pacer</span>
+                            </label>
+                            <label className={`cricket-pill-option ${playerForm.bowling_style === 'Spinner' ? 'active' : ''}`}>
+                              <input type="radio" name="bowling_style" checked={playerForm.bowling_style === 'Spinner'} onChange={() => setPlayerForm({...playerForm, bowling_style: 'Spinner'})} />
+                              <span>Spinner</span>
+                            </label>
+                          </div>
+                        )}
+                      </div>
                       
                       {/* Wicket Keeper */}
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600, color: 'var(--text)', marginTop: '8px' }}><input type="checkbox" checked={playerForm.wicket_keeper} onChange={(e) => setPlayerForm({ ...playerForm, wicket_keeper: e.target.checked })} style={{ width: 'auto' }} /> Wicket Keeper</label>
+                      <div className="cricket-role-card">
+                        <label className="cricket-checkbox-label">
+                          <input type="checkbox" checked={playerForm.wicket_keeper} onChange={(e) => setPlayerForm({ ...playerForm, wicket_keeper: e.target.checked })} />
+                          <span>Wicket Keeper</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
 
                   <div className="form-grid">
                     <div className="form-row">
                       <label>Player Photo *</label>
-                      <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px', border: '1px dashed var(--gold)', borderRadius: '8px', cursor: 'pointer', background: 'rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
-                        <input type="file" accept="image/*" required onChange={(e) => handlePlayerFileChange(e, 'photo')} style={{ opacity: 0, position: 'absolute', inset: 0, zIndex: 10 }} />
-                        {playerForm.photo ? <img src={getImageUrl(playerForm.photo)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <><Users size={32} color="var(--gold)" style={{ marginBottom: '8px' }} /> <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Upload Photo</span></>}
+                      <label className="file-upload-dropzone">
+                        <input type="file" accept="image/*" required onChange={(e) => handlePlayerFileChange(e, 'photo')} />
+                        {playerForm.photo ? (
+                          <div className="file-upload-preview">
+                            <img src={getImageUrl(playerForm.photo)} alt="Preview" />
+                            <span className="file-upload-change-badge">Change Photo</span>
+                          </div>
+                        ) : (
+                          <div className="file-upload-empty">
+                            <Users size={26} className="file-upload-icon" />
+                            <span className="file-upload-label">Upload Photo</span>
+                            <span className="file-upload-sublabel">PNG, JPG up to 5MB</span>
+                          </div>
+                        )}
                       </label>
                     </div>
                     <div className="form-row">
                       <label>Address Proof *</label>
-                      <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px', border: '1px dashed var(--gold)', borderRadius: '8px', cursor: 'pointer', background: 'rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
-                        <input type="file" accept="image/*" required onChange={(e) => handlePlayerFileChange(e, 'address_proof')} style={{ opacity: 0, position: 'absolute', inset: 0, zIndex: 10 }} />
-                        {playerForm.address_proof ? <img src={getImageUrl(playerForm.address_proof)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <><BadgeCheck size={32} color="var(--gold)" style={{ marginBottom: '8px' }} /> <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Upload Proof</span></>}
+                      <label className="file-upload-dropzone">
+                        <input type="file" accept="image/*" required onChange={(e) => handlePlayerFileChange(e, 'address_proof')} />
+                        {playerForm.address_proof ? (
+                          <div className="file-upload-preview">
+                            <img src={getImageUrl(playerForm.address_proof)} alt="Preview" />
+                            <span className="file-upload-change-badge">Change Proof</span>
+                          </div>
+                        ) : (
+                          <div className="file-upload-empty">
+                            <BadgeCheck size={26} className="file-upload-icon" />
+                            <span className="file-upload-label">Upload Proof</span>
+                            <span className="file-upload-sublabel">Aadhaar, Voter ID, etc.</span>
+                          </div>
+                        )}
                       </label>
                     </div>
                   </div>
