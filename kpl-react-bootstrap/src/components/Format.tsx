@@ -1,14 +1,24 @@
 import React from 'react';
 import { Shield, Layers, Trophy, CheckCircle2 } from 'lucide-react';
+import type { ContentSettings } from '../types';
 
-export const Format: React.FC = () => {
+interface FormatProps {
+  content?: ContentSettings;
+}
+
+export const Format: React.FC<FormatProps> = ({ content }) => {
+  const title = content?.format_title || 'The Tournament Format';
+  const subtitle =
+    content?.format_subtitle ||
+    'Short, intense and built for heroes. Every match carries the weight of a season.';
+
   return (
     <section id="format" className="py-5 border-bottom" style={{ background: '#f8fafc' }}>
       <div className="container py-4">
         <div className="mb-4">
           <div className="section-label">Tournament Structure</div>
-          <h2 className="sport-heading">League Format & Guidelines</h2>
-          <p className="text-muted fs-6">Franchise-based hard tennis ball tournament rules</p>
+          <h2 className="sport-heading">{title}</h2>
+          <p className="text-muted fs-6" style={{ whiteSpace: 'pre-line' }}>{subtitle}</p>
         </div>
 
         <div className="row g-4">
@@ -76,3 +86,4 @@ export const Format: React.FC = () => {
     </section>
   );
 };
+

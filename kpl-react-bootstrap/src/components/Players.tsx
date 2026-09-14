@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Player } from '../types';
-import { Search } from 'lucide-react';
+import { Search, UserCheck } from 'lucide-react';
+import { getImageUrl } from '../api';
 
 interface PlayersProps {
   players: Player[];
@@ -11,11 +12,15 @@ export const Players: React.FC<PlayersProps> = ({ players }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const filteredPlayers = players.filter((player) => {
-    const matchesRole = filterRole === 'All' || player.role === filterRole;
-    const matchesSearch =
-      player.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      player.registration_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      player.village.toLowerCase().includes(searchQuery.toLowerCase());
+    const role = player.role || '';
+    const matchesRole =
+      filterRole === 'All' || role.toLowerCase().includes(filterRole.toLowerCase());
+    const name = (player.full_name || '').toLowerCase();
+    const reg = (player.registration_number || '').toLowerCase();
+    const village = (player.village || '').toLowerCase();
+    const q = searchQuery.toLowerCase();
+
+    const matchesSearch = name.includes(q) || reg.includes(q) || village.includes(q);
     return matchesRole && matchesSearch;
   });
 
@@ -25,7 +30,7 @@ export const Players: React.FC<PlayersProps> = ({ players }) => {
         <div className="mb-4">
           <div className="section-label">Auction & Player Pool</div>
           <h2 className="sport-heading">Registered Players</h2>
-          <p className="text-muted fs-6">Explore players draft list for KPL Season 3</p>
+          <p className="text-muted fs-6">Explore the players draft list for KPL Season 3</p>
         </div>
 
         {/* Filters */}
@@ -36,7 +41,7 @@ export const Players: React.FC<PlayersProps> = ({ players }) => {
                 <button
                   key={role}
                   className={`btn btn-sm rounded-pill px-3 fw-bold ${
-                    filterRole === role ? 'btn-dark text-warning' : 'btn-outline-secondary text-dark bg-white'
+                    filterRole === role ? 'button-primary py-1 px-3 fs-8' : 'btn-outline-secondary text-dark bg-white'
                   }`}
                   onClick={() => setFilterRole(role)}
                 >
@@ -63,38 +68,53 @@ export const Players: React.FC<PlayersProps> = ({ players }) => {
         {/* Players Grid */}
         <div className="row g-4">
           {filteredPlayers.length === 0 ? (
-            <div className="col-12 text-center py-5 text-muted">No registered players match your search criteria.</div>
+            <div className="col-12 text-center py-5 text-muted bg-white rounded-3 border">
+              <UserCheck size={40} className="text-muted mb-2 opacity-50" />
+              <p className="mb-0">No registered players match your search criteria.</p>
+            </div>
           ) : (
-            filteredPlayers.map((player) => (
-              <div key={player.id} className="col-6 col-md-4 col-lg-3">
-                <div className="player-card">
-                  <img
-                    src={player.photo_url || '/images/kpl-logo.jpg'}
-                    alt={player.full_name}
-                    className="player-photo"
-                  />
+            filteredPlayers.map((player) => {
+              const photo = getImageUrl(player.photo_url) || '/images/kpl-logo.jpg';
 
-                  <div className="p-3 bg-white">
-                    <span className="text-muted fs-8 fw-bold d-block mb-1">{player.registration_number}</span>
-                    <h3 className="sport-heading fs-6 mb-2 text-truncate">{player.full_name}</h3>
-                    <p className="text-muted small mb-2">{player.village}</p>
+              return (
+                <div key={player.id} className="col-6 col-md-4 col-lg-3">
+                  <div className="player-card">
+                    <img
+                      src={photo}
+                      alt={player.full_name}
+                      className="player-photo"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/images/kpl-logo.jpg';
+                      }}
+                    />
 
-                    <div className="d-flex flex-wrap gap-1 mb-2">
-                      <span className="player-role-badge">{player.role}</span>
-                      <span className="player-category-badge">{player.category}</span>
-                    </div>
+                    <div className="p-3 bg-white">
+                      <span className="text-muted fs-8 fw-bold d-block mb-1 font-monospace">
+                        {player.registration_number}
+                      </span>
+                      <h3 className="sport-heading fs-6 mb-1 text-truncate" title={player.full_name}>
+                        {player.full_name}
+                      </h3>
+                      <p className="text-muted small mb-2 text-truncate">{player.village || 'Assam'}</p>
 
-                    <div className="d-flex justify-content-between align-items-center pt-2 border-top">
-                      <span className="text-muted small">Base Price:</span>
-                      <strong className="text-dark fs-7">{player.base_price}</strong>
+                      <div className="d-flex flex-wrap gap-1 mb-2">
+                        <span className="player-role-badge">{player.role || 'All-Rounder'}</span>
+                        <span className="player-category-badge">{player.category || 'Local'}</span>
+                      </div>
+
+                      <div className="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <span className="text-muted small">Base Price:</span>
+                        <strong className="text-dark fs-7">{player.base_price || '₹ 500'}</strong>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
     </section>
   );
 };
+

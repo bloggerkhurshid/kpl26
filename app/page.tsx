@@ -135,10 +135,17 @@ function WhatsAppFloat() {
   );
 }
 
+const FALLBACK_HERO_PHOTOS = [
+  'https://kpl.projuktisoft.com/uploads/gallery/gallery_6aa6f7ff7fa9e4.23537043.jpg',
+  'https://kpl.projuktisoft.com/uploads/gallery/gallery_6aa6f7fb8e0d31.97887951.jpg',
+  'https://kpl.projuktisoft.com/uploads/gallery/gallery_6aa6f4789eb346.46586793.jpg',
+];
+
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null);
   const [modal, setModal] = useState<ModalType>(null);
+
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -252,15 +259,18 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Cycle hero background through gallery images smoothly every 6s
+  const heroPhotos = gallery.filter((g) => g.image).map((g) => g.image);
+  const activeHeroList = heroPhotos.length > 0 ? heroPhotos : FALLBACK_HERO_PHOTOS;
+
+  // Cycle hero background through gallery images smoothly every 5s
   useEffect(() => {
-    const imgs = gallery.filter(g => g.image);
-    if (imgs.length <= 1) return;
+    if (activeHeroList.length <= 1) return;
     const timer = setInterval(() => {
-      setHeroIndex(prev => (prev + 1) % imgs.length);
-    }, 6000);
+      setHeroIndex((prev) => (prev + 1) % activeHeroList.length);
+    }, 5000);
     return () => clearInterval(timer);
-  }, [gallery.length]);
+  }, [activeHeroList.length]);
+
 
   const handlePlayerFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     const file = e.target.files?.[0];
@@ -557,7 +567,22 @@ export default function Home() {
             {content.show_teams === 'true' && <button onClick={(e) => scrollTo('teams', e)}>Teams</button>}
             {content.show_management === 'true' && <button onClick={(e) => scrollTo('management', e)}>Management</button>}
             {content.show_gallery === 'true' && <button onClick={(e) => scrollTo('gallery', e)}>Gallery</button>}
-            <a className="nav-cta" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Register Player <ArrowRight size={15} /></a>
+            
+            {/* Redesigned Nav Register Button */}
+            <div className="nav-cta-wrapper">
+              <button
+                className="nav-cta"
+                onClick={() => {
+                  setModal('player');
+                  setMenuOpen(false);
+                }}
+                title="Register for KPL Season 3"
+              >
+                <span className="nav-cta-pulse" />
+                <span>Register Now</span>
+                <ArrowRight size={15} strokeWidth={2.8} />
+              </button>
+            </div>
           </div>
           <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">{menuOpen ? <X size={24} /> : <Menu size={24} />}</button>
         </div>
@@ -566,46 +591,99 @@ export default function Home() {
       {content.show_hero === 'true' && (
         <section className="hero" id="top">
           {/* Cycling background images with smooth CSS crossfade */}
-          {gallery.filter(g => g.image).map((item, idx) => {
-            const activeImgs = gallery.filter(g => g.image);
-            const activeIdx = heroIndex % (activeImgs.length || 1);
+          {activeHeroList.map((imgSrc, idx) => {
+            const activeIdx = heroIndex % (activeHeroList.length || 1);
             return (
               <img
-                key={item.image}
-                src={getImageUrl(item.image)}
-                alt=""
+                key={imgSrc}
+                src={getImageUrl(imgSrc)}
+                alt="KPL Action"
                 aria-hidden="true"
                 className={`hero-bg-img ${idx === activeIdx ? 'is-active' : ''}`}
               />
             );
           })}
           <div className="hero-content page-width">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-              <span className="section-label">THE BATTLE BEGINS • SEASON 3</span>
-              <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(34, 197, 94, 0.15)', color: 'var(--green-mint)', border: '1px solid var(--border-strong)', padding: '4px 12px', borderRadius: '20px' }}>
-                🏏 HARD TENNIS TOURNAMENT
-              </span>
+            {/* Live Status Ribbon */}
+            <div className="hero-badge-row">
+              <div className="hero-live-pill">
+                <span className="hero-live-dot" />
+                <span>Season 3 · 2026 Registration Open</span>
+              </div>
+              <div className="hero-venue-pill">
+                <MapPin size={13} className="text-emerald-400" />
+                <span>Khoraghat High School Ground, Assam</span>
+              </div>
             </div>
 
-            <h1 className="sport-heading" dangerouslySetInnerHTML={{ __html: content.hero_title || 'Where local legends become <em>champions.</em>' }} />
-            <p className="lead">{content.hero_subtitle}</p>
+            {/* Headline Title */}
+            <h1
+              className="sport-heading"
+              dangerouslySetInnerHTML={{
+                __html: content.hero_title || 'ASSAM’S PREMIER <em>HARD TENNIS</em> CRICKET CHAMPIONSHIP'
+              }}
+            />
 
-            {/* Countdown timer & Quick stats */}
-            <div style={{ marginTop: '8px', marginBottom: '8px' }}>
-              <CountdownTimer deadlineDate={content.deadline_date} />
+            {/* Subtitle */}
+            <p className="lead">
+              {content.hero_subtitle || 'Eight elite franchises. High-voltage auction draft. Massive cash prizes & trophies live under floodlights from Khoraghat, Bilasipara, Dhubri, Assam.'}
+            </p>
+
+            {/* Tournament Highlights Ribbon */}
+            <div className="hero-highlights-strip">
+              <div className="hero-highlight-card">
+                <span className="highlight-label">1st Champions</span>
+                <strong className="highlight-value text-emerald-400">₹1,00,000 + 🏆</strong>
+              </div>
+              <div className="hero-highlight-card">
+                <span className="highlight-label">Runners-Up</span>
+                <strong className="highlight-value text-amber-300">₹50,000 + 🥈</strong>
+              </div>
+              <div className="hero-highlight-card">
+                <span className="highlight-label">Franchises</span>
+                <strong className="highlight-value text-sky-400">8 Squads</strong>
+              </div>
+              <div className="hero-highlight-card">
+                <span className="highlight-label">Tournament Ball</span>
+                <strong className="highlight-value text-green-300">Hard Tennis</strong>
+              </div>
             </div>
 
+            {/* Scoreboard Countdown Timer */}
+            <div className="hero-timer-box">
+              <div className="hero-timer-header">
+                <Clock3 size={15} />
+                <span>{content.deadline_text || 'Registration Window Closes In'}</span>
+              </div>
+              <CountdownTimer deadlineDate={content.deadline_date || '2026-09-20'} />
+            </div>
+
+            {/* Action Buttons */}
             <div className="hero-actions">
-              <a className="button button-primary" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20a%20franchise%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">
-                <span>Register Franchise <ArrowRight size={18} strokeWidth={3} /></span>
-              </a>
-              <a className="button button-outline" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20as%20a%20player%20for%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">
-                <span>Register Player <Users size={18} /></span>
-              </a>
+              <button
+                className="button button-primary"
+                onClick={() => setModal('player')}
+              >
+                <span>Register Player <ArrowRight size={18} strokeWidth={3} /></span>
+              </button>
+              <button
+                className="button button-outline"
+                onClick={() => setModal('team')}
+              >
+                <span>Register Franchise <Users size={18} /></span>
+              </button>
+              <button
+                className="text-link"
+                onClick={(e) => scrollTo('prizes', e)}
+                style={{ marginLeft: '4px' }}
+              >
+                Explore Prizes <Trophy size={16} />
+              </button>
             </div>
           </div>
         </section>
       )}
+
 
       {content.show_stats === 'true' && (
         <section className="section-pad" id="prizes">

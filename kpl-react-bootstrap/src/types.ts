@@ -15,12 +15,12 @@ export interface Player {
   id: string;
   registration_number: string;
   full_name: string;
-  role: 'Batter' | 'Bowler' | 'All-Rounder' | 'Wicketkeeper';
-  category: 'Local' | 'Outstation' | 'Icon';
+  role: string;
+  category: string;
   base_price: string;
   team_name?: string;
   photo_url?: string;
-  status: 'Pending' | 'Approved' | 'Sold';
+  status: string;
   contact: string;
   village: string;
 }
@@ -31,11 +31,28 @@ export interface ManagementMember {
   designation: string;
   contact: string;
   photo_url?: string;
+  display_order?: number;
 }
 
 export interface GalleryItem {
   id: number;
   photo_url: string;
   caption: string;
-  category: string;
+  category?: string;
 }
+
+export interface ContentSettings {
+  hero_title?: string;
+  hero_subtitle?: string;
+  about_title?: string;
+  about_text?: string;
+  format_title?: string;
+  format_subtitle?: string;
+  deadline_date?: string;
+  deadline_text?: string;
+  fee_player?: string | number;
+  fee_foreign_player?: string | number;
+  fee_team?: string | number;
+  active_gateway?: string;
+}
+
