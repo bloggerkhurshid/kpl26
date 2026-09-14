@@ -6,7 +6,7 @@ import DataTable, { Column } from '@/components/admin/DataTable';
 import { kplApi } from '@/lib/api';
 import {
   CreditCard, Plus, X, Loader2, CheckCircle2,
-  AlertCircle, Download, RefreshCw, Check, Ban
+  AlertCircle, Download, RefreshCw, Check, Ban, Image as ImageIcon
 } from 'lucide-react';
 
 
@@ -34,6 +34,7 @@ interface Payment {
   payer_phone?: string;
   phone?: string;
   utr_number?: string;
+  screenshot?: string;
   created_at: string;
 }
 
@@ -51,6 +52,7 @@ export default function PaymentsPage() {
   const [saving, setSaving] = useState(false);
   const [filterGateway, setFilterGateway] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [selectedScreenshot, setSelectedScreenshot] = useState<{ url: string; title: string } | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
@@ -139,7 +141,38 @@ export default function PaymentsPage() {
   const columns: Column<Payment>[] = [
     {
       key: 'payment_id', label: 'UTR / Payment Ref',
-      render: p => <span className="dt-mono" style={{ fontWeight: 700, color: '#10b981' }}>{p.payment_id || p.order_id || '—'}</span>,
+      render: p => (
+        <div>
+          <span className="dt-mono" style={{ fontWeight: 700, color: '#10b981' }}>{p.payment_id || p.order_id || '—'}</span>
+          {p.screenshot && (
+            <div style={{ marginTop: 4 }}>
+              <button
+                type="button"
+                onClick={() => setSelectedScreenshot({
+                  url: p.screenshot!,
+                  title: `${p.name || p.payer_name || 'Payer'} (UTR: ${p.payment_id || 'N/A'})`
+                })}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '3px 8px',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: '#0284c7',
+                  backgroundColor: '#f0f9ff',
+                  border: '1px solid #bae6fd',
+                  borderRadius: 6,
+                  cursor: 'pointer'
+                }}
+                title="View Payment Proof Screenshot"
+              >
+                <ImageIcon size={12} /> View Screenshot
+              </button>
+            </div>
+          )}
+        </div>
+      ),
     },
     {
       key: 'payment_gateway', label: 'Gateway',
@@ -348,6 +381,43 @@ export default function PaymentsPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Screenshot Preview Modal */}
+        {selectedScreenshot && (
+          <div className="admin-modal-overlay" onClick={() => setSelectedScreenshot(null)}>
+            <div className="admin-modal" style={{ maxWidth: 520, width: '90%' }} onClick={e => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2>Payment Proof Screenshot</h2>
+                <button onClick={() => setSelectedScreenshot(null)}><X size={20} /></button>
+              </div>
+              <div style={{ padding: '1.25rem', textAlign: 'center' }}>
+                <p style={{ fontSize: 13, color: '#64748b', marginBottom: 12, fontWeight: 500 }}>
+                  {selectedScreenshot.title}
+                </p>
+                <div style={{ maxHeight: '65vh', overflowY: 'auto', borderRadius: 8, border: '1px solid #e2e8f0', background: '#0f172a', padding: '8px' }}>
+                  <img
+                    src={selectedScreenshot.url}
+                    alt="Payment Screenshot"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto', borderRadius: 4 }}
+                  />
+                </div>
+                <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                  <a
+                    href={selectedScreenshot.url}
+                    download="payment_screenshot"
+                    className="admin-btn admin-btn-ghost"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <Download size={14} /> Download
+                  </a>
+                  <button type="button" className="admin-btn admin-btn-primary" onClick={() => setSelectedScreenshot(null)}>
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

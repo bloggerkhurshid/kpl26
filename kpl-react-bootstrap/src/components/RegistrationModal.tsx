@@ -10,6 +10,10 @@ import {
   ArrowRight,
   ShieldCheck,
   Loader2,
+  Download,
+  Image as ImageIcon,
+  UploadCloud,
+  Trash2,
 } from 'lucide-react';
 import { kplApi } from '../api';
 import type { ApiFeeSettings } from '../api';
@@ -57,7 +61,19 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   const [registeredId, setRegisteredId] = useState('');
   const [payableAmount, setPayableAmount] = useState(500);
   const [utrNumber, setUtrNumber] = useState('');
+  const [paymentScreenshot, setPaymentScreenshot] = useState<string>('');
   const [copiedUpi, setCopiedUpi] = useState(false);
+
+  const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setPaymentScreenshot(event.target?.result as string);
+      setErrorMsg('');
+    };
+    reader.readAsDataURL(file);
+  };
 
   if (!isOpen) return null;
 
@@ -180,10 +196,18 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
   const handleUtrSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (utrNumber.trim().length < 6) {
+    const cleanUtr = utrNumber.trim();
+    if (!cleanUtr && !paymentScreenshot) {
+      setErrorMsg('Please upload a payment screenshot or enter your 12-digit UPI UTR number.');
+      return;
+    }
+
+    if (cleanUtr && cleanUtr.length < 6) {
       setErrorMsg('Please enter a valid 12-digit UPI UTR / Reference number.');
       return;
     }
+
+    const finalPaymentId = cleanUtr || `UPI-SHOT-${registeredId}`;
 
     setSubmitting(true);
     setErrorMsg('');
@@ -196,7 +220,8 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
         phone: regType === 'player' ? contact : teamContact,
         amount: payableAmount,
         payment_gateway: 'upi_direct',
-        payment_id: utrNumber.trim(),
+        payment_id: finalPaymentId,
+        screenshot: paymentScreenshot || null,
         status: 'pending_verification',
       }).catch((err) => {
         console.warn('Payment submission note:', err);
@@ -551,13 +576,22 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                     </div>
                   </div>
 
-                  {/* App Action Buttons */}
-                  <div className="d-flex gap-2 mb-3">
+                  {/* App Action Buttons for Phones */}
+                  <div className="d-flex flex-wrap gap-2 mb-3">
                     <a
                       href={upiIntentUrl}
                       className="btn btn-success flex-grow-1 rounded-pill fw-bold py-2 d-flex align-items-center justify-content-center gap-1 text-decoration-none"
                     >
                       <Smartphone size={16} /> Open UPI App
+                    </a>
+                    <a
+                      href={qrCodeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-outline-dark rounded-pill fw-bold py-2 px-3 d-flex align-items-center gap-1"
+                      title="Open/Save QR code image to scan in UPI app"
+                    >
+                      <Download size={15} /> Save QR
                     </a>
                     <button
                       type="button"
@@ -577,19 +611,56 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                     </button>
                   </div>
 
-                  {/* UTR Reference Input Form */}
+                  {/* Payment Submission Form */}
                   <form onSubmit={handleUtrSubmit}>
-                    <label className="form-label text-dark small fw-bold">
-                      Enter 12-Digit UPI UTR / Transaction Ref No *
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control form-control-light font-monospace mb-2"
-                      placeholder="e.g. 425612349876 or UTR Ref"
-                      value={utrNumber}
-                      onChange={(e) => setUtrNumber(e.target.value)}
-                      required
-                    />
+                    {/* Option A: Upload Payment Screenshot */}
+                    <div className="mb-3">
+                      <div className="d-flex justify-content-between align-items-center mb-1">
+                        <label className="form-label text-dark small fw-bold mb-0">
+                          <ImageIcon size={14} className="text-success me-1" /> Upload Payment Screenshot
+                        </label>
+                        <span className="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25" style={{ fontSize: '10px' }}>
+                          Recommended on Phone
+                        </span>
+                      </div>
+
+                      {paymentScreenshot ? (
+                        <div className="d-flex align-items-center gap-2 p-2 bg-light border rounded-3">
+                          <img src={paymentScreenshot} alt="Payment Receipt" style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '6px' }} />
+                          <div className="flex-grow-1 min-w-0">
+                            <div className="small fw-bold text-dark text-truncate">Payment Screenshot Attached</div>
+                            <div className="text-success" style={{ fontSize: '11px' }}>Ready to verify</div>
+                          </div>
+                          <button type="button" className="btn btn-sm text-danger" onClick={() => setPaymentScreenshot('')}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="d-flex flex-column align-items-center justify-content-center p-3 border border-2 border-dashed rounded-3 bg-white text-center cursor-pointer w-100" style={{ cursor: 'pointer' }}>
+                          <input type="file" accept="image/*" className="d-none" onChange={handleScreenshotUpload} />
+                          <UploadCloud size={24} className="text-muted mb-1" />
+                          <span className="small fw-bold text-dark">Tap to Upload Payment Screenshot</span>
+                          <span className="text-muted" style={{ fontSize: '11px' }}>From Google Pay, PhonePe, Paytm, or Gallery</span>
+                        </label>
+                      )}
+                    </div>
+
+                    <div className="text-center text-muted small my-2" style={{ fontSize: '11px' }}>— AND / OR —</div>
+
+                    {/* Option B: 12-Digit UTR Number */}
+                    <div className="mb-3">
+                      <label className="form-label text-dark small fw-bold">
+                        12-Digit UPI UTR / Transaction Ref No
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-light font-monospace"
+                        placeholder="e.g. 425612349876 or UTR Ref"
+                        value={utrNumber}
+                        onChange={(e) => setUtrNumber(e.target.value)}
+                      />
+                    </div>
+
                     <button
                       type="submit"
                       disabled={submitting}
@@ -602,7 +673,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                           </>
                         ) : (
                           <>
-                            Submit Payment Reference <ArrowRight size={16} className="ms-1" />
+                            Submit Payment Proof <ArrowRight size={16} className="ms-1" />
                           </>
                         )}
                       </span>

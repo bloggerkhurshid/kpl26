@@ -14,6 +14,8 @@ import {
   Check,
   AlertCircle,
   Loader2,
+  Image as ImageIcon,
+  Download,
 } from 'lucide-react';
 import { kplApi, type ApiPayment, type ApiFeeSettings } from '../api';
 
@@ -53,6 +55,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // Payments from API
   const [payments, setPayments] = useState<ApiPayment[]>([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
+  const [selectedScreenshot, setSelectedScreenshot] = useState<{ url: string; title: string } | null>(null);
 
   // Settings form
   const [formFees, setFormFees] = useState({
@@ -553,8 +556,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               <td className="text-capitalize">{p.registration_type}</td>
                               <td className="fw-semibold text-dark">{p.name}</td>
                               <td className="small text-muted">{p.phone}</td>
-                              <td className="fw-bold text-dark font-monospace">₹{p.amount}</td>
-                              <td className="font-monospace text-dark fw-bold">{p.payment_id}</td>
+                              <td className="font-monospace text-dark fw-bold">
+                                <div>{p.payment_id}</div>
+                                {p.screenshot && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-info rounded-pill px-2 py-0 mt-1 d-inline-flex align-items-center gap-1"
+                                    style={{ fontSize: '11px', fontWeight: 600 }}
+                                    onClick={() => setSelectedScreenshot({
+                                      url: p.screenshot!,
+                                      title: `${p.name} (Ref: ${p.payment_id || 'N/A'})`
+                                    })}
+                                    title="View Payment Proof Screenshot"
+                                  >
+                                    <ImageIcon size={11} /> Screenshot
+                                  </button>
+                                )}
+                              </td>
                               <td>
                                 <span
                                   className={`badge ${
@@ -722,6 +740,60 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
         </div>
       </div>
+
+      {/* Screenshot Preview Modal */}
+      {selectedScreenshot && (
+        <div
+          className="modal fade show d-block"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)', zIndex: 1060 }}
+          onClick={() => setSelectedScreenshot(null)}
+        >
+          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header border-bottom py-2.5 px-3">
+                <h6 className="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                  <ImageIcon size={16} className="text-primary" /> Payment Proof Screenshot
+                </h6>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setSelectedScreenshot(null)}
+                />
+              </div>
+              <div className="modal-body text-center p-3">
+                <p className="text-muted small mb-2">{selectedScreenshot.title}</p>
+                <div
+                  className="rounded-3 border overflow-auto bg-dark p-2"
+                  style={{ maxHeight: '65vh' }}
+                >
+                  <img
+                    src={selectedScreenshot.url}
+                    alt="Payment Screenshot"
+                    className="img-fluid rounded"
+                    style={{ maxHeight: '60vh' }}
+                  />
+                </div>
+              </div>
+              <div className="modal-footer border-top py-2 px-3 justify-content-between">
+                <a
+                  href={selectedScreenshot.url}
+                  download="payment_screenshot"
+                  className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
+                >
+                  <Download size={13} /> Download
+                </a>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary px-3"
+                  onClick={() => setSelectedScreenshot(null)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

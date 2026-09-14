@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS `payments` (
   `amount` DECIMAL(10, 2) NOT NULL,
   `payment_gateway` VARCHAR(50) DEFAULT 'razorpay',
   `payment_id` VARCHAR(255) DEFAULT NULL,
+  `screenshot` LONGTEXT DEFAULT NULL,
   `status` VARCHAR(20) DEFAULT 'completed',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

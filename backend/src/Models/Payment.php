@@ -41,27 +41,52 @@ class Payment {
             mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
         );
 
-        $stmt = self::getDb()->prepare("
-            INSERT INTO payments (
-                id, registration_type, registration_id, name, phone, amount, payment_gateway, payment_id, status
-            ) VALUES (
-                :id, :registration_type, :registration_id, :name, :phone, :amount, :payment_gateway, :payment_id, :status
-            )
-        ");
+        $screenshot = $data['screenshot'] ?? null;
+        try {
+            $stmt = self::getDb()->prepare("
+                INSERT INTO payments (
+                    id, registration_type, registration_id, name, phone, amount, payment_gateway, payment_id, status, screenshot
+                ) VALUES (
+                    :id, :registration_type, :registration_id, :name, :phone, :amount, :payment_gateway, :payment_id, :status, :screenshot
+                )
+            ");
 
-        $stmt->execute([
-            ':id' => $id,
-            ':registration_type' => $data['registration_type'] ?? 'player',
-            ':registration_id' => $data['registration_id'] ?? null,
-            ':name' => $data['name'],
-            ':phone' => $data['phone'],
-            ':amount' => (float)$data['amount'],
-            ':payment_gateway' => $data['payment_gateway'] ?? 'upi_direct',
-            ':payment_id' => $data['payment_id'] ?? null,
-            ':status' => $data['status'] ?? 'completed'
-        ]);
+            $stmt->execute([
+                ':id' => $id,
+                ':registration_type' => $data['registration_type'] ?? 'player',
+                ':registration_id' => $data['registration_id'] ?? null,
+                ':name' => $data['name'],
+                ':phone' => $data['phone'],
+                ':amount' => (float)$data['amount'],
+                ':payment_gateway' => $data['payment_gateway'] ?? 'upi_direct',
+                ':payment_id' => $data['payment_id'] ?? null,
+                ':status' => $data['status'] ?? 'completed',
+                ':screenshot' => $screenshot
+            ]);
+            return $id;
+        } catch (\PDOException $e) {
+            // Fallback if screenshot column is not present in legacy schema
+            $stmt = self::getDb()->prepare("
+                INSERT INTO payments (
+                    id, registration_type, registration_id, name, phone, amount, payment_gateway, payment_id, status
+                ) VALUES (
+                    :id, :registration_type, :registration_id, :name, :phone, :amount, :payment_gateway, :payment_id, :status
+                )
+            ");
 
-        return $id;
+            $stmt->execute([
+                ':id' => $id,
+                ':registration_type' => $data['registration_type'] ?? 'player',
+                ':registration_id' => $data['registration_id'] ?? null,
+                ':name' => $data['name'],
+                ':phone' => $data['phone'],
+                ':amount' => (float)$data['amount'],
+                ':payment_gateway' => $data['payment_gateway'] ?? 'upi_direct',
+                ':payment_id' => $data['payment_id'] ?? null,
+                ':status' => $data['status'] ?? 'completed'
+            ]);
+            return $id;
+        }
     }
 
     public static function updateStatus(string $id, string $status): bool {

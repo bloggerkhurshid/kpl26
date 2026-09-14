@@ -133,6 +133,7 @@ export interface ApiPayment {
   payment_gateway: string;
   payment_id: string;
   status: string;
+  screenshot?: string;
   created_at?: string;
 }
 
