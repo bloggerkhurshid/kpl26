@@ -9,7 +9,8 @@ import {
   X, Loader2, CheckCircle2, AlertCircle, Users,
   UserCheck, UserX, Gavel, FileText, Printer,
   Phone, Mail, MapPin, Calendar, Hash, User, Shield, Target, Zap,
-  Check, Clock, XCircle, ArrowRight, ShieldCheck, CreditCard, Image as ImageIcon, Upload
+  Check, Clock, XCircle, ArrowRight, ShieldCheck, CreditCard, Image as ImageIcon, Upload,
+  LayoutGrid, List, RefreshCw, Search
 } from 'lucide-react';
 
 interface Team { id: string; name: string; short_code: string; accent_color: string; }
@@ -70,6 +71,10 @@ export default function PlayersPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'self' | 'active'>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [syncing, setSyncing] = useState(false);
   const [filterTeam, setFilterTeam] = useState('');
   const [filterAuction, setFilterAuction] = useState('');
   const [filterSource, setFilterSource] = useState('');
@@ -207,6 +212,7 @@ export default function PlayersPage() {
 
   async function loadData(silent: boolean = false) {
     if (!silent) setLoading(true);
+    else setSyncing(true);
     try {
       const [pRes, tRes, payRes] = await Promise.all([
         kplApi.getPlayers({ limit: 1000 }),
@@ -221,20 +227,37 @@ export default function PlayersPage() {
       setTeams(tList);
       setPayments(Array.isArray(payList) ? payList : []);
 
-      // Cache data locally so subsequent visits load instantly
+      // Cache data locally so subsequent visits load instantly (0ms), stripping any huge base64 strings
       try {
-        localStorage.setItem('kpl_admin_players_cache', JSON.stringify({ p: pList, t: tList, pay: payList }));
+        const leanPlayers = pList.map((p: any) => {
+          const item = { ...p };
+          if (item.address_proof && item.address_proof.length > 500 && item.address_proof.startsWith('data:')) {
+            item.address_proof = '';
+          }
+          if (item.player_signature && item.player_signature.length > 500) {
+            item.player_signature = '';
+          }
+          return item;
+        });
+        localStorage.setItem('kpl_admin_players_cache', JSON.stringify({ p: leanPlayers, t: tList, pay: payList }));
       } catch (e) {}
     } catch (err: any) {
       console.error(err);
       if (!silent) showToast(err.message || 'Failed to load players data', 'error');
     } finally {
       setLoading(false);
+      setSyncing(false);
     }
   }
 
   useEffect(() => {
-    // 1. Instant cache load (Zero waiting time on initial render)
+    // 1. Restore saved view mode preference
+    try {
+      const savedMode = localStorage.getItem('kpl_admin_players_view_mode');
+      if (savedMode === 'cards' || savedMode === 'table') setViewMode(savedMode);
+    } catch (e) {}
+
+    // 2. Instant cache load (Zero waiting time on initial render)
     try {
       const cached = localStorage.getItem('kpl_admin_players_cache');
       if (cached) {
@@ -244,7 +267,7 @@ export default function PlayersPage() {
           if (parsed.t) setTeams(parsed.t);
           if (parsed.pay) setPayments(parsed.pay);
           setLoading(false);
-          loadData(true); // Revalidate in background
+          loadData(true); // Revalidate fresh data quietly in background
           return;
         }
       }
@@ -435,11 +458,28 @@ export default function PlayersPage() {
   const pendingCount = pendingPlayers.length;
   const selfCount = players.filter(p => p.registered_by?.toLowerCase().includes('self')).length;
   const activeCount = players.filter(p => p.status === 'active' && p.approval !== 'rejected').length;
+  const auctionCount = players.filter(p => p.auction_eligible).length;
+
+  const verifiedPayments = payments.filter(p => p.status === 'completed' || p.status === 'success');
+  const totalFeesCollected = verifiedPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+
+  const batsmanCount = players.filter(p => p.batsman || (p.role || '').toLowerCase().includes('bat')).length;
+  const bowlerCount = players.filter(p => p.bowler || (p.role || '').toLowerCase().includes('bowl')).length;
+  const allRounderCount = players.filter(p => p.all_rounder || (p.role || '').toLowerCase().includes('all')).length;
+  const keeperCount = players.filter(p => p.wicket_keeper || (p.role || '').toLowerCase().includes('keep')).length;
 
   const filtered = players.filter(p => {
     if (activeTab === 'pending' && p.status !== 'pending' && p.approval !== 'pending') return false;
     if (activeTab === 'self' && !p.registered_by?.toLowerCase().includes('self')) return false;
     if (activeTab === 'active' && (p.status !== 'active' || p.approval === 'rejected')) return false;
+
+    if (roleFilter !== 'all') {
+      const r = (p.role || '').toLowerCase();
+      if (roleFilter === 'batsman' && !p.batsman && !r.includes('bat')) return false;
+      if (roleFilter === 'bowler' && !p.bowler && !r.includes('bowl')) return false;
+      if (roleFilter === 'all_rounder' && !p.all_rounder && !r.includes('all')) return false;
+      if (roleFilter === 'keeper' && !p.wicket_keeper && !r.includes('keep')) return false;
+    }
 
     if (filterTeam && p.team_id !== filterTeam) return false;
     if (filterAuction === 'eligible' && !p.auction_eligible) return false;
@@ -450,6 +490,17 @@ export default function PlayersPage() {
     if (filterApproval === 'pending' && p.status !== 'pending' && p.approval !== 'pending') return false;
     if (filterApproval === 'approved' && p.status !== 'active') return false;
     if (filterApproval === 'rejected' && p.approval !== 'rejected') return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchName = (p.player_name || '').toLowerCase().includes(q);
+      const matchReg = (p.registration_number || '').toLowerCase().includes(q);
+      const matchPhone = (p.contact_number || '').toLowerCase().includes(q);
+      const matchEmail = (p.email || '').toLowerCase().includes(q);
+      const matchRole = (p.role || '').toLowerCase().includes(q);
+      if (!matchName && !matchReg && !matchPhone && !matchEmail && !matchRole) return false;
+    }
+
     return true;
   });
 
@@ -679,12 +730,101 @@ export default function PlayersPage() {
 
         <div className="admin-page-header">
           <div>
-            <h1><Users size={22} /> Players</h1>
-            <p>Review self-registrations, manage player approvals, detailed profiles, and auction pool.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h1 style={{ margin: 0 }}><Users size={22} /> Players</h1>
+              {syncing && (
+                <span className="admin-sync-indicator">
+                  <RefreshCw size={11} className="spin" /> Syncing...
+                </span>
+              )}
+            </div>
+            <p style={{ marginTop: '4px' }}>Review registrations, verify player payments, manage cricket profiles, and auction pool.</p>
           </div>
-          <button className="admin-btn admin-btn-primary" onClick={openCreate}>
-            <Plus size={16} /> Add Player
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* View Mode Switcher */}
+            <div className="admin-view-toggle">
+              <button
+                type="button"
+                className={`admin-view-btn ${viewMode === 'table' ? 'active' : ''}`}
+                onClick={() => {
+                  setViewMode('table');
+                  try { localStorage.setItem('kpl_admin_players_view_mode', 'table'); } catch (e) {}
+                }}
+                title="Compact Table View"
+              >
+                <List size={14} />
+                <span>Table</span>
+              </button>
+              <button
+                type="button"
+                className={`admin-view-btn ${viewMode === 'cards' ? 'active' : ''}`}
+                onClick={() => {
+                  setViewMode('cards');
+                  try { localStorage.setItem('kpl_admin_players_view_mode', 'cards'); } catch (e) {}
+                }}
+                title="Cricket Trading Cards Grid View"
+              >
+                <LayoutGrid size={14} />
+                <span>Cards</span>
+              </button>
+            </div>
+
+            <button className="admin-btn admin-btn-primary" onClick={openCreate}>
+              <Plus size={16} /> Add Player
+            </button>
+          </div>
+        </div>
+
+        {/* Top Metric Cards */}
+        <div className="admin-stats-grid">
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
+              <Users size={20} />
+            </div>
+            <div className="admin-stat-body">
+              <div className="admin-stat-value">{players.length}</div>
+              <div className="admin-stat-label">Total Players</div>
+              <div className="admin-stat-sub">{selfCount} self-registered • {players.length - selfCount} admin</div>
+            </div>
+          </div>
+
+          <div
+            className="admin-stat-card"
+            style={{ cursor: 'pointer', borderColor: pendingCount > 0 ? 'rgba(234, 179, 8, 0.4)' : undefined }}
+            onClick={() => setActiveTab('pending')}
+            title="Click to view pending reviews"
+          >
+            <div className="admin-stat-icon" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#facc15' }}>
+              <Clock size={20} />
+            </div>
+            <div className="admin-stat-body">
+              <div className="admin-stat-value" style={{ color: pendingCount > 0 ? '#facc15' : undefined }}>{pendingCount}</div>
+              <div className="admin-stat-label">Pending Review</div>
+              <div className="admin-stat-sub">{pendingCount > 0 ? '⚠️ Action needed for auction pool' : 'All applications reviewed'}</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
+              <Gavel size={20} />
+            </div>
+            <div className="admin-stat-body">
+              <div className="admin-stat-value">{auctionCount}</div>
+              <div className="admin-stat-label">Auction Eligible</div>
+              <div className="admin-stat-sub">{Math.round((auctionCount / (players.length || 1)) * 100)}% pool readiness</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon" style={{ background: 'rgba(212, 175, 55, 0.15)', color: '#d4af37' }}>
+              <CreditCard size={20} />
+            </div>
+            <div className="admin-stat-body">
+              <div className="admin-stat-value">₹{totalFeesCollected.toLocaleString('en-IN')}</div>
+              <div className="admin-stat-label">Fees Verified</div>
+              <div className="admin-stat-sub">{verifiedPayments.length} payments recorded</div>
+            </div>
+          </div>
         </div>
 
         {/* Pending Approvals Notice Banner */}
@@ -721,8 +861,71 @@ export default function PlayersPage() {
           </button>
         </div>
 
-        {/* Filters */}
-        <div className="admin-filters">
+        {/* Role Filter Pills & Search */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
+          <div className="admin-role-pills">
+            <button
+              type="button"
+              className={`admin-role-pill ${roleFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setRoleFilter('all')}
+            >
+              All Roles ({players.length})
+            </button>
+            <button
+              type="button"
+              className={`admin-role-pill ${roleFilter === 'batsman' ? 'active' : ''}`}
+              onClick={() => setRoleFilter('batsman')}
+            >
+              🏏 Batsmen ({batsmanCount})
+            </button>
+            <button
+              type="button"
+              className={`admin-role-pill ${roleFilter === 'bowler' ? 'active' : ''}`}
+              onClick={() => setRoleFilter('bowler')}
+            >
+              ⚡ Bowlers ({bowlerCount})
+            </button>
+            <button
+              type="button"
+              className={`admin-role-pill ${roleFilter === 'all_rounder' ? 'active' : ''}`}
+              onClick={() => setRoleFilter('all_rounder')}
+            >
+              ⭐ All-Rounders ({allRounderCount})
+            </button>
+            <button
+              type="button"
+              className={`admin-role-pill ${roleFilter === 'keeper' ? 'active' : ''}`}
+              onClick={() => setRoleFilter('keeper')}
+            >
+              🧤 Keepers ({keeperCount})
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '240px', flex: '1', maxWidth: '340px' }}>
+            <div className="dt-search" style={{ margin: 0, width: '100%', background: 'var(--adm-panel)', border: '1px solid var(--adm-border)', borderRadius: '8px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Search size={14} color="var(--adm-text-muted)" />
+              <input
+                type="text"
+                placeholder="Search name, phone, reg ID..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--adm-text-strong)', fontSize: '12.5px', width: '100%' }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer', padding: '0 4px', display: 'flex' }}
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Dropdown Filters */}
+        <div className="admin-filters" style={{ marginBottom: '16px' }}>
           <select value={filterTeam} onChange={e => setFilterTeam(e.target.value)}>
             <option value="">All Teams</option>
             <option value="unassigned">Unassigned</option>
@@ -746,18 +949,183 @@ export default function PlayersPage() {
             <option value="rejected">Rejected</option>
           </select>
           <div className="admin-filter-count">
-            <UserCheck size={14} /> {filtered.length} players
+            <UserCheck size={14} /> {filtered.length} players shown
           </div>
         </div>
 
-        <DataTable
-          columns={columns}
-          data={filtered}
-          loading={loading}
-          searchKeys={['player_name', 'registration_number', 'contact_number', 'email']}
-          searchPlaceholder="Search players or reg ID..."
-          emptyMessage="No players found."
-        />
+        {/* Loading Skeletons */}
+        {loading && players.length === 0 ? (
+          viewMode === 'cards' ? (
+            <div className="player-cards-grid">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="skeleton-card" />
+              ))}
+            </div>
+          ) : (
+            <div className="admin-loading-rows">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="admin-skeleton-row" />
+              ))}
+            </div>
+          )
+        ) : viewMode === 'cards' ? (
+          /* Cards Grid View */
+          filtered.length === 0 ? (
+            <div className="admin-empty">No players found matching current filters.</div>
+          ) : (
+            <div className="player-cards-grid">
+              {filtered.map(p => {
+                const pay = getPlayerPayment(p);
+                const screenshot = pay?.screenshot || pay?.payment_proof || pay?.proof_url || p.address_proof;
+                const isPending = p.status === 'pending' || p.approval === 'pending';
+                const isRejected = p.approval === 'rejected' || p.status === 'rejected';
+
+                return (
+                  <div key={p.id} className="player-card">
+                    <div className="player-card-header">
+                      <div className="player-avatar-wrap">
+                        {p.photo ? (
+                          <img src={getImageUrl(p.photo)} alt={p.player_name} className="player-avatar-img" />
+                        ) : (
+                          <div className="player-avatar-placeholder">
+                            {p.player_name?.slice(0, 2).toUpperCase() || 'PL'}
+                          </div>
+                        )}
+                        <span className={`status-dot ${isPending ? 'pending' : isRejected ? 'rejected' : 'active'}`} />
+                      </div>
+
+                      <div className="player-card-info">
+                        <div className="player-card-name" title={p.player_name}>
+                          <span>{p.player_name}</span>
+                          {p.registered_by?.toLowerCase().includes('self') ? (
+                            <span className="admin-source-badge self" style={{ fontSize: '9px', padding: '1px 5px' }}>Self</span>
+                          ) : (
+                            <span className="admin-source-badge admin" style={{ fontSize: '9px', padding: '1px 5px' }}>Admin</span>
+                          )}
+                        </div>
+                        <div className="player-card-reg">{p.registration_number || 'No Reg #'}</div>
+                      </div>
+                    </div>
+
+                    <div className="player-card-badges">
+                      <span className="player-card-pill" style={{ background: 'rgba(212, 175, 55, 0.15)', color: '#d4af37' }}>
+                        {p.role || p.player_category || 'Player'}
+                      </span>
+                      {p.teams ? (
+                        <span className="player-card-pill" style={{ borderColor: p.teams.accent_color, border: '1px solid', color: p.teams.accent_color }}>
+                          {p.teams.short_code}
+                        </span>
+                      ) : (
+                        <span className="player-card-pill" style={{ opacity: 0.6 }}>Unassigned</span>
+                      )}
+                      <span className={`admin-status-badge ${isPending ? 'admin-status-pending' : isRejected ? 'admin-status-disabled' : 'admin-status-approved'}`}>
+                        {isPending ? 'Pending' : isRejected ? 'Rejected' : 'Approved'}
+                      </span>
+                    </div>
+
+                    <div className="player-card-details">
+                      <div className="player-card-detail-item">
+                        <span className="player-card-detail-label">Batting / Bowling</span>
+                        <span className="player-card-detail-val" title={`${p.batting_hand || 'RHB'} • ${p.bowling_type || 'None'}`}>
+                          {p.batting_hand || 'RHB'} • {p.bowling_type || (p.bowler ? 'Bowler' : 'None')}
+                        </span>
+                      </div>
+                      <div className="player-card-detail-item">
+                        <span className="player-card-detail-label">Base Price</span>
+                        <span className="player-card-detail-val" style={{ color: '#d4af37' }}>
+                          ₹{Number(p.base_price || 50).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="player-card-detail-item">
+                        <span className="player-card-detail-label">Auction Pool</span>
+                        <span className="player-card-detail-val">
+                          <button
+                            type="button"
+                            onClick={() => toggleAuction(p)}
+                            className={`admin-toggle-btn ${p.auction_eligible ? 'admin-toggle-on' : 'admin-toggle-off'}`}
+                            style={{ fontSize: '10.5px', padding: '2px 6px' }}
+                          >
+                            <Gavel size={10} />
+                            {p.auction_eligible ? 'Eligible' : 'Off'}
+                          </button>
+                        </span>
+                      </div>
+                      <div className="player-card-detail-item">
+                        <span className="player-card-detail-label">Payment Proof</span>
+                        <span className="player-card-detail-val">
+                          {screenshot ? (
+                            <button
+                              type="button"
+                              onClick={() => openPaymentProof(p)}
+                              style={{ background: 'none', border: 'none', color: '#10b981', fontWeight: 700, fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0 }}
+                            >
+                              <CreditCard size={12} /> View Proof ↗
+                            </button>
+                          ) : pay ? (
+                            <button
+                              type="button"
+                              onClick={() => openPaymentProof(p)}
+                              style={{ background: 'none', border: 'none', color: '#eab308', fontWeight: 600, fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0 }}
+                            >
+                              <CreditCard size={12} /> UTR: {pay.payment_id?.slice(-6)}
+                            </button>
+                          ) : (
+                            <span style={{ color: '#64748b', fontSize: '11px' }}>—</span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="player-card-actions">
+                      {isPending ? (
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            className="dt-btn dt-btn-approve"
+                            onClick={() => handleApprove(p)}
+                            disabled={saving}
+                            style={{ height: '28px', padding: '0 8px', fontSize: '11px', fontWeight: 700 }}
+                          >
+                            <Check size={12} /> Approve
+                          </button>
+                          <button
+                            className="dt-btn dt-btn-reject dt-btn-icon"
+                            onClick={() => handleReject(p)}
+                            disabled={saving}
+                            style={{ width: '28px', height: '28px' }}
+                            title="Reject"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>
+                          {p.contact_number || 'No Contact'}
+                        </span>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button className="dt-btn dt-btn-icon" title="View details" onClick={() => openView(p)} style={{ width: '28px', height: '28px' }}><FileText size={13} /></button>
+                        <button className="dt-btn dt-btn-icon" title="Print" onClick={() => window.open(`/admin/players/print/${p.id}`, '_blank')} style={{ width: '28px', height: '28px' }}><Printer size={13} /></button>
+                        <button className="dt-btn dt-btn-icon" title="Edit" onClick={() => openEdit(p)} style={{ width: '28px', height: '28px' }}><Edit2 size={13} /></button>
+                        <button className="dt-btn dt-btn-icon dt-btn-danger" title="Delete" onClick={() => openDelete(p)} style={{ width: '28px', height: '28px' }}><Trash2 size={13} /></button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        ) : (
+          /* Table View */
+          <DataTable
+            columns={columns}
+            data={filtered}
+            loading={loading && players.length === 0}
+            searchKeys={['player_name', 'registration_number', 'contact_number', 'email']}
+            searchPlaceholder="Search players or reg ID..."
+            emptyMessage="No players found."
+          />
+        )}
 
         {/* Create/Edit Modal */}
         {(modal === 'create' || modal === 'edit') && (

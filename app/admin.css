@@ -247,7 +247,47 @@
 .admin-skeleton-row { height: 52px; background: var(--adm-border); border-radius: 8px; margin-bottom: 8px; animation: shimmer 1.4s infinite; border: 1px solid var(--adm-border); }
 .admin-loading-rows { padding: 8px 0; }
 @keyframes shimmer { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
-.admin-empty { padding: 32px; text-align: center; color: var(--adm-text-muted); font-size: 13px; }
+/* ---- Player Cards Grid & Modern View ---- */
+.admin-view-toggle { display: inline-flex; align-items: center; background: var(--adm-panel); border: 1px solid var(--adm-border); border-radius: 8px; padding: 3px; gap: 3px; }
+.admin-view-btn { background: none; border: none; color: var(--adm-text-muted); padding: 5px 11px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all .15s ease; }
+.admin-view-btn:hover { color: var(--adm-text-strong); }
+.admin-view-btn.active { background: var(--adm-border-focus); color: var(--adm-gold); }
+
+.player-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; margin-top: 16px; }
+.player-card { background: var(--adm-panel); border: 1px solid var(--adm-border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; position: relative; transition: transform .2s, border-color .2s, box-shadow .2s; }
+.player-card:hover { transform: translateY(-2px); border-color: var(--adm-gold-bg-strong); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4); }
+
+.player-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.player-avatar-wrap { position: relative; width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0; }
+.player-avatar-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid var(--adm-border-focus); }
+.player-avatar-placeholder { width: 100%; height: 100%; border-radius: 50%; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; color: #94a3b8; font-weight: 700; font-size: 13px; border: 2px solid var(--adm-border-focus); }
+.status-dot { position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--adm-panel-solid); }
+.status-dot.active { background: #22c55e; }
+.status-dot.pending { background: #eab308; }
+.status-dot.rejected { background: #ef4444; }
+
+.player-card-info { flex: 1; min-width: 0; }
+.player-card-name { font-size: 15px; font-weight: 700; color: var(--adm-text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+.player-card-reg { font-size: 11px; color: var(--adm-text-muted); font-family: monospace; margin-top: 2px; }
+
+.player-card-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.player-card-pill { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: var(--adm-border); color: var(--adm-text); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+
+.player-card-details { background: rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 10px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11.5px; margin-bottom: 14px; border: 1px solid var(--adm-border); }
+.player-card-detail-item { display: flex; flex-direction: column; }
+.player-card-detail-label { color: var(--adm-text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.player-card-detail-val { color: var(--adm-text-strong); font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.player-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--adm-border); }
+
+.admin-role-pills { display: flex; gap: 6px; align-items: center; overflow-x: auto; padding-bottom: 4px; }
+.admin-role-pill { background: var(--adm-panel); border: 1px solid var(--adm-border); color: var(--adm-text); font-size: 11.5px; font-weight: 600; padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all .15s ease; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.admin-role-pill:hover { border-color: var(--adm-gold); color: var(--adm-text-strong); }
+.admin-role-pill.active { background: rgba(212, 175, 55, 0.15); border-color: var(--adm-gold); color: var(--adm-gold); }
+
+.admin-sync-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--adm-gold); background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.25); padding: 3px 9px; border-radius: 12px; }
+
+.skeleton-card { height: 210px; background: var(--adm-panel); border: 1px solid var(--adm-border); border-radius: 14px; animation: shimmer 1.4s infinite; }
 
 /* ---- Payment Summary ---- */
 .admin-pay-summary { display: flex; gap: 0; background: var(--adm-panel); border: 1px solid var(--adm-border); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }

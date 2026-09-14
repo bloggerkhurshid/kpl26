@@ -48,16 +48,19 @@ class PlayerController {
         }
 
         // Handle File uploads / Base64 conversions if provided
-        if (!empty($input['photo_base64'])) {
-            $input['photo'] = FileUploader::uploadBase64($input['photo_base64'], 'photo_');
+        $photoInput = $input['photo_base64'] ?? ($input['photo'] ?? null);
+        if (!empty($photoInput) && str_starts_with($photoInput, 'data:')) {
+            $input['photo'] = FileUploader::uploadBase64($photoInput, 'photos');
         }
 
-        if (!empty($input['address_proof_base64'])) {
-            $input['address_proof'] = FileUploader::uploadBase64($input['address_proof_base64'], 'proof_');
+        $proofInput = $input['address_proof_base64'] ?? ($input['address_proof'] ?? null);
+        if (!empty($proofInput) && str_starts_with($proofInput, 'data:')) {
+            $input['address_proof'] = FileUploader::uploadBase64($proofInput, 'documents');
         }
 
-        if (!empty($input['player_signature_base64'])) {
-            $input['player_signature'] = FileUploader::uploadBase64($input['player_signature_base64'], 'sig_');
+        $sigInput = $input['player_signature_base64'] ?? ($input['player_signature'] ?? null);
+        if (!empty($sigInput) && str_starts_with($sigInput, 'data:')) {
+            $input['player_signature'] = FileUploader::uploadBase64($sigInput, 'signatures');
         }
 
         $id = Player::create($input);
@@ -80,16 +83,19 @@ class PlayerController {
         }
 
         // Handle base64 uploads if present
-        if (!empty($input['photo_base64'])) {
-            $input['photo'] = FileUploader::uploadBase64($input['photo_base64'], 'photo_');
+        $photoInput = $input['photo_base64'] ?? ($input['photo'] ?? null);
+        if (!empty($photoInput) && str_starts_with($photoInput, 'data:')) {
+            $input['photo'] = FileUploader::uploadBase64($photoInput, 'photos');
         }
 
-        if (!empty($input['address_proof_base64'])) {
-            $input['address_proof'] = FileUploader::uploadBase64($input['address_proof_base64'], 'proof_');
+        $proofInput = $input['address_proof_base64'] ?? ($input['address_proof'] ?? null);
+        if (!empty($proofInput) && str_starts_with($proofInput, 'data:')) {
+            $input['address_proof'] = FileUploader::uploadBase64($proofInput, 'documents');
         }
 
-        if (!empty($input['player_signature_base64'])) {
-            $input['player_signature'] = FileUploader::uploadBase64($input['player_signature_base64'], 'sig_');
+        $sigInput = $input['player_signature_base64'] ?? ($input['player_signature'] ?? null);
+        if (!empty($sigInput) && str_starts_with($sigInput, 'data:')) {
+            $input['player_signature'] = FileUploader::uploadBase64($sigInput, 'signatures');
         }
 
         $updated = Player::update($id, $input);
