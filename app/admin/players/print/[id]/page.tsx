@@ -12,13 +12,23 @@ export default function PrintPlayerReceipt({ params }: { params: { id: string } 
   useEffect(() => {
     async function load() {
       try {
-        // Fetch player directly by ID — fast and accurate
+        // Try fetching player directly by ID first (fast path)
         const res = await fetch(`/api/players.php?id=${params.id}`);
-        if (!res.ok) throw new Error('API error');
-        const data = await res.json();
-        const found = data?.data || data;
-        if (found && found.id) {
-          setPlayer(found);
+        if (res.ok) {
+          const data = await res.json();
+          const found = data?.data || data;
+          if (found && found.id) {
+            setPlayer(found);
+            return;
+          }
+        }
+        // Fallback: scan all players (handles servers where show() returns 500)
+        const res2 = await fetch(`/api/players.php?limit=2000`);
+        if (res2.ok) {
+          const data2 = await res2.json();
+          const list = data2?.data || data2 || [];
+          const found2 = list.find((p: any) => String(p.id) === String(params.id));
+          if (found2) setPlayer(found2);
         }
       } catch (err) {
         console.error('Failed to load player print data:', err);
