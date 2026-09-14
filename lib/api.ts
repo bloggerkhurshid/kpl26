@@ -12,15 +12,47 @@ export function getImageUrl(path?: string | null): string {
   if (!path || typeof path !== 'string') return '';
   const trimmed = path.trim();
   if (!trimmed) return '';
-  if (trimmed.startsWith('data:') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+
+  // 1. Valid data URL (e.g. data:image/jpeg;base64,...)
+  if (trimmed.startsWith('data:image/')) {
     return trimmed;
   }
+
+  // 2. Absolute web URL
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  // 3. Local bundled static asset
   if (trimmed.startsWith('/images/') || trimmed === '/kpl-logo.jpg' || trimmed === '/kpl-logo.png') {
     return trimmed;
   }
-  const baseUrl = PHP_API_BASE.replace(/\/$/, '');
-  const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-  return `${baseUrl}${cleanPath}`;
+
+  // 4. Relative server uploads path (must look like a real path: starts with /uploads/ or uploads/)
+  if (trimmed.startsWith('/uploads/') || trimmed.startsWith('uploads/')) {
+    const baseUrl = PHP_API_BASE.replace(/\/$/, '');
+    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return `${baseUrl}${cleanPath}`;
+  }
+
+  // 5. If it's a raw base64 string without data: prefix (e.g. from an un-prefixed upload), prefix it as jpeg
+  if (trimmed.startsWith('/9j/') || trimmed.startsWith('iVBORw0K') || trimmed.startsWith('UklGR')) {
+    const mime = trimmed.startsWith('iVBORw0K') ? 'image/png' : trimmed.startsWith('UklGR') ? 'image/webp' : 'image/jpeg';
+    return `data:${mime};base64,${trimmed}`;
+  }
+
+  // 6. If it doesn't contain a slash or extension, it's not a valid server path — return empty to prevent browser ERR_BLOCKED_BY_CLIENT / 414 URI Too Long
+  if (!trimmed.includes('/') && !trimmed.includes('.')) {
+    return '';
+  }
+
+  // Fallback for other valid relative paths
+  if (trimmed.startsWith('/')) {
+    const baseUrl = PHP_API_BASE.replace(/\/$/, '');
+    return `${baseUrl}${trimmed}`;
+  }
+
+  return '';
 }
 
 export async function fetchFromPhpApi(endpoint: string, options: RequestInit = {}) {
