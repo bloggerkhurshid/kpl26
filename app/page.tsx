@@ -28,7 +28,6 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { load } from '@cashfreepayments/cashfree-js';
 import { kplApi, getImageUrl } from '@/lib/api';
 import { ManagementSection } from '@/components/ManagementSection';
 import { GallerySection } from '@/components/GallerySection';
@@ -361,85 +360,16 @@ export default function Home() {
 
       const teamId = res.id || res.data?.id || newRegNum;
 
-      if (fees.active_gateway === 'upi_direct' || !fees.active_gateway) {
-        setModal(null);
-        setStatus('idle');
-        setUpiModalData({
-          isOpen: true,
-          type: 'team',
-          regId: newRegNum,
-          name: teamForm.owner_name,
-          phone: teamForm.contact_number,
-          amount: Number(fees.fee_team) || 5000,
-        });
-        return;
-      }
-
-      if (fees.active_gateway === 'razorpay') {
-        const res = await fetch('/api/payments/razorpay/create-order', {
-          method: 'POST',
-          body: JSON.stringify({ amount: fees.fee_team, receipt: newRegNum, notes: { teamId } })
-        });
-        const data = await res.json();
-        
-        if (data.error) throw new Error(data.error);
-
-        const options = {
-          key: data.keyId,
-          amount: data.amount,
-          currency: data.currency,
-          name: 'Khoraghat Premier League',
-          description: 'Team Registration Fee',
-          order_id: data.orderId,
-          handler: async function (response: any) {
-            await kplApi.updateTeam(teamId, { status: 'active' });
-            setStatus('success');
-            setRegisteredId(newRegNum);
-            setTeamForm({ team_name: '', owner_name: '', captain_name: '', contact_number: '', email: '', home_location: '', message: '' });
-          },
-          prefill: {
-            name: teamForm.owner_name,
-            contact: teamForm.contact_number,
-            email: teamForm.email || ''
-          },
-          theme: {
-            color: '#e8ac2f'
-          }
-        };
-        // @ts-ignore
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else if (fees.active_gateway === 'cashfree') {
-        const res = await fetch('/api/payments/cashfree/create-order', {
-          method: 'POST',
-          body: JSON.stringify({ 
-            amount: fees.fee_team, 
-            customerName: teamForm.owner_name, 
-            customerPhone: teamForm.contact_number,
-            customerEmail: teamForm.email || '',
-            orderId: newRegNum
-          })
-        });
-        const data = await res.json();
-        
-        if (data.error) throw new Error(data.error);
-
-        const cashfree = await load({ mode: data.mode });
-        cashfree.checkout({
-          paymentSessionId: data.paymentSessionId
-        }).then(async (result: any) => {
-          if (result.error) {
-            setStatus('error');
-            setErrorMsg(result.error.message);
-          }
-          if (result.paymentDetails) {
-            await kplApi.updateTeam(teamId, { status: 'active' });
-            setStatus('success');
-            setRegisteredId(newRegNum);
-            setTeamForm({ team_name: '', owner_name: '', captain_name: '', contact_number: '', email: '', home_location: '', message: '' });
-          }
-        });
-      }
+      setModal(null);
+      setStatus('idle');
+      setUpiModalData({
+        isOpen: true,
+        type: 'team',
+        regId: newRegNum,
+        name: teamForm.owner_name,
+        phone: teamForm.contact_number,
+        amount: Number(fees.fee_team) || 5000,
+      });
 
     } catch (err: any) {
       setStatus('error');
@@ -484,85 +414,16 @@ export default function Home() {
       // Handle Payment Gateway
       const paymentAmount = playerForm.player_category === 'Foreign' ? Number(fees.fee_foreign_player) : Number(fees.fee_player);
 
-      if (fees.active_gateway === 'upi_direct' || !fees.active_gateway) {
-        setModal(null);
-        setStatus('idle');
-        setUpiModalData({
-          isOpen: true,
-          type: 'player',
-          regId: newRegNum,
-          name: playerForm.player_name,
-          phone: playerForm.contact_number,
-          amount: paymentAmount || 500,
-        });
-        return;
-      }
-
-      if (fees.active_gateway === 'razorpay') {
-        const res = await fetch('/api/payments/razorpay/create-order', {
-          method: 'POST',
-          body: JSON.stringify({ amount: paymentAmount, receipt: newRegNum, notes: { playerId } })
-        });
-        const data = await res.json();
-        
-        if (data.error) throw new Error(data.error);
-
-        const options = {
-          key: data.keyId,
-          amount: data.amount,
-          currency: data.currency,
-          name: 'Khoraghat Premier League',
-          description: 'Player Registration Fee',
-          order_id: data.orderId,
-          handler: async function (response: any) {
-            // Payment successful; registration remains pending admin approval
-            await kplApi.updatePlayer(playerId, { status: 'pending', approval: 'pending' });
-            setStatus('success');
-            setRegisteredId(newRegNum);
-            setPlayerForm({ player_name: '', father_name: '', age_input: '', contact_number: '', present_address: '', address_proof: '', photo: '', batsman: false, batting_hand: '', wicket_keeper: false, previously_played: false, player_category: 'local', bowler: false, bowling_arm: '', bowling_style: '' });
-          },
-          prefill: {
-            name: playerForm.player_name,
-            contact: playerForm.contact_number,
-          },
-          theme: {
-            color: '#e8ac2f'
-          }
-        };
-        // @ts-ignore
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else if (fees.active_gateway === 'cashfree') {
-        const res = await fetch('/api/payments/cashfree/create-order', {
-          method: 'POST',
-          body: JSON.stringify({ 
-            amount: paymentAmount, 
-            customerName: playerForm.player_name, 
-            customerPhone: playerForm.contact_number,
-            orderId: newRegNum
-          })
-        });
-        const data = await res.json();
-        
-        if (data.error) throw new Error(data.error);
-
-        const cashfree = await load({ mode: data.mode });
-        cashfree.checkout({
-          paymentSessionId: data.paymentSessionId
-        }).then(async (result: any) => {
-          if (result.error) {
-            setStatus('error');
-            setErrorMsg(result.error.message);
-          }
-          if (result.paymentDetails) {
-            // Payment successful; registration remains pending admin approval
-            await kplApi.updatePlayer(playerId, { status: 'pending', approval: 'pending' });
-            setStatus('success');
-            setRegisteredId(newRegNum);
-            setPlayerForm({ player_name: '', father_name: '', age_input: '', contact_number: '', present_address: '', address_proof: '', photo: '', batsman: false, batting_hand: '', wicket_keeper: false, previously_played: false, player_category: 'local', bowler: false, bowling_arm: '', bowling_style: '' });
-          }
-        });
-      }
+      setModal(null);
+      setStatus('idle');
+      setUpiModalData({
+        isOpen: true,
+        type: 'player',
+        regId: newRegNum,
+        name: playerForm.player_name,
+        phone: playerForm.contact_number,
+        amount: paymentAmount || 500,
+      });
 
     } catch (err: any) {
       setStatus('error');

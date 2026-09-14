@@ -10,12 +10,12 @@ export async function GET() {
       fee_player: parseInt(settings['fee_player'] || '500'),
       fee_foreign_player: parseInt(settings['fee_foreign_player'] || '1000'),
       fee_team: parseInt(settings['fee_team'] || '5000'),
-      active_gateway: settings['active_gateway'] || 'razorpay',
+      active_gateway: settings['active_gateway'] || 'upi_direct',
     };
 
     return NextResponse.json(publicSettings);
   } catch (err) {
     console.error('Failed to fetch public settings:', err);
-    return NextResponse.json({ fee_player: 500, fee_foreign_player: 1000, fee_team: 5000, active_gateway: 'razorpay' }); // Fallback defaults
+    return NextResponse.json({ fee_player: 500, fee_foreign_player: 1000, fee_team: 5000, active_gateway: 'upi_direct' }); // Fallback defaults
   }
 }

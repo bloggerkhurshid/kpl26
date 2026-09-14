@@ -195,44 +195,30 @@ export default function SettingsPage() {
               )}
             </div>
 
-            {/* Active Gateway */}
+            {/* Active Payment Gateway */}
             <div className="settings-section">
               <div className="settings-section-header">
                 <Settings size={16} />
                 <h3>Active Payment Gateway</h3>
               </div>
               <div className="settings-mode-toggle">
-                {(['upi_direct', 'razorpay', 'cashfree'] as const).map(gateway => (
-                  <label key={gateway} className={`settings-mode-option ${settings.active_gateway === gateway ? 'settings-mode-active' : ''}`}>
-                    <input
-                      type="radio"
-                      name="active_gateway"
-                      value={gateway}
-                      checked={settings.active_gateway === gateway}
-                      onChange={() => update('active_gateway', gateway)}
-                    />
-                    <span className="settings-mode-dot" />
-                    <div>
-                      <strong>
-                        {gateway === 'upi_direct'
-                          ? '⚡ Free Direct UPI QR (0% Fees)'
-                          : gateway === 'razorpay'
-                          ? 'Razorpay'
-                          : 'Cashfree'}
-                      </strong>
-                      <span>
-                        {gateway === 'upi_direct'
-                          ? 'Zero transaction charges. Direct UPI QR scan & 12-digit UTR verification.'
-                          : gateway === 'razorpay'
-                          ? 'Use Razorpay for all registrations'
-                          : 'Use Cashfree for all registrations'}
-                      </span>
-                    </div>
-                  </label>
-                ))}
+                <label className="settings-mode-option settings-mode-active">
+                  <input
+                    type="radio"
+                    name="active_gateway"
+                    value="upi_direct"
+                    checked={true}
+                    readOnly
+                  />
+                  <span className="settings-mode-dot" />
+                  <div>
+                    <strong>⚡ Free Direct UPI QR (0% Fees)</strong>
+                    <span>Zero transaction charges. Direct UPI QR scan & 12-digit UTR verification.</span>
+                  </div>
+                </label>
               </div>
               <div className="settings-hint">
-                This enforces the selected gateway for all users.
+                All team and player registrations use Direct UPI QR code with instant UTR tracking.
               </div>
             </div>
 
@@ -264,81 +250,6 @@ export default function SettingsPage() {
               </div>
               <div className="settings-hint">
                 This UPI VPA ID is used to generate the dynamic QR Code for zero-fee payments.
-              </div>
-            </div>
-
-
-            {/* Razorpay */}
-            <div className="settings-section">
-              <div className="settings-section-header">
-                <Key size={16} />
-                <h3>Razorpay</h3>
-                <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener noreferrer" className="settings-ext-link">
-                  Get keys <ExternalLink size={11} />
-                </a>
-              </div>
-              <div className="settings-grid">
-                <div className="admin-form-field">
-                  <label>Key ID</label>
-                  <input
-                    type="text"
-                    value={settings.gateway_razorpay_key_id}
-                    onChange={e => update('gateway_razorpay_key_id', e.target.value)}
-                    placeholder={settings.gateway_mode === 'production' ? 'rzp_live_...' : 'rzp_test_...'}
-                    className={edited['gateway_razorpay_key_id'] ? 'settings-input-edited' : ''}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="admin-form-field">
-                  <label>Key Secret <span className="settings-secret-tag">secret</span></label>
-                  <SecretInput
-                    fieldKey="gateway_razorpay_key_secret"
-                    placeholder="••••••••••••••••"
-                    value={settings.gateway_razorpay_key_secret}
-                  />
-                </div>
-              </div>
-              <div className="settings-hint">
-                {settings.gateway_mode === 'sandbox'
-                  ? 'Use Test API keys from Razorpay Dashboard → Settings → API Keys'
-                  : 'Use Live API keys. Ensure webhook is configured for payment verification.'}
-              </div>
-            </div>
-
-            {/* Cashfree */}
-            <div className="settings-section">
-              <div className="settings-section-header">
-                <Key size={16} />
-                <h3>Cashfree</h3>
-                <a href="https://merchant.cashfree.com/merchants/settings/api" target="_blank" rel="noopener noreferrer" className="settings-ext-link">
-                  Get keys <ExternalLink size={11} />
-                </a>
-              </div>
-              <div className="settings-grid">
-                <div className="admin-form-field">
-                  <label>App ID</label>
-                  <input
-                    type="text"
-                    value={settings.gateway_cashfree_app_id}
-                    onChange={e => update('gateway_cashfree_app_id', e.target.value)}
-                    placeholder={settings.gateway_mode === 'production' ? 'App ID' : 'TEST_...'}
-                    className={edited['gateway_cashfree_app_id'] ? 'settings-input-edited' : ''}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="admin-form-field">
-                  <label>Secret Key <span className="settings-secret-tag">secret</span></label>
-                  <SecretInput
-                    fieldKey="gateway_cashfree_secret_key"
-                    placeholder="••••••••••••••••"
-                    value={settings.gateway_cashfree_secret_key}
-                  />
-                </div>
-              </div>
-              <div className="settings-hint">
-                {settings.gateway_mode === 'sandbox'
-                  ? 'Use Test API credentials from Cashfree Dashboard → Developers → API Keys'
-                  : 'Use Production credentials. Test thoroughly in sandbox before going live.'}
               </div>
             </div>
             {/* Registration Fees */}
