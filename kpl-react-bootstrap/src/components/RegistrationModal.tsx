@@ -70,10 +70,40 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
-      setPaymentScreenshot(event.target?.result as string);
-      setErrorMsg('');
+      const rawUrl = event.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIM = 900;
+        let { width, height } = img;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          setPaymentScreenshot(canvas.toDataURL('image/jpeg', 0.72));
+        } else {
+          setPaymentScreenshot(rawUrl);
+        }
+        setErrorMsg('');
+      };
+      img.onerror = () => {
+        setPaymentScreenshot(rawUrl);
+        setErrorMsg('');
+      };
+      img.src = rawUrl;
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   if (!isOpen) return null;
@@ -235,6 +265,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
         payment_gateway: 'upi_direct',
         payment_id: finalPaymentId,
         screenshot: paymentScreenshot || null,
+        payment_proof: paymentScreenshot || null,
         status: 'pending_verification',
       }).catch((err) => {
         console.warn('Payment submission note:', err);

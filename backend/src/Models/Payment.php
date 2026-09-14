@@ -41,7 +41,7 @@ class Payment {
             mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
         );
 
-        $screenshot = $data['screenshot'] ?? null;
+        $screenshot = $data['screenshot'] ?? ($data['payment_proof'] ?? null);
         try {
             $stmt = self::getDb()->prepare("
                 INSERT INTO payments (

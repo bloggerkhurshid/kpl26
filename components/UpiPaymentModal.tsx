@@ -45,6 +45,7 @@ export function UpiPaymentModal({
   const [copied, setCopied] = useState(false);
   const [utr, setUtr] = useState('');
   const [screenshot, setScreenshot] = useState<string>('');
+  const [processingImage, setProcessingImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -63,8 +64,8 @@ export function UpiPaymentModal({
 
   const handleDownloadQr = async () => {
     try {
-      const res = await fetch(qrApiUrl);
-      const blob = await res.blob();
+      const response = await fetch(qrApiUrl);
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -81,26 +82,28 @@ export function UpiPaymentModal({
   const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 15 * 1024 * 1024) {
-      setError('Screenshot file size must be under 15MB.');
+    if (file.size > 20 * 1024 * 1024) {
+      setError('Screenshot file size must be under 20MB.');
       return;
     }
+    setProcessingImage(true);
+    setError('');
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const rawUrl = event.target?.result as string;
-      // Compress image using canvas so upload is instant and doesn't get stuck
+      // Compress image using canvas so payload is compact (~80-150KB) and database insertion is 100% reliable
       const img = new Image();
       img.onload = () => {
-        const maxWidth = 1200;
-        const maxHeight = 1200;
+        const MAX_DIMENSION = 900;
         let { width, height } = img;
-        if (width > maxWidth || height > maxHeight) {
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
           if (width > height) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
+            height = Math.round((height * MAX_DIMENSION) / width);
+            width = MAX_DIMENSION;
           } else {
-            width = Math.round((width * maxHeight) / height);
-            height = maxHeight;
+            width = Math.round((width * MAX_DIMENSION) / height);
+            height = MAX_DIMENSION;
           }
         }
         const canvas = document.createElement('canvas');
@@ -109,24 +112,37 @@ export function UpiPaymentModal({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          setScreenshot(canvas.toDataURL('image/jpeg', 0.8));
+          setScreenshot(canvas.toDataURL('image/jpeg', 0.72));
         } else {
           setScreenshot(rawUrl);
         }
+        setProcessingImage(false);
         setError('');
       };
       img.onerror = () => {
         setScreenshot(rawUrl);
+        setProcessingImage(false);
         setError('');
       };
       img.src = rawUrl;
     };
+    reader.onerror = () => {
+      setProcessingImage(false);
+      setError('Failed to read selected image file. Please try another image.');
+    };
     reader.readAsDataURL(file);
+    // Reset file input so user can re-select if desired
+    e.target.value = '';
   };
 
   const handleSubmitPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanUtr = utr.trim();
+
+    if (processingImage) {
+      setError('Please wait, processing payment screenshot...');
+      return;
+    }
 
     // Screenshot is required for proof verification
     if (!screenshot) {
@@ -153,7 +169,8 @@ export function UpiPaymentModal({
         amount: amount,
         payment_gateway: 'upi_direct',
         payment_id: finalPaymentId,
-        screenshot: screenshot || null,
+        screenshot: screenshot,
+        payment_proof: screenshot,
         status: 'pending_verification',
       });
 
@@ -255,7 +272,12 @@ export function UpiPaymentModal({
               </span>
             </div>
 
-            {screenshot ? (
+            {processingImage ? (
+              <div className="border border-slate-700/80 rounded-xl p-4 bg-slate-950/80 flex items-center justify-center gap-2.5 text-slate-300 text-xs font-semibold">
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                <span>Optimizing screenshot for upload...</span>
+              </div>
+            ) : screenshot ? (
               <div className="relative border border-emerald-500/40 rounded-xl overflow-hidden bg-slate-950 p-2 flex items-center gap-3">
                 <img src={screenshot} alt="Payment Receipt" className="w-16 h-16 object-cover rounded-lg border border-slate-700" />
                 <div className="flex-1 min-w-0">

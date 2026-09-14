@@ -27,6 +27,15 @@ class PaymentController {
             Response::error("Name, phone, and a valid amount are required", 400);
         }
 
+        // Handle base64 screenshot upload if provided
+        $screenshot = $input['screenshot'] ?? ($input['payment_proof'] ?? null);
+        if (!empty($screenshot) && str_starts_with($screenshot, 'data:')) {
+            $uploadedUrl = \Kpl\Utils\FileUploader::uploadBase64($screenshot, 'payments');
+            $input['screenshot'] = $uploadedUrl ?: $screenshot;
+        } elseif (!empty($screenshot)) {
+            $input['screenshot'] = $screenshot;
+        }
+
         $id = Payment::create($input);
 
         Response::json([
