@@ -32,52 +32,7 @@ class Player {
         return (int)($res['count'] ?? 0);
     }
 
-    public static function migrateBase64(): void {
-        static $migrated = false;
-        if ($migrated) return;
-        $migrated = true;
-
-        try {
-            $db = self::getDb();
-            // Migrate up to 10 players with base64 per request to keep it fast
-            $stmt = $db->query("SELECT id, photo, address_proof, player_signature FROM players WHERE (photo LIKE 'data:%' OR address_proof LIKE 'data:%' OR player_signature LIKE 'data:%') LIMIT 10");
-            $rows = $stmt->fetchAll();
-            foreach ($rows as $row) {
-                $updates = [];
-                $params = [':id' => $row['id']];
-                if (!empty($row['photo']) && str_starts_with($row['photo'], 'data:')) {
-                    $url = \Kpl\Utils\FileUploader::uploadBase64($row['photo'], 'photos');
-                    if ($url && !str_starts_with($url, 'data:')) {
-                        $updates[] = "photo = :photo";
-                        $params[':photo'] = $url;
-                    }
-                }
-                if (!empty($row['address_proof']) && str_starts_with($row['address_proof'], 'data:')) {
-                    $url = \Kpl\Utils\FileUploader::uploadBase64($row['address_proof'], 'documents');
-                    if ($url && !str_starts_with($url, 'data:')) {
-                        $updates[] = "address_proof = :address_proof";
-                        $params[':address_proof'] = $url;
-                    }
-                }
-                if (!empty($row['player_signature']) && str_starts_with($row['player_signature'], 'data:')) {
-                    $url = \Kpl\Utils\FileUploader::uploadBase64($row['player_signature'], 'signatures');
-                    if ($url && !str_starts_with($url, 'data:')) {
-                        $updates[] = "player_signature = :player_signature";
-                        $params[':player_signature'] = $url;
-                    }
-                }
-                if (!empty($updates)) {
-                    $upStmt = $db->prepare("UPDATE players SET " . implode(', ', $updates) . " WHERE id = :id");
-                    $upStmt->execute($params);
-                }
-            }
-        } catch (\Throwable $t) {
-            // Silently continue if table locked or read-only
-        }
-    }
-
     public static function all(array $filters = [], int $limit = 500): array {
-        // self::migrateBase64();
         $sql = "
             SELECT p.*, 
                    t.name as team_name, 

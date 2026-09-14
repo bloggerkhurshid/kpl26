@@ -15,10 +15,5 @@
     Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
 </IfModule>
 
-# Enable Gzip compression for high performance
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE application/json text/plain text/html text/xml text/css application/javascript
-</IfModule>
-
 # Disable directory browsing
 Options -Indexes

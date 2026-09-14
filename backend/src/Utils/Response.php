@@ -7,19 +7,10 @@ namespace Kpl\Utils;
 class Response {
 
     public static function json($data = [], int $statusCode = 200): void {
-        if (!headers_sent()) {
-            header("Content-Type: application/json; charset=UTF-8");
-            header("Access-Control-Allow-Origin: *");
-            header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-            header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-            
-            // Enable gzip compression if supported by client
-            if (isset($_SERVER['HTTP_ACCEPT_ENCODING']) && str_contains($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip')) {
-                if (!ob_get_level() && extension_loaded('zlib') && !ini_get('zlib.output_compression')) {
-                    ob_start('ob_gzhandler');
-                }
-            }
-        }
+        header("Content-Type: application/json; charset=UTF-8");
+        header("Access-Control-Allow-Origin: *");
+        header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+        header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
         http_response_code($statusCode);
         echo json_encode($data);
         exit();
