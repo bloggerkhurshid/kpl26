@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { kplApi, getImageUrl } from '@/lib/api';
+import { getImageUrl } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import '@/app/register/player/paper.css';
 
@@ -12,28 +12,54 @@ export default function PrintPlayerReceipt({ params }: { params: { id: string } 
   useEffect(() => {
     async function load() {
       try {
-        const res = await kplApi.getPlayers({ limit: 1000 });
-        const list = res?.data || res || [];
-        const found = list.find((p: any) => String(p.id) === String(params.id));
-        if (found) setPlayer(found);
+        // Fetch player directly by ID — fast and accurate
+        const res = await fetch(`/api/players.php?id=${params.id}`);
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        const found = data?.data || data;
+        if (found && found.id) {
+          setPlayer(found);
+        }
       } catch (err) {
         console.error('Failed to load player print data:', err);
       } finally {
         setLoading(false);
-        setTimeout(() => {
-          window.print();
-        }, 500);
       }
     }
     load();
   }, [params.id]);
 
+  useEffect(() => {
+    if (!loading && player) {
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    }
+  }, [loading, player]);
+
   if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}><Loader2 className="spin" size={32} /></div>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: '16px', fontFamily: 'sans-serif', color: '#64748b' }}>
+        <Loader2 className="spin" size={40} />
+        <p style={{ margin: 0, fontSize: '14px' }}>Loading player data…</p>
+      </div>
+    );
   }
 
   if (!player) {
-    return <div>Player not found.</div>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: '16px', fontFamily: 'sans-serif', color: '#374151', background: '#f9fafb' }}>
+        <div style={{ fontSize: '48px' }}>🏏</div>
+        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#111827' }}>Player Not Found</h2>
+        <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>No player record exists for ID: <strong>{params.id}</strong></p>
+        <button
+          onClick={() => window.history.back()}
+          style={{ marginTop: '8px', padding: '8px 20px', background: '#1e40af', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
+        >
+          ← Go Back
+        </button>
+      </div>
+    );
   }
 
   return (
