@@ -77,6 +77,19 @@ type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
 const navItems = ['League', 'Teams', 'Champions', 'Highlights'];
 
+const formatPlayerRole = (roleStr?: string) => {
+  if (!roleStr) return 'ALL-ROUNDER';
+  const roles = roleStr.split(',').map(r => r.trim().toLowerCase());
+  const isBat = roles.includes('batsman') || roles.includes('batter');
+  const isBowl = roles.includes('bowler');
+  const isWk = roles.includes('wicket-keeper') || roles.includes('wicketkeeper') || roles.includes('wk');
+  
+  if (isBat && isBowl) return 'ALL-ROUNDER';
+  if (isWk && isBat) return 'WK-BATSMAN';
+  
+  return roleStr.toUpperCase();
+};
+
 function SectionLabel({ children }: { children: string }) {
   return <p className="section-label"><span />{children}</p>;
 }
@@ -933,7 +946,7 @@ export default function Home() {
                     <div className="player-info">
                       <h3 className="sport-heading">{player.player_name}</h3>
                       <div className="player-badge-wrap">
-                        <span className="player-role-badge">{player.role || 'ALL-ROUNDER'}</span>
+                        <span className="player-role-badge">{formatPlayerRole(player.role)}</span>
                         {player.player_category && (
                           <span className="player-category-badge">{player.player_category}</span>
                         )}
