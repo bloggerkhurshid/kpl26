@@ -1386,6 +1386,16 @@ export default function Home() {
           } else {
             const age = parseInt(playerForm.age_input);
             const calculatedAge = age > 1900 ? new Date().getFullYear() - age : age;
+            
+            let calculatedRole = '';
+            if (playerForm.batsman && playerForm.bowler) {
+              calculatedRole = 'All-Rounder';
+            } else if (playerForm.wicket_keeper && playerForm.batsman) {
+              calculatedRole = 'WK-Batsman';
+            } else {
+              calculatedRole = [playerForm.batsman ? 'Batsman' : '', playerForm.bowler ? 'Bowler' : '', playerForm.wicket_keeper ? 'Wicket-keeper' : ''].filter(Boolean).join(', ');
+            }
+
             await kplApi.createPlayer({
               registration_number: upiModalData.regId,
               player_name: playerForm.player_name,
@@ -1395,7 +1405,7 @@ export default function Home() {
               present_address: playerForm.present_address,
               address_proof: playerForm.address_proof || null,
               photo: playerForm.photo || null,
-              role: [playerForm.batsman ? 'Batsman' : '', playerForm.bowler ? 'Bowler' : '', playerForm.wicket_keeper ? 'Wicket-keeper' : ''].filter(Boolean).join(', '),
+              role: calculatedRole,
               batting_hand: playerForm.batting_hand || null,
               wicket_keeper: playerForm.wicket_keeper ? 1 : 0,
               previously_played: playerForm.previously_played ? 1 : 0,
