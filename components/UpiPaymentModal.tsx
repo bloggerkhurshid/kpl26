@@ -338,7 +338,7 @@ export function UpiPaymentModal({
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !screenshot}
             className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer mt-2"
           >
             {submitting ? (

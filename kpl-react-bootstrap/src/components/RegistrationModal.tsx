@@ -240,6 +240,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
   const handleUtrSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanUtr = utrNumber.trim();
     if (!paymentScreenshot) {
       setErrorMsg('Please upload your payment confirmation screenshot before submitting.');
       return;
@@ -726,7 +727,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
                     <button
                       type="submit"
-                      disabled={submitting}
+                      disabled={submitting || !paymentScreenshot}
                       className="button-primary w-100 py-2.5"
                     >
                       <span>
