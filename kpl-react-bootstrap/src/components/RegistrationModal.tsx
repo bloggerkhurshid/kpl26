@@ -129,107 +129,27 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    setSubmitting(true);
 
-    try {
-      if (regType === 'player') {
-        if (!photoBase64) {
-          setErrorMsg('Please upload a passport-size photo of the player.');
-          setSubmitting(false);
-          return;
-        }
-
-        if (!declarationAccepted) {
-          setErrorMsg('Please accept the player declaration & undertaking checkbox.');
-          setSubmitting(false);
-          return;
-        }
-
-        const regNum = `KPL-PLR-${Date.now().toString().slice(-6)}`;
-        const payload = {
-          registration_number: regNum,
-          player_name: playerName.trim(),
-          father_name: fatherName.trim(),
-          age: parseInt(age) || 22,
-          contact_number: contact.trim(),
-          present_address: village.trim(),
-          village: village.trim(),
-          photo: photoBase64 || null,
-          role: role,
-          player_category: category,
-          batting_hand: battingHand,
-          bowling_type: bowlingStyle,
-          declaration_accepted: declarationAccepted ? 1 : 0,
-          status: 'pending',
-          base_price: 500,
-        };
-
-        const res = await kplApi.createPlayer(payload).catch((err) => {
-          console.warn('API createPlayer notice:', err);
-          return { id: regNum, registration_number: regNum };
-        });
-
-        const finalId = res?.registration_number || regNum;
-        setRegisteredId(finalId);
-        setPayableAmount(playerFee);
-
-        if (onPlayerRegistered) {
-          onPlayerRegistered({
-            id: res?.id || finalId,
-            registration_number: finalId,
-            full_name: playerName,
-            role: role,
-            category: category,
-            base_price: '₹ 500',
-            photo_url: photoBase64 || '/images/kpl-logo.jpg',
-            status: 'Pending',
-            contact: contact,
-            village: village,
-          });
-        }
-      } else {
-        const regNum = `KPL-TEAM-${Date.now().toString().slice(-6)}`;
-        const payload = {
-          name: teamName.trim(),
-          owner_name: ownerName.trim(),
-          captain_name: captainName.trim() || 'TBA',
-          owner_contact: teamContact.trim(),
-          short_code: teamName.slice(0, 3).toUpperCase(),
-          home_location: city.trim(),
-          status: 'pending',
-        };
-
-        const res = await kplApi.createTeam(payload).catch((err) => {
-          console.warn('API createTeam notice:', err);
-          return { id: regNum };
-        });
-
-        const finalId = res?.id || regNum;
-        setRegisteredId(regNum);
-        setPayableAmount(teamFee);
-
-        if (onTeamRegistered) {
-          onTeamRegistered({
-            id: finalId,
-            name: teamName,
-            short_name: teamName.slice(0, 3).toUpperCase(),
-            owner_name: ownerName,
-            captain_name: captainName || 'TBA',
-            city: city,
-            primary_color: '#0f172a',
-            secondary_color: '#d4af37',
-            logo_url: '/images/kpl-logo.jpg',
-            squad_count: 0,
-          });
-        }
+    if (regType === 'player') {
+      if (!photoBase64) {
+        setErrorMsg('Please upload a passport-size photo of the player.');
+        return;
+      }
+      if (!declarationAccepted) {
+        setErrorMsg('Please accept the player declaration & undertaking checkbox.');
+        return;
       }
 
-      setStep('upi_payment');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Registration failed. Please check details and retry.');
-    } finally {
-      setSubmitting(false);
+      const regNum = `KPL-PLR-${Date.now().toString().slice(-6)}`;
+      setRegisteredId(regNum);
+      setPayableAmount(playerFee);
+    } else {
+      const regNum = `KPL-TEAM-${Date.now().toString().slice(-6)}`;
+      setRegisteredId(regNum);
+      setPayableAmount(teamFee);
     }
+
+    setStep('upi_payment');
   };
 
   const handleCopyUpi = () => {
@@ -251,15 +171,93 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       return;
     }
 
-    const finalPaymentId = cleanUtr || `UPI-SHOT-${registeredId}`;
-
     setSubmitting(true);
     setErrorMsg('');
 
     try {
+      let finalRegistrationId = registeredId;
+      
+      // Save Player or Team Registration first
+      if (regType === 'player') {
+        const payload = {
+          registration_number: registeredId,
+          player_name: playerName.trim(),
+          father_name: fatherName.trim(),
+          age: parseInt(age) || 22,
+          contact_number: contact.trim(),
+          present_address: village.trim(),
+          village: village.trim(),
+          photo: photoBase64 || null,
+          role: role,
+          player_category: category,
+          batting_hand: battingHand,
+          bowling_type: bowlingStyle,
+          declaration_accepted: declarationAccepted ? 1 : 0,
+          status: 'pending_verification',
+          base_price: 500,
+        };
+
+        const res = await kplApi.createPlayer(payload).catch((err) => {
+          console.warn('API createPlayer notice:', err);
+          return { id: registeredId, registration_number: registeredId };
+        });
+        
+        finalRegistrationId = res?.registration_number || registeredId;
+
+        if (onPlayerRegistered) {
+          onPlayerRegistered({
+            id: res?.id || finalRegistrationId,
+            registration_number: finalRegistrationId,
+            full_name: playerName,
+            role: role,
+            category: category,
+            base_price: '₹ 500',
+            photo_url: photoBase64 || '/images/kpl-logo.jpg',
+            status: 'Pending Verification',
+            contact: contact,
+            village: village,
+          });
+        }
+      } else {
+        const payload = {
+          name: teamName.trim(),
+          owner_name: ownerName.trim(),
+          captain_name: captainName.trim() || 'TBA',
+          owner_contact: teamContact.trim(),
+          short_code: teamName.slice(0, 3).toUpperCase(),
+          home_location: city.trim(),
+          status: 'pending_verification',
+        };
+
+        const res = await kplApi.createTeam(payload).catch((err) => {
+          console.warn('API createTeam notice:', err);
+          return { id: registeredId };
+        });
+        
+        finalRegistrationId = res?.id || registeredId;
+
+        if (onTeamRegistered) {
+          onTeamRegistered({
+            id: finalRegistrationId,
+            name: teamName,
+            short_name: teamName.slice(0, 3).toUpperCase(),
+            owner_name: ownerName,
+            captain_name: captainName || 'TBA',
+            city: city,
+            primary_color: '#0f172a',
+            secondary_color: '#d4af37',
+            logo_url: '/images/kpl-logo.jpg',
+            squad_count: 0,
+          });
+        }
+      }
+
+      const finalPaymentId = cleanUtr || `UPI-SHOT-${finalRegistrationId}`;
+
+      // Save Payment Data
       await kplApi.createPayment({
         registration_type: regType,
-        registration_id: registeredId,
+        registration_id: finalRegistrationId,
         name: regType === 'player' ? playerName : ownerName,
         phone: regType === 'player' ? contact : teamContact,
         amount: payableAmount,
@@ -272,9 +270,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
         console.warn('Payment submission note:', err);
       });
 
+      setRegisteredId(finalRegistrationId);
       setStep('success');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Payment reference submission failed.');
+      setErrorMsg(err.message || 'Registration and payment submission failed.');
     } finally {
       setSubmitting(false);
     }
