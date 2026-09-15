@@ -359,33 +359,17 @@ export default function Home() {
     setErrorMsg('');
     const newRegNum = `KPL-TEAM-${Date.now().toString().slice(-6)}`;
 
-    try {
-      const res = await kplApi.createTeam({
-        name: teamForm.team_name,
-        owner_name: teamForm.owner_name,
-        owner_contact: teamForm.contact_number,
-        short_code: teamForm.team_name.slice(0, 3).toUpperCase(),
-        home_location: teamForm.home_location || null,
-        status: 'pending'
-      });
-
-      const teamId = res.id || res.data?.id || newRegNum;
-
-      setModal(null);
-      setStatus('idle');
-      setUpiModalData({
-        isOpen: true,
-        type: 'team',
-        regId: newRegNum,
-        name: teamForm.owner_name,
-        phone: teamForm.contact_number,
-        amount: Number(fees.fee_team) || 5000,
-      });
-
-    } catch (err: any) {
-      setStatus('error');
-      setErrorMsg(err.message || 'Payment failed to initiate.');
-    }
+    // Defer API call until payment proof is submitted
+    setModal(null);
+    setStatus('idle');
+    setUpiModalData({
+      isOpen: true,
+      type: 'team',
+      regId: newRegNum,
+      name: teamForm.owner_name,
+      phone: teamForm.contact_number,
+      amount: Number(fees.fee_team) || 5000,
+    });
   }
 
   async function submitPlayerRegistration(e: React.FormEvent) {
@@ -413,53 +397,19 @@ export default function Home() {
     setStatus('submitting');
     
     const newRegNum = `KPL-PLR-${Date.now().toString().slice(-6)}`;
-    const age = parseInt(playerForm.age_input);
-    const calculatedAge = age > 1900 ? new Date().getFullYear() - age : age;
+    const paymentAmount = playerForm.player_category === 'Foreign' ? Number(fees.fee_foreign_player) : Number(fees.fee_player);
 
-    try {
-      const res = await kplApi.createPlayer({
-        registration_number: newRegNum,
-        player_name: playerForm.player_name,
-        father_name: playerForm.father_name,
-        age: calculatedAge,
-        contact_number: playerForm.contact_number,
-        present_address: playerForm.present_address,
-        address_proof: playerForm.address_proof || null,
-        photo: playerForm.photo || null,
-        role: [playerForm.batsman ? 'Batsman' : '', playerForm.bowler ? 'Bowler' : '', playerForm.wicket_keeper ? 'Wicket-keeper' : ''].filter(Boolean).join(', '),
-        batting_hand: playerForm.batting_hand || null,
-        wicket_keeper: playerForm.wicket_keeper ? 1 : 0,
-        previously_played: playerForm.previously_played ? 1 : 0,
-        bowler: playerForm.bowler ? 1 : 0,
-        bowling_type: playerForm.bowler ? `${playerForm.bowling_arm} ${playerForm.bowling_style}`.trim() : null,
-        registered_by: 'Self Registration',
-        declaration_accepted: playerForm.declaration_accepted ? 1 : 0,
-        status: 'pending',
-        approval: 'pending',
-        auction_eligible: 0,
-        base_price: 50
-      });
-
-      const playerId = res.id || res.data?.id || newRegNum;
-
-      // Handle Payment Gateway
-      const paymentAmount = playerForm.player_category === 'Foreign' ? Number(fees.fee_foreign_player) : Number(fees.fee_player);
-
-      setModal(null);
-      setStatus('idle');
-      setUpiModalData({
-        isOpen: true,
-        type: 'player',
-        regId: newRegNum,
-        name: playerForm.player_name,
-        phone: playerForm.contact_number,
-        amount: paymentAmount || 500,
-      });
-
-    } catch (err: any) {
-      setStatus('error');
-      setErrorMsg(err.message || 'Payment failed to initiate.');
-    }
+    // Defer API call until payment proof is submitted
+    setModal(null);
+    setStatus('idle');
+    setUpiModalData({
+      isOpen: true,
+      type: 'player',
+      regId: newRegNum,
+      name: playerForm.player_name,
+      phone: playerForm.contact_number,
+      amount: paymentAmount || 500,
+    });
   }
 
   const scrollTo = (id: string, e?: React.MouseEvent) => {
@@ -1423,6 +1373,44 @@ export default function Home() {
         amount={upiModalData.amount}
         upiId={fees.upi_id || '8638479115@ybl'}
         payeeName={fees.upi_payee_name || 'Khoraghat Premier League'}
+        onSubmitPaymentProof={async (paymentPayload) => {
+          if (upiModalData.type === 'team') {
+            await kplApi.createTeam({
+              name: teamForm.team_name,
+              owner_name: teamForm.owner_name,
+              owner_contact: teamForm.contact_number,
+              short_code: teamForm.team_name.slice(0, 3).toUpperCase(),
+              home_location: teamForm.home_location || null,
+              status: 'pending_verification'
+            });
+          } else {
+            const age = parseInt(playerForm.age_input);
+            const calculatedAge = age > 1900 ? new Date().getFullYear() - age : age;
+            await kplApi.createPlayer({
+              registration_number: upiModalData.regId,
+              player_name: playerForm.player_name,
+              father_name: playerForm.father_name,
+              age: calculatedAge,
+              contact_number: playerForm.contact_number,
+              present_address: playerForm.present_address,
+              address_proof: playerForm.address_proof || null,
+              photo: playerForm.photo || null,
+              role: [playerForm.batsman ? 'Batsman' : '', playerForm.bowler ? 'Bowler' : '', playerForm.wicket_keeper ? 'Wicket-keeper' : ''].filter(Boolean).join(', '),
+              batting_hand: playerForm.batting_hand || null,
+              wicket_keeper: playerForm.wicket_keeper ? 1 : 0,
+              previously_played: playerForm.previously_played ? 1 : 0,
+              bowler: playerForm.bowler ? 1 : 0,
+              bowling_type: playerForm.bowler ? `${playerForm.bowling_arm} ${playerForm.bowling_style}`.trim() : null,
+              registered_by: 'Self Registration',
+              declaration_accepted: playerForm.declaration_accepted ? 1 : 0,
+              status: 'pending_verification',
+              approval: 'pending',
+              auction_eligible: 0,
+              base_price: 50
+            });
+          }
+          await kplApi.createPayment(paymentPayload);
+        }}
         onSuccess={(utr) => {
           setUpiModalData(prev => ({ ...prev, isOpen: false }));
           setRegisteredId(upiModalData.regId);

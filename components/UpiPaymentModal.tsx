@@ -28,6 +28,7 @@ interface UpiPaymentModalProps {
   upiId?: string;
   payeeName?: string;
   onSuccess: (utr: string) => void;
+  onSubmitPaymentProof?: (paymentData: any) => Promise<void>;
 }
 
 export function UpiPaymentModal({
@@ -41,6 +42,7 @@ export function UpiPaymentModal({
   upiId = '8638479115@ybl',
   payeeName = 'Khoraghat Premier League',
   onSuccess,
+  onSubmitPaymentProof,
 }: UpiPaymentModalProps) {
   const [copied, setCopied] = useState(false);
   const [utr, setUtr] = useState('');
@@ -161,7 +163,7 @@ export function UpiPaymentModal({
       setSubmitting(true);
       setError('');
 
-      await kplApi.createPayment({
+      const paymentPayload = {
         registration_type: registrationType,
         registration_id: registrationId,
         name: payerName,
@@ -172,7 +174,13 @@ export function UpiPaymentModal({
         screenshot: screenshot,
         payment_proof: screenshot,
         status: 'pending_verification',
-      });
+      };
+
+      if (onSubmitPaymentProof) {
+        await onSubmitPaymentProof(paymentPayload);
+      } else {
+        await kplApi.createPayment(paymentPayload);
+      }
 
       onSuccess(finalPaymentId);
     } catch (err: any) {
