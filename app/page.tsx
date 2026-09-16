@@ -977,60 +977,58 @@ export default function Home() {
         </section>
       )}
 
-      {content.show_players === 'true' && (
-        <section className="section-pad" id="players">
-          <div className="page-width">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px', flexWrap: 'wrap', gap: '16px' }}>
-              <div>
-                <span className="section-label">The Talent</span>
-                <h2 className="sport-heading">Registered Players</h2>
-              </div>
-              <a className="text-link" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20to%20play%20in%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register to play <ArrowRight size={14} /></a>
+      <section className="section-pad" id="players">
+        <div className="page-width">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <span className="section-label">The Talent</span>
+              <h2 className="sport-heading">Registered Players</h2>
             </div>
-            
-            <div className="players-grid">
-              {players.length === 0 ? (
-                <p className="lead">Players will be revealed soon...</p>
-              ) : (
-                players.map((player) => (
-                  <div className="player-card" key={player.id}>
-                    {player.photo ? (
-                      <img
-                        src={getImageUrl(player.photo)}
-                        alt={player.player_name}
-                        className="player-photo"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : (
-                      <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: 'var(--bg-subtle)' }}>
-                        <Users size={48} color="var(--green-mint)" />
-                      </div>
-                    )}
-                    <div className="player-info">
-                      <h3 className="sport-heading">{player.player_name}</h3>
-                      <div className="player-badge-wrap">
-                        <span className="player-role-badge">{formatPlayerRole(player.role)}</span>
-                        {player.player_category && (
-                          <span className="player-category-badge">{player.player_category}</span>
-                        )}
-                      </div>
+            <a className="text-link" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20to%20play%20in%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register to play <ArrowRight size={14} /></a>
+          </div>
+          
+          <div className="players-grid">
+            {players.length === 0 ? (
+              <p className="lead">Players will be revealed soon...</p>
+            ) : (
+              players.map((player) => (
+                <div className="player-card" key={player.id}>
+                  {player.photo ? (
+                    <img
+                      src={getImageUrl(player.photo)}
+                      alt={player.player_name}
+                      className="player-photo"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: 'var(--bg-subtle)' }}>
+                      <Users size={48} color="var(--green-mint)" />
+                    </div>
+                  )}
+                  <div className="player-info">
+                    <h3 className="sport-heading">{player.player_name}</h3>
+                    <div className="player-badge-wrap">
+                      <span className="player-role-badge">{formatPlayerRole(player.role)}</span>
+                      {player.player_category && (
+                        <span className="player-category-badge">{player.player_category}</span>
+                      )}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-
-            {players.length > 0 && (
-              <div style={{ textAlign: 'center', marginTop: '40px' }}>
-                <a href="/players" className="button button-outline" style={{ display: 'inline-flex', padding: '12px 24px', textDecoration: 'none' }}>
-                  <span>View All Registered Players</span>
-                </a>
-              </div>
+                </div>
+              ))
             )}
           </div>
-        </section>
-      )}
+
+          {players.length > 0 && (
+            <div style={{ textAlign: 'center', marginTop: '40px' }}>
+              <a href="/players" className="button button-outline" style={{ display: 'inline-flex', padding: '12px 24px', textDecoration: 'none' }}>
+                <span>View All Registered Players</span>
+              </a>
+            </div>
+          )}
+        </div>
+      </section>
 
       {content.show_register === 'true' && (
         <section className="section-pad cta-register-section" id="register">
