@@ -73,9 +73,9 @@ export default function PlayersPage() {
               <span>SEASON 03 • 2026</span>
             </span>
           </Link>
-          <div className="nav-links is-open" style={{ display: 'flex' }}>
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', textDecoration: 'none' }}>
-              <ArrowLeft size={16} /> Back to Home
+          <div style={{ display: 'flex' }}>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', textDecoration: 'none', background: 'rgba(255, 255, 255, 0.1)', padding: '8px 14px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, border: '1px solid rgba(255, 255, 255, 0.2)' }}>
+              <ArrowLeft size={16} /> Back
             </Link>
           </div>
         </div>
