@@ -177,7 +177,7 @@ export function App() {
   return (
     <div className="min-vh-100 d-flex flex-column bg-light text-dark">
       {/* Background Audio */}
-      <audio ref={audioRef} loop src="/background-audio.mp3" style={{ display: 'none' }} />
+      <audio ref={audioRef} loop src="https://kpl.projuktisoft.com/uploads/gallery/background-audio.mp3" style={{ display: 'none' }} />
       {/* Top Navbar */}
       <Navbar
         onOpenRegister={() => setIsRegisterOpen(true)}

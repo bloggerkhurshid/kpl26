@@ -508,7 +508,7 @@ export default function Home() {
       )}
 
       {/* Background Audio Element */}
-      <audio ref={audioRef} autoPlay loop src="/background-audio.mp3" style={{ display: 'none' }} />
+      <audio ref={audioRef} autoPlay loop src="https://kpl.projuktisoft.com/uploads/gallery/background-audio.mp3" style={{ display: 'none' }} />
 
       {/* Audio Control Floating Widget (Positioned above WhatsApp) */}
       <button
