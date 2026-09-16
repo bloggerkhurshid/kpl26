@@ -2800,7 +2800,11 @@ h2 em {
 }
 
 @media (max-width: 480px) {
-  .players-grid { grid-template-columns: 1fr; }
+  .players-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .player-photo { height: 200px; }
+  .player-info { padding: 32px 10px 12px; }
+  .player-info h3 { font-size: 14px; margin-bottom: 4px; }
+  .player-role-badge, .player-category-badge { font-size: 8.5px; padding: 2px 6px; }
   .brand-text { font-size: 13.5px !important; }
   .brand-logo { height: 34px; width: 34px; }
   .countdown-cell { min-width: 60px; padding: 8px 10px; }
