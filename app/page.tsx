@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   ArrowRight,
   Award,
@@ -31,6 +31,8 @@ import {
   Target,
   Activity,
   Swords,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { kplApi, getImageUrl } from '@/lib/api';
 import { ManagementSection } from '@/components/ManagementSection';
@@ -175,6 +177,50 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null);
   const [modal, setModal] = useState<ModalType>(null);
+
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const toggleAudio = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  useEffect(() => {
+    const attemptPlay = () => {
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(e => console.log('Autoplay blocked by browser:', e));
+      }
+      document.removeEventListener('click', attemptPlay);
+      document.removeEventListener('touchstart', attemptPlay);
+      window.removeEventListener('scroll', attemptPlay);
+    };
+
+    document.addEventListener('click', attemptPlay);
+    document.addEventListener('touchstart', attemptPlay);
+    window.addEventListener('scroll', attemptPlay, { once: true });
+
+    // Also attempt to play immediately if the browser allows it
+    if (audioRef.current && audioRef.current.paused) {
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(e => console.log('Initial autoplay blocked:', e));
+    }
+
+    return () => {
+      document.removeEventListener('click', attemptPlay);
+      document.removeEventListener('touchstart', attemptPlay);
+      window.removeEventListener('scroll', attemptPlay);
+    };
+  }, []);
 
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -461,6 +507,24 @@ export default function Home() {
         </div>
       )}
 
+      {/* Background Audio Element */}
+      <audio ref={audioRef} autoPlay loop src="/background-audio.mp3" style={{ display: 'none' }} />
+
+      {/* Audio Control Floating Widget (Positioned above WhatsApp) */}
+      <button
+        onClick={toggleAudio}
+        className="wa-float-btn"
+        style={{
+          bottom: '90px',
+          backgroundColor: '#0f172a',
+          border: '2px solid #d4af37',
+          zIndex: 9999,
+        }}
+        aria-label="Toggle Background Music"
+      >
+        {isPlaying ? <Volume2 size={24} color="#d4af37" /> : <VolumeX size={24} color="#fff" />}
+      </button>
+
       <nav className={`site-nav ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="nav-container max-w-7xl mx-auto w-full flex items-center justify-between">
           <button className="brand" onClick={scrollToTop} aria-label="KPL home">
@@ -523,7 +587,7 @@ export default function Home() {
                 </div>
                 <div className="hero-venue-pill">
                   <MapPin size={13} className="text-emerald-400" />
-                  <span>Khoraghat High School Ground, Assam</span>
+                  <span>Khoraghat M.E. School Ground, Kokrajhar, Assam</span>
                 </div>
               </div>
 
@@ -956,6 +1020,14 @@ export default function Home() {
                 ))
               )}
             </div>
+
+            {players.length > 0 && (
+              <div style={{ textAlign: 'center', marginTop: '40px' }}>
+                <a href="/players" className="button button-outline" style={{ display: 'inline-flex', padding: '12px 24px', textDecoration: 'none' }}>
+                  <span>View All Registered Players</span>
+                </a>
+              </div>
+            )}
           </div>
         </section>
       )}

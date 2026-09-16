@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { Prizes } from './components/Prizes';
@@ -14,7 +14,7 @@ import { Footer } from './components/Footer';
 import { INITIAL_TEAMS, INITIAL_PLAYERS, INITIAL_MANAGEMENT, INITIAL_GALLERY } from './mockData';
 import type { Player, Team, ManagementMember, GalleryItem, ContentSettings } from './types';
 import { kplApi, type ApiFeeSettings } from './api';
-import { MessageCircle, X } from 'lucide-react';
+import { MessageCircle, X, Volume2, VolumeX } from 'lucide-react';
 
 export function App() {
   const [contentSettings, setContentSettings] = useState<ContentSettings | undefined>(undefined);
@@ -28,6 +28,20 @@ export function App() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [waOpen, setWaOpen] = useState(false);
+
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const toggleAudio = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
 
   // Fetch live API data on mount with local storage cache
   useEffect(() => {
@@ -162,6 +176,8 @@ export function App() {
 
   return (
     <div className="min-vh-100 d-flex flex-column bg-light text-dark">
+      {/* Background Audio */}
+      <audio ref={audioRef} loop src="/background-audio.mp3" style={{ display: 'none' }} />
       {/* Top Navbar */}
       <Navbar
         onOpenRegister={() => setIsRegisterOpen(true)}
@@ -184,6 +200,25 @@ export function App() {
 
       {/* Footer */}
       <Footer />
+
+      {/* Audio Control Float Widget */}
+      <button
+        onClick={toggleAudio}
+        className="btn btn-dark rounded-circle shadow d-flex align-items-center justify-content-center"
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '20px',
+          width: '56px',
+          height: '56px',
+          zIndex: 9999,
+          backgroundColor: '#0f172a',
+          border: '2px solid #d4af37'
+        }}
+        title={isPlaying ? "Mute Background Music" : "Play Background Music"}
+      >
+        {isPlaying ? <Volume2 size={24} color="#d4af37" /> : <VolumeX size={24} color="#fff" />}
+      </button>
 
       {/* WhatsApp Float Widget */}
       <div className="wa-float-wrap">

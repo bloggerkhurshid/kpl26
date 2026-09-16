@@ -72,7 +72,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister, content }) => {
               <Calendar size={14} className="me-1 text-primary" /> Season 3 · 2026 Registration Open
             </span>
             <span className="badge bg-white text-dark border p-2 px-3 rounded-pill fw-bold shadow-sm">
-              <MapPin size={14} className="me-1 text-danger" /> Khoraghat High School Ground, Assam
+              <MapPin size={14} className="me-1 text-danger" /> Khoraghat M.E. School Ground, Kokrajhar, Assam
             </span>
           </div>
 
