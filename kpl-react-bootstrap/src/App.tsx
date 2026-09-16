@@ -43,6 +43,36 @@ export function App() {
     }
   };
 
+  useEffect(() => {
+    const attemptPlay = () => {
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(e => console.log('Autoplay blocked by browser:', e));
+      }
+      document.removeEventListener('click', attemptPlay);
+      document.removeEventListener('touchstart', attemptPlay);
+      window.removeEventListener('scroll', attemptPlay);
+    };
+
+    document.addEventListener('click', attemptPlay);
+    document.addEventListener('touchstart', attemptPlay);
+    window.addEventListener('scroll', attemptPlay, { once: true });
+
+    // Try immediately
+    if (audioRef.current && audioRef.current.paused) {
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(e => console.log('Initial autoplay blocked:', e));
+    }
+
+    return () => {
+      document.removeEventListener('click', attemptPlay);
+      document.removeEventListener('touchstart', attemptPlay);
+      window.removeEventListener('scroll', attemptPlay);
+    };
+  }, []);
+
   // Fetch live API data on mount with local storage cache
   useEffect(() => {
     // 1. Check local cache for immediate fast render
@@ -177,7 +207,7 @@ export function App() {
   return (
     <div className="min-vh-100 d-flex flex-column bg-light text-dark">
       {/* Background Audio */}
-      <audio ref={audioRef} loop src="https://kpl.projuktisoft.com/uploads/gallery/background-audio.mp3" style={{ display: 'none' }} />
+      <audio ref={audioRef} autoPlay loop src="https://kpl.projuktisoft.com/uploads/gallery/background-audio.mp3" style={{ display: 'none' }} />
       {/* Top Navbar */}
       <Navbar
         onOpenRegister={() => setIsRegisterOpen(true)}
