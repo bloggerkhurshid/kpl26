@@ -196,22 +196,30 @@ export default function Home() {
     const attemptPlay = () => {
       if (audioRef.current && audioRef.current.paused) {
         audioRef.current.play()
-          .then(() => setIsPlaying(true))
+          .then(() => {
+            setIsPlaying(true);
+            // Only remove listeners if playback actually succeeded
+            document.removeEventListener('click', attemptPlay);
+            document.removeEventListener('touchstart', attemptPlay);
+            window.removeEventListener('scroll', attemptPlay);
+          })
           .catch(e => console.log('Autoplay blocked by browser:', e));
       }
-      document.removeEventListener('click', attemptPlay);
-      document.removeEventListener('touchstart', attemptPlay);
-      window.removeEventListener('scroll', attemptPlay);
     };
 
     document.addEventListener('click', attemptPlay);
     document.addEventListener('touchstart', attemptPlay);
-    window.addEventListener('scroll', attemptPlay, { once: true });
+    window.addEventListener('scroll', attemptPlay);
 
     // Also attempt to play immediately if the browser allows it
     if (audioRef.current && audioRef.current.paused) {
       audioRef.current.play()
-        .then(() => setIsPlaying(true))
+        .then(() => {
+          setIsPlaying(true);
+          document.removeEventListener('click', attemptPlay);
+          document.removeEventListener('touchstart', attemptPlay);
+          window.removeEventListener('scroll', attemptPlay);
+        })
         .catch(e => console.log('Initial autoplay blocked:', e));
     }
 
