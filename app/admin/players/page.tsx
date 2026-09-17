@@ -10,8 +10,9 @@ import {
   UserCheck, UserX, Gavel, FileText, Printer,
   Phone, Mail, MapPin, Calendar, Hash, User, Shield, Target, Zap,
   Check, Clock, XCircle, ArrowRight, ShieldCheck, CreditCard, Image as ImageIcon, Upload,
-  LayoutGrid, List, RefreshCw, Search
+  LayoutGrid, List, RefreshCw, Search, IdCard
 } from 'lucide-react';
+import { RegistrationSlipModal } from '@/components/RegistrationSlipModal';
 
 interface Team { id: string; name: string; short_code: string; accent_color: string; }
 
@@ -80,6 +81,7 @@ export default function PlayersPage() {
   const [filterSource, setFilterSource] = useState('');
   const [filterApproval, setFilterApproval] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [slipPlayer, setSlipPlayer] = useState<any>(null);
   const [proofModal, setProofModal] = useState<{
     url: string;
     title: string;
@@ -704,6 +706,7 @@ export default function PlayersPage() {
                 </button>
               );
             })()}
+            <button className="dt-btn dt-btn-icon" title="View Slip" onClick={() => setSlipPlayer(p)}><IdCard size={14} /></button>
             <button className="dt-btn dt-btn-icon" title="Edit" onClick={() => openEdit(p)}><Edit2 size={14} /></button>
             {p.team_id && (
               <button className="dt-btn dt-btn-icon" title="Unassign from team" onClick={() => unassignPlayer(p)}><UserX size={14} /></button>
@@ -1106,6 +1109,7 @@ export default function PlayersPage() {
                       <div style={{ display: 'flex', gap: '4px' }}>
                         <button className="dt-btn dt-btn-icon" title="View details" onClick={() => openView(p)} style={{ width: '28px', height: '28px' }}><FileText size={13} /></button>
                         <button className="dt-btn dt-btn-icon" title="Print" onClick={() => window.open(`/admin/players/print/${p.id}`, '_blank')} style={{ width: '28px', height: '28px' }}><Printer size={13} /></button>
+                        <button className="dt-btn dt-btn-icon" title="View Slip" onClick={() => setSlipPlayer(p)} style={{ width: '28px', height: '28px' }}><IdCard size={13} /></button>
                         <button className="dt-btn dt-btn-icon" title="Edit" onClick={() => openEdit(p)} style={{ width: '28px', height: '28px' }}><Edit2 size={13} /></button>
                         <button className="dt-btn dt-btn-icon dt-btn-danger" title="Delete" onClick={() => openDelete(p)} style={{ width: '28px', height: '28px' }}><Trash2 size={13} /></button>
                       </div>
@@ -1747,6 +1751,14 @@ export default function PlayersPage() {
           </div>
         )}
       </div>
+
+      {slipPlayer && (
+        <RegistrationSlipModal 
+          isOpen={true} 
+          onClose={() => setSlipPlayer(null)} 
+          player={slipPlayer} 
+        />
+      )}
     </AdminLayout>
   );
 }
