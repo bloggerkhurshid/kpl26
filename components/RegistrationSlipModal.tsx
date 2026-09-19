@@ -10,15 +10,16 @@ interface PlayerDetails {
   registration_number?: string;
   player_name?: string;
   father_name?: string;
+  age?: number | string;
   age_input?: string;
   contact_number?: string;
   present_address?: string;
   photo?: string;
   batting_hand?: string;
   bowling_style?: string;
-  wicket_keeper?: boolean | string;
+  wicket_keeper?: boolean | string | number;
   player_category?: string;
-  previously_played?: boolean | string;
+  previously_played?: boolean | string | number;
   registered_by?: string;
   serial_no?: string;
 }
@@ -63,8 +64,8 @@ export function RegistrationSlipModal({ isOpen, onClose, player }: RegistrationS
     window.print();
   };
 
-  const isWk = player.wicket_keeper === true || player.wicket_keeper === '1' || player.wicket_keeper === 'Yes' || player.wicket_keeper === 'true';
-  const isPlayed = player.previously_played === true || player.previously_played === '1' || player.previously_played === 'Yes' || player.previously_played === 'true';
+  const isWk = player.wicket_keeper === true || player.wicket_keeper === '1' || player.wicket_keeper === 1 || player.wicket_keeper === 'Yes' || player.wicket_keeper === 'true';
+  const isPlayed = player.previously_played === true || player.previously_played === '1' || player.previously_played === 1 || player.previously_played === 'Yes' || player.previously_played === 'true';
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto">
@@ -143,7 +144,7 @@ export function RegistrationSlipModal({ isOpen, onClose, player }: RegistrationS
                 
                 <div className="grid grid-cols-[140px_1fr] gap-2 items-start">
                   <span className="text-gray-500">Age / Year of Birth:</span>
-                  <span className="font-bold break-words">{player.age_input || 'N/A'}</span>
+                  <span className="font-bold break-words">{player.age || player.age_input || 'N/A'}</span>
                 </div>
 
                 <div className="grid grid-cols-[140px_1fr] gap-2 items-start">
