@@ -17,7 +17,12 @@ interface PlayerDetails {
   photo?: string;
   batting_hand?: string;
   bowling_style?: string;
+  bowling_type?: string;
   wicket_keeper?: boolean | string | number;
+  batsman?: boolean | string | number;
+  bowler?: boolean | string | number;
+  all_rounder?: boolean | string | number;
+  role?: string;
   player_category?: string;
   previously_played?: boolean | string | number;
   registered_by?: string;
@@ -64,8 +69,35 @@ export function RegistrationSlipModal({ isOpen, onClose, player }: RegistrationS
     window.print();
   };
 
-  const isWk = player.wicket_keeper === true || player.wicket_keeper === '1' || player.wicket_keeper === 1 || player.wicket_keeper === 'Yes' || player.wicket_keeper === 'true';
-  const isPlayed = player.previously_played === true || player.previously_played === '1' || player.previously_played === 1 || player.previously_played === 'Yes' || player.previously_played === 'true';
+  const isWkStr = String(player.wicket_keeper).toLowerCase();
+  const isWk = isWkStr === 'true' || isWkStr === '1' || isWkStr === 'yes';
+  
+  const isPlayedStr = String(player.previously_played).toLowerCase();
+  const isPlayed = isPlayedStr === 'true' || isPlayedStr === '1' || isPlayedStr === 'yes';
+  
+  const isAllRounderStr = String(player.all_rounder).toLowerCase();
+  const isAllRounder = isAllRounderStr === 'true' || isAllRounderStr === '1' || isAllRounderStr === 'yes';
+  
+  const isBowlerStr = String(player.bowler).toLowerCase();
+  const isBowler = isBowlerStr === 'true' || isBowlerStr === '1' || isBowlerStr === 'yes';
+  
+  const isBatsmanStr = String(player.batsman).toLowerCase();
+  const isBatsman = isBatsmanStr === 'true' || isBatsmanStr === '1' || isBatsmanStr === 'yes';
+
+  const actualBowlingStyle = player.bowling_style || player.bowling_type;
+
+  let calculatedRole = 'Player';
+  if (isAllRounder || (player.batting_hand && actualBowlingStyle && actualBowlingStyle !== 'None' && actualBowlingStyle !== 'N/A')) {
+    calculatedRole = 'All-Rounder';
+  } else if (isWk) {
+    calculatedRole = 'Wicket-Keeper Batsman';
+  } else if (isBowler || (actualBowlingStyle && actualBowlingStyle !== 'None' && actualBowlingStyle !== 'N/A')) {
+    calculatedRole = 'Bowler';
+  } else if (isBatsman || player.batting_hand) {
+    calculatedRole = 'Batsman';
+  } else if (player.role) {
+    calculatedRole = player.role;
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto">
@@ -168,27 +200,23 @@ export function RegistrationSlipModal({ isOpen, onClose, player }: RegistrationS
                   </div>
                 </div>
 
-                <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
-                  <span className="text-gray-500">Bowling Style:</span>
-                  <div>
-                    {player.bowling_style ? (
-                      <div className="w-max px-2.5 py-1 rounded border bg-green-50 text-green-700 border-green-200 text-xs font-semibold">{player.bowling_style}</div>
-                    ) : (
-                      <div className="w-max px-2.5 py-1 rounded border bg-gray-100 text-gray-600 border-gray-200 text-xs font-semibold">Not a Bowler</div>
-                    )}
+                {actualBowlingStyle && (
+                  <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
+                    <span className="text-gray-500">Bowling Style:</span>
+                    <div>
+                      <div className="w-max px-2.5 py-1 rounded border bg-green-50 text-green-700 border-green-200 text-xs font-semibold">{actualBowlingStyle}</div>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
-                  <span className="text-gray-500">Wicket Keeper:</span>
-                  <div>
-                    {isWk ? (
+                {isWk && (
+                  <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
+                    <span className="text-gray-500">Wicket Keeper:</span>
+                    <div>
                       <div className="w-max px-2.5 py-1 rounded border bg-gray-200 text-gray-800 border-gray-300 text-xs font-semibold">Yes</div>
-                    ) : (
-                      <div className="w-max px-2.5 py-1 rounded border bg-gray-100 text-gray-500 border-gray-200 text-xs">No</div>
-                    )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
                   <span className="text-gray-500">Player Category:</span>
@@ -202,19 +230,28 @@ export function RegistrationSlipModal({ isOpen, onClose, player }: RegistrationS
                 </div>
 
                 <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
+                  <span className="text-gray-500">Player Role:</span>
+                  <div>
+                    <div className="w-max px-2.5 py-1 rounded border bg-purple-50 text-purple-700 border-purple-200 text-xs font-semibold">
+                      {calculatedRole}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
                   <span className="text-gray-500">Previously Played:</span>
                   <div>
                     {isPlayed ? (
-                      <div className="w-max px-2.5 py-1 rounded border bg-yellow-50 text-yellow-700 border-yellow-200 text-xs font-semibold">Previously Played</div>
+                      <div className="w-max px-2.5 py-1 rounded border bg-yellow-50 text-yellow-700 border-yellow-200 text-xs font-semibold">Yes</div>
                     ) : (
-                      <div className="w-max px-2.5 py-1 rounded border bg-gray-100 text-gray-500 border-gray-200 text-xs">New/Fresh</div>
+                      <div className="w-max px-2.5 py-1 rounded border bg-gray-100 text-gray-500 border-gray-200 text-xs">No</div>
                     )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-[140px_1fr] gap-2 items-start">
                   <span className="text-gray-500">Registered By:</span>
-                  <span className="font-bold break-words">{player.registered_by || 'Self'}</span>
+                  <span className="font-bold break-words">{player.registered_by === 'admin' ? 'Admin' : (player.registered_by || 'Self')}</span>
                 </div>
 
               </div>
