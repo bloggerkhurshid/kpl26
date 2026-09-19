@@ -189,16 +189,14 @@ export function RegistrationSlipModal({ isOpen, onClose, player }: RegistrationS
                   <span className="font-medium break-words">{player.present_address || 'N/A'}</span>
                 </div>
 
-                <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
-                  <span className="text-gray-500">Batting Style:</span>
-                  <div>
-                    {player.batting_hand ? (
+                {player.batting_hand && player.batting_hand !== 'N/A' && player.batting_hand !== 'None' && (
+                  <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
+                    <span className="text-gray-500">Batting Style:</span>
+                    <div>
                       <div className="w-max px-2.5 py-1 rounded border bg-blue-50 text-blue-700 border-blue-200 text-xs font-semibold">{player.batting_hand}</div>
-                    ) : (
-                      <span className="text-gray-400">N/A</span>
-                    )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {actualBowlingStyle && (
                   <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
@@ -222,7 +220,9 @@ export function RegistrationSlipModal({ isOpen, onClose, player }: RegistrationS
                   <span className="text-gray-500">Player Category:</span>
                   <div>
                     {player.player_category ? (
-                      <div className="w-max px-2.5 py-1 rounded border bg-cyan-50 text-cyan-700 border-cyan-200 text-xs font-semibold">{player.player_category}</div>
+                      <div className="w-max px-2.5 py-1 rounded border bg-cyan-50 text-cyan-700 border-cyan-200 text-xs font-semibold">
+                        {player.player_category === 'local' ? 'Local' : player.player_category === 'outstation' ? 'Outstation' : player.player_category}
+                      </div>
                     ) : (
                       <span className="text-gray-400">N/A</span>
                     )}
