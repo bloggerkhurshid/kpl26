@@ -420,45 +420,45 @@ export default function TeamsPage() {
         {/* Top Metric Cards */}
         <div className="admin-stats-grid">
           <div className="admin-stat-card">
-            <div className="admin-stat-icon" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
-              <Shield size={20} />
+            <div className="admin-stat-icon">
+              <Shield size={18} />
             </div>
-            <div className="admin-stat-body">
-              <div className="admin-stat-value">{teams.length}</div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
               <div className="admin-stat-label">Total Teams</div>
+              <div className="admin-stat-value">{teams.length}</div>
               <div className="admin-stat-sub">{activeTeamsCount} active franchises</div>
             </div>
           </div>
 
           <div className="admin-stat-card">
-            <div className="admin-stat-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
-              <UserCheck size={20} />
+            <div className="admin-stat-icon">
+              <UserCheck size={18} />
             </div>
-            <div className="admin-stat-body">
-              <div className="admin-stat-value">{activeTeamsCount}</div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
               <div className="admin-stat-label">Active Franchises</div>
+              <div className="admin-stat-value">{activeTeamsCount}</div>
               <div className="admin-stat-sub">{teams.length - activeTeamsCount} inactive / pending</div>
             </div>
           </div>
 
           <div className="admin-stat-card">
-            <div className="admin-stat-icon" style={{ background: 'rgba(212, 175, 55, 0.15)', color: '#d4af37' }}>
-              <CreditCard size={20} />
+            <div className="admin-stat-icon">
+              <CreditCard size={18} />
             </div>
-            <div className="admin-stat-body">
-              <div className="admin-stat-value">₹{totalTeamFees.toLocaleString('en-IN')}</div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
               <div className="admin-stat-label">Team Fees Verified</div>
+              <div className="admin-stat-value">₹{totalTeamFees.toLocaleString('en-IN')}</div>
               <div className="admin-stat-sub">{verifiedTeamPayments.length} team payments confirmed</div>
             </div>
           </div>
 
-          <div className="admin-stat-card" style={{ borderColor: pendingTeamPayments.length > 0 ? 'rgba(234, 179, 8, 0.4)' : undefined }}>
-            <div className="admin-stat-icon" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#facc15' }}>
-              <AlertCircle size={20} />
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon" style={{ color: pendingTeamPayments.length > 0 ? '#facc15' : undefined }}>
+              <AlertCircle size={18} />
             </div>
-            <div className="admin-stat-body">
-              <div className="admin-stat-value" style={{ color: pendingTeamPayments.length > 0 ? '#facc15' : undefined }}>{pendingTeamPayments.length}</div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
               <div className="admin-stat-label">Pending Verification</div>
+              <div className="admin-stat-value">{pendingTeamPayments.length}</div>
               <div className="admin-stat-sub">{pendingTeamPayments.length > 0 ? 'Review franchise receipts' : 'All payments up to date'}</div>
             </div>
           </div>

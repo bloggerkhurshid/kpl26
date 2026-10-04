@@ -781,50 +781,50 @@ export default function PlayersPage() {
         {/* Top Metric Cards */}
         <div className="admin-stats-grid">
           <div className="admin-stat-card">
-            <div className="admin-stat-icon" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
-              <Users size={20} />
+            <div className="admin-stat-icon">
+              <Users size={18} />
             </div>
-            <div className="admin-stat-body">
-              <div className="admin-stat-value">{players.length}</div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
               <div className="admin-stat-label">Total Players</div>
-              <div className="admin-stat-sub">{selfCount} self-registered • {players.length - selfCount} admin</div>
+              <div className="admin-stat-value">{players.length}</div>
+              <div className="admin-stat-sub">{selfCount} self-registered · {players.length - selfCount} admin</div>
             </div>
           </div>
 
           <div
             className="admin-stat-card"
-            style={{ cursor: 'pointer', borderColor: pendingCount > 0 ? 'rgba(234, 179, 8, 0.4)' : undefined }}
+            style={{ cursor: 'pointer' }}
             onClick={() => setActiveTab('pending')}
             title="Click to view pending reviews"
           >
-            <div className="admin-stat-icon" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#facc15' }}>
-              <Clock size={20} />
+            <div className="admin-stat-icon" style={{ color: pendingCount > 0 ? '#facc15' : undefined }}>
+              <Clock size={18} />
             </div>
-            <div className="admin-stat-body">
-              <div className="admin-stat-value" style={{ color: pendingCount > 0 ? '#facc15' : undefined }}>{pendingCount}</div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
               <div className="admin-stat-label">Pending Review</div>
-              <div className="admin-stat-sub">{pendingCount > 0 ? '⚠️ Action needed for auction pool' : 'All applications reviewed'}</div>
+              <div className="admin-stat-value">{pendingCount}</div>
+              <div className="admin-stat-sub">{pendingCount > 0 ? 'Action required for pool' : 'All applications reviewed'}</div>
             </div>
           </div>
 
           <div className="admin-stat-card">
-            <div className="admin-stat-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
-              <Gavel size={20} />
+            <div className="admin-stat-icon">
+              <Gavel size={18} />
             </div>
-            <div className="admin-stat-body">
-              <div className="admin-stat-value">{auctionCount}</div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
               <div className="admin-stat-label">Auction Eligible</div>
+              <div className="admin-stat-value">{auctionCount}</div>
               <div className="admin-stat-sub">{Math.round((auctionCount / (players.length || 1)) * 100)}% pool readiness</div>
             </div>
           </div>
 
           <div className="admin-stat-card">
-            <div className="admin-stat-icon" style={{ background: 'rgba(212, 175, 55, 0.15)', color: '#d4af37' }}>
-              <CreditCard size={20} />
+            <div className="admin-stat-icon">
+              <CreditCard size={18} />
             </div>
-            <div className="admin-stat-body">
-              <div className="admin-stat-value">₹{totalFeesCollected.toLocaleString('en-IN')}</div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
               <div className="admin-stat-label">Fees Verified</div>
+              <div className="admin-stat-value">₹{totalFeesCollected.toLocaleString('en-IN')}</div>
               <div className="admin-stat-sub">{verifiedPayments.length} payments recorded</div>
             </div>
           </div>

@@ -39,7 +39,6 @@ const navItems = [
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
-
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -86,18 +85,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside className={`admin-sidebar ${sidebarOpen ? 'admin-sidebar-open' : ''}`}>
         <div className="admin-brand">
-          <Trophy size={22} className="admin-brand-icon" />
+          <div className="admin-brand-icon">
+            <Trophy size={16} />
+          </div>
           <div>
-            <span className="admin-brand-title">KPL Admin</span>
+            <span className="admin-brand-title">KPL Console</span>
             <span className="admin-brand-sub">Season 3 · 2026</span>
           </div>
           <button className="admin-sidebar-close" onClick={() => setSidebarOpen(false)}>
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         <nav className="admin-nav">
-          <span className="admin-nav-label">Management</span>
+          <span className="admin-nav-label">Overview & Registry</span>
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href);
             return (
@@ -107,17 +108,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 className={`admin-nav-item ${active ? 'admin-nav-item-active' : ''}`}
                 onClick={() => setSidebarOpen(false)}
               >
-                <Icon size={18} />
+                <Icon size={16} />
                 <span>{label}</span>
-                {active && <ChevronRight size={14} className="admin-nav-arrow" />}
+                {active && <ChevronRight size={13} className="admin-nav-arrow" />}
               </Link>
             );
           })}
         </nav>
 
         <button className="admin-logout-btn" onClick={adminLogout}>
-          <LogOut size={16} />
-          <span>Logout</span>
+          <LogOut size={15} />
+          <span>Sign Out</span>
         </button>
       </aside>
 
@@ -125,15 +126,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="admin-main">
         <header className="admin-header">
           <button className="admin-menu-btn" onClick={() => setSidebarOpen(true)}>
-            <Menu size={20} />
+            <Menu size={18} />
           </button>
           <div className="admin-header-right">
             <button onClick={toggleTheme} className="admin-theme-toggle" aria-label="Toggle theme">
-              {lightMode ? <Moon size={16} /> : <Sun size={16} />}
+              {lightMode ? <Moon size={15} /> : <Sun size={15} />}
             </button>
             <span className="admin-badge">Admin</span>
             <Link href="/" target="_blank" className="admin-view-site">
-              View Site →
+              Live Site ↗
             </Link>
           </div>
         </header>
