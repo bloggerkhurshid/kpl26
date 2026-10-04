@@ -470,11 +470,19 @@ export default function PlayersPage() {
   const allRounderCount = players.filter(p => p.all_rounder || (p.role || '').toLowerCase().includes('all')).length;
   const keeperCount = players.filter(p => p.wicket_keeper || (p.role || '').toLowerCase().includes('keep')).length;
 
+  // Unified clear filter predicates
   const filtered = players.filter(p => {
-    if (activeTab === 'pending' && p.status !== 'pending' && p.approval !== 'pending') return false;
-    if (activeTab === 'self' && !p.registered_by?.toLowerCase().includes('self')) return false;
-    if (activeTab === 'active' && (p.status !== 'active' || p.approval === 'rejected')) return false;
+    // 1. Status / Approval tab
+    if (activeTab === 'pending') {
+      const isPending = p.status === 'pending' || p.approval === 'pending';
+      if (!isPending) return false;
+    } else if (activeTab === 'self') {
+      if (!p.registered_by?.toLowerCase().includes('self')) return false;
+    } else if (activeTab === 'active') {
+      if (p.status !== 'active' || p.approval === 'rejected') return false;
+    }
 
+    // 2. Role filter
     if (roleFilter !== 'all') {
       const r = (p.role || '').toLowerCase();
       if (roleFilter === 'batsman' && !p.batsman && !r.includes('bat')) return false;
@@ -483,16 +491,18 @@ export default function PlayersPage() {
       if (roleFilter === 'keeper' && !p.wicket_keeper && !r.includes('keep')) return false;
     }
 
-    if (filterTeam && p.team_id !== filterTeam) return false;
+    // 3. Team filter
+    if (filterTeam === 'unassigned') {
+      if (p.team_id) return false;
+    } else if (filterTeam) {
+      if (p.team_id !== filterTeam) return false;
+    }
+
+    // 4. Auction filter
     if (filterAuction === 'eligible' && !p.auction_eligible) return false;
     if (filterAuction === 'ineligible' && p.auction_eligible) return false;
-    if (filterAuction === 'unassigned' && p.team_id) return false;
-    if (filterSource === 'self' && !p.registered_by?.toLowerCase().includes('self')) return false;
-    if (filterSource === 'admin' && p.registered_by?.toLowerCase().includes('self')) return false;
-    if (filterApproval === 'pending' && p.status !== 'pending' && p.approval !== 'pending') return false;
-    if (filterApproval === 'approved' && p.status !== 'active') return false;
-    if (filterApproval === 'rejected' && p.approval !== 'rejected') return false;
 
+    // 5. Search query (multi-field)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchName = (p.player_name || '').toLowerCase().includes(q);
@@ -848,112 +858,134 @@ export default function PlayersPage() {
           </div>
         )}
 
-        {/* Quick Filter Tabs */}
-        <div className="admin-quick-tabs">
-          <button className={`admin-tab-btn ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>
-            All Players <span className="admin-tab-badge">{players.length}</span>
-          </button>
-          <button className={`admin-tab-btn ${activeTab === 'pending' ? 'active' : ''}`} onClick={() => setActiveTab('pending')}>
-            <Clock size={13} color="#facc15" /> Pending Approval <span className={`admin-tab-badge ${pendingCount > 0 ? 'pending' : ''}`}>{pendingCount}</span>
-          </button>
-          <button className={`admin-tab-btn ${activeTab === 'self' ? 'active' : ''}`} onClick={() => setActiveTab('self')}>
-            Self-Registered <span className="admin-tab-badge">{selfCount}</span>
-          </button>
-          <button className={`admin-tab-btn ${activeTab === 'active' ? 'active' : ''}`} onClick={() => setActiveTab('active')}>
-            Approved / Active <span className="admin-tab-badge">{activeCount}</span>
-          </button>
-        </div>
+        {/* Super Clean Unified Filter & Search Bar */}
+        <div style={{ background: 'var(--adm-surface)', border: '1px solid var(--adm-border)', borderRadius: 'var(--adm-radius-md)', padding: '12px 14px', marginBottom: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          
+          {/* Top Row: Primary Status Segments + View Counter */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="admin-quick-tabs" style={{ margin: 0, padding: 0 }}>
+              <button
+                type="button"
+                className={`admin-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveTab('all')}
+              >
+                All Players <span className="admin-tab-badge">{players.length}</span>
+              </button>
+              <button
+                type="button"
+                className={`admin-tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
+                onClick={() => setActiveTab('pending')}
+              >
+                <Clock size={13} color="#facc15" /> Pending Review <span className={`admin-tab-badge ${pendingCount > 0 ? 'pending' : ''}`}>{pendingCount}</span>
+              </button>
+              <button
+                type="button"
+                className={`admin-tab-btn ${activeTab === 'active' ? 'active' : ''}`}
+                onClick={() => setActiveTab('active')}
+              >
+                Active / Approved <span className="admin-tab-badge">{activeCount}</span>
+              </button>
+              <button
+                type="button"
+                className={`admin-tab-btn ${activeTab === 'self' ? 'active' : ''}`}
+                onClick={() => setActiveTab('self')}
+              >
+                Website Registrations <span className="admin-tab-badge">{selfCount}</span>
+              </button>
+            </div>
 
-        {/* Role Filter Pills & Search */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
-          <div className="admin-role-pills">
-            <button
-              type="button"
-              className={`admin-role-pill ${roleFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setRoleFilter('all')}
-            >
-              All Roles ({players.length})
-            </button>
-            <button
-              type="button"
-              className={`admin-role-pill ${roleFilter === 'batsman' ? 'active' : ''}`}
-              onClick={() => setRoleFilter('batsman')}
-            >
-              🏏 Batsmen ({batsmanCount})
-            </button>
-            <button
-              type="button"
-              className={`admin-role-pill ${roleFilter === 'bowler' ? 'active' : ''}`}
-              onClick={() => setRoleFilter('bowler')}
-            >
-              ⚡ Bowlers ({bowlerCount})
-            </button>
-            <button
-              type="button"
-              className={`admin-role-pill ${roleFilter === 'all_rounder' ? 'active' : ''}`}
-              onClick={() => setRoleFilter('all_rounder')}
-            >
-              ⭐ All-Rounders ({allRounderCount})
-            </button>
-            <button
-              type="button"
-              className={`admin-role-pill ${roleFilter === 'keeper' ? 'active' : ''}`}
-              onClick={() => setRoleFilter('keeper')}
-            >
-              🧤 Keepers ({keeperCount})
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--adm-text-muted)' }}>
+              <UserCheck size={14} color="var(--adm-emerald)" />
+              <strong style={{ color: 'var(--adm-text-primary)' }}>{filtered.length}</strong> of {players.length} players
+              {(roleFilter !== 'all' || filterTeam || filterAuction || searchQuery || activeTab !== 'all') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('all');
+                    setRoleFilter('all');
+                    setFilterTeam('');
+                    setFilterAuction('');
+                    setSearchQuery('');
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#f87171',
+                    fontSize: '11.5px',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    padding: '2px 6px',
+                    marginLeft: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '3px'
+                  }}
+                >
+                  <X size={12} /> Reset Filters
+                </button>
+              )}
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '240px', flex: '1', maxWidth: '340px' }}>
-            <div className="dt-search" style={{ margin: 0, width: '100%', background: 'var(--adm-panel)', border: '1px solid var(--adm-border)', borderRadius: '8px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Bottom Row: Search Box + Role Selector + Team Selector + Auction Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Search Box */}
+            <div style={{ flex: '1', minWidth: '220px', maxWidth: '320px', background: 'var(--adm-input-bg)', border: '1px solid var(--adm-border)', borderRadius: 'var(--adm-radius-sm)', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Search size={14} color="var(--adm-text-muted)" />
               <input
                 type="text"
                 placeholder="Search name, phone, reg ID..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--adm-text-strong)', fontSize: '12.5px', width: '100%' }}
+                style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--adm-text-primary)', fontSize: '12.5px', width: '100%' }}
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer', padding: '0 4px', display: 'flex' }}
+                  style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer', padding: '0 2px' }}
                 >
-                  <X size={13} />
+                  <X size={12} />
                 </button>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Dropdown Filters */}
-        <div className="admin-filters" style={{ marginBottom: '16px' }}>
-          <select value={filterTeam} onChange={e => setFilterTeam(e.target.value)}>
-            <option value="">All Teams</option>
-            <option value="unassigned">Unassigned</option>
-            {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
-          <select value={filterAuction} onChange={e => setFilterAuction(e.target.value)}>
-            <option value="">All Auction Status</option>
-            <option value="eligible">Auction Eligible</option>
-            <option value="ineligible">Auction Disabled</option>
-            <option value="unassigned">Unassigned</option>
-          </select>
-          <select value={filterSource} onChange={e => setFilterSource(e.target.value)}>
-            <option value="">All Sources</option>
-            <option value="self">Self-Registered</option>
-            <option value="admin">Admin Created</option>
-          </select>
-          <select value={filterApproval} onChange={e => setFilterApproval(e.target.value)}>
-            <option value="">All Approvals</option>
-            <option value="pending">Pending Review</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-          <div className="admin-filter-count">
-            <UserCheck size={14} /> {filtered.length} players shown
+            {/* Cricket Role Filter */}
+            <select
+              value={roleFilter}
+              onChange={e => setRoleFilter(e.target.value)}
+              style={{ background: 'var(--adm-input-bg)', border: '1px solid var(--adm-border)', color: 'var(--adm-text-primary)', padding: '7px 11px', borderRadius: 'var(--adm-radius-sm)', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
+            >
+              <option value="all">🏏 All Roles ({players.length})</option>
+              <option value="batsman">Batsman ({batsmanCount})</option>
+              <option value="bowler">Bowler ({bowlerCount})</option>
+              <option value="all_rounder">All-Rounder ({allRounderCount})</option>
+              <option value="keeper">Wicket Keeper ({keeperCount})</option>
+            </select>
+
+            {/* Franchise Team Filter */}
+            <select
+              value={filterTeam}
+              onChange={e => setFilterTeam(e.target.value)}
+              style={{ background: 'var(--adm-input-bg)', border: '1px solid var(--adm-border)', color: 'var(--adm-text-primary)', padding: '7px 11px', borderRadius: 'var(--adm-radius-sm)', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
+            >
+              <option value="">🛡️ All Teams</option>
+              <option value="unassigned">Unassigned Only</option>
+              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+
+            {/* Auction Status Filter */}
+            <select
+              value={filterAuction}
+              onChange={e => setFilterAuction(e.target.value)}
+              style={{ background: 'var(--adm-input-bg)', border: '1px solid var(--adm-border)', color: 'var(--adm-text-primary)', padding: '7px 11px', borderRadius: 'var(--adm-radius-sm)', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
+            >
+              <option value="">🔨 All Auction Pool</option>
+              <option value="eligible">Auction Eligible</option>
+              <option value="ineligible">Auction Disabled</option>
+            </select>
           </div>
+
         </div>
 
         {/* Loading Skeletons */}
