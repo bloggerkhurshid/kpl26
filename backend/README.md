@@ -17,6 +17,7 @@ backend/
 │   ├── auth.php            # Admin authentication (login/verify)
 │   ├── players.php         # Player registration, search, CRUD, & counts
 │   ├── teams.php           # Franchise team management & squad limits
+│   ├── sponsors.php        # Tournament sponsors & brand partners CRUD
 │   ├── highlights.php      # Highlights photo gallery CRUD
 │   ├── content.php         # UI content toggles & texts
 │   ├── settings.php        # Payment gateway & registration fee settings
