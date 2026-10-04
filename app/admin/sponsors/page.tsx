@@ -209,16 +209,18 @@ export default function AdminSponsorsPage() {
         )}
 
         {/* Page Header */}
-        <div className="admin-header">
+        <div className="admin-page-header">
           <div>
-            <h1 className="admin-title">Tournament Sponsors</h1>
-            <p className="admin-sub">
-              Manage sponsors, brand partners, images, and sponsorship tiers displayed on the public landing page.
+            <h1>Tournament Sponsors</h1>
+            <p>
+              Manage official tournament sponsors, partner brands, media tiers, and website visibility.
             </p>
           </div>
-          <button className="admin-btn admin-btn-primary" onClick={openCreate}>
-            <Plus size={16} /> Add Sponsor
-          </button>
+          <div className="admin-header-actions">
+            <button className="admin-btn admin-btn-primary" onClick={openCreate}>
+              <Plus size={16} /> Add Sponsor
+            </button>
+          </div>
         </div>
 
         {/* Sponsor Grid View */}
@@ -335,9 +337,9 @@ export default function AdminSponsorsPage() {
                   </p>
 
                   {/* Actions */}
-                  <div style={{ display: 'flex', gap: '10px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ display: 'flex', gap: '10px', paddingTop: '14px', borderTop: '1px solid var(--adm-border)' }}>
                     <button
-                      className="admin-btn admin-btn-secondary"
+                      className="admin-btn admin-btn-ghost"
                       style={{ flex: 1, justifyContent: 'center' }}
                       onClick={() => openEdit(sponsor)}
                     >
@@ -367,114 +369,115 @@ export default function AdminSponsorsPage() {
                 <button className="admin-modal-close" onClick={() => setModal(null)}><X size={18} /></button>
               </div>
 
-              <form onSubmit={saveSponsor} className="admin-form">
-                <div className="form-group">
-                  <label>Sponsor / Brand Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Projukti Soft"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div className="form-group">
-                    <label>Sponsorship Tier *</label>
-                    <select
-                      value={form.tier}
-                      onChange={(e) => {
-                        const selectedTier = TIERS.find((t) => t.label === e.target.value);
-                        setForm({
-                          ...form,
-                          tier: e.target.value as any,
-                          tierBadgeColor: selectedTier?.color || '#22c55e'
-                        });
-                      }}
-                    >
-                      {TIERS.map((t) => (
-                        <option key={t.label} value={t.label}>{t.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Badge Color Accent</label>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <input
-                        type="color"
-                        value={form.tierBadgeColor}
-                        onChange={(e) => setForm({ ...form, tierBadgeColor: e.target.value })}
-                        style={{ width: '42px', height: '38px', padding: 2, cursor: 'pointer', borderRadius: '8px' }}
-                      />
-                      <input
-                        type="text"
-                        value={form.tierBadgeColor}
-                        onChange={(e) => setForm({ ...form, tierBadgeColor: e.target.value })}
-                        placeholder="#22c55e"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Highlight Tagline (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Official Technology & Title Partner"
-                    value={form.highlight}
-                    onChange={(e) => setForm({ ...form, highlight: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Partner Website (Optional)</label>
-                  <input
-                    type="url"
-                    placeholder="https://example.com"
-                    value={form.website}
-                    onChange={(e) => setForm({ ...form, website: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Sponsor Image / Banner / Logo *</label>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
+              <form onSubmit={saveSponsor} className="admin-modal-form">
+                <div className="admin-modal-body" style={{ padding: '0 0 20px' }}>
+                  <div className="admin-form-field" style={{ marginBottom: '14px' }}>
+                    <label>Sponsor / Brand Name *</label>
                     <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      style={{ fontSize: '13px' }}
+                      type="text"
+                      required
+                      placeholder="e.g. Projukti Soft"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
                     />
                   </div>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Or enter direct image URL"
-                    value={form.logo}
-                    onChange={(e) => setForm({ ...form, logo: e.target.value })}
-                  />
-                  {form.logo && (
-                    <div style={{ marginTop: '10px', height: '110px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <img src={getImageUrl(form.logo)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+
+                  <div className="admin-form-grid" style={{ marginBottom: '14px' }}>
+                    <div className="admin-form-field">
+                      <label>Sponsorship Tier *</label>
+                      <select
+                        value={form.tier}
+                        onChange={(e) => {
+                          const selectedTier = TIERS.find((t) => t.label === e.target.value);
+                          setForm({
+                            ...form,
+                            tier: e.target.value as any,
+                            tierBadgeColor: selectedTier?.color || '#22c55e'
+                          });
+                        }}
+                      >
+                        {TIERS.map((t) => (
+                          <option key={t.label} value={t.label}>{t.label}</option>
+                        ))}
+                      </select>
                     </div>
-                  )}
+
+                    <div className="admin-form-field">
+                      <label>Badge Color Accent</label>
+                      <div className="admin-color-row">
+                        <input
+                          type="color"
+                          value={form.tierBadgeColor}
+                          onChange={(e) => setForm({ ...form, tierBadgeColor: e.target.value })}
+                        />
+                        <input
+                          type="text"
+                          value={form.tierBadgeColor}
+                          onChange={(e) => setForm({ ...form, tierBadgeColor: e.target.value })}
+                          placeholder="#22c55e"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="admin-form-field" style={{ marginBottom: '14px' }}>
+                    <label>Highlight Tagline (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Official Technology & Title Partner"
+                      value={form.highlight}
+                      onChange={(e) => setForm({ ...form, highlight: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="admin-form-field" style={{ marginBottom: '14px' }}>
+                    <label>Partner Website (Optional)</label>
+                    <input
+                      type="url"
+                      placeholder="https://example.com"
+                      value={form.website}
+                      onChange={(e) => setForm({ ...form, website: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="admin-form-field" style={{ marginBottom: '14px' }}>
+                    <label>Sponsor Image / Banner / Logo *</label>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        style={{ fontSize: '12px' }}
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Or enter image URL"
+                      value={form.logo}
+                      onChange={(e) => setForm({ ...form, logo: e.target.value })}
+                    />
+                    {form.logo && (
+                      <div style={{ marginTop: '10px', height: '110px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--adm-border)' }}>
+                        <img src={getImageUrl(form.logo)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="admin-form-field">
+                    <label>Description *</label>
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="Write a brief overview of the company, role in tournament, or products..."
+                      value={form.description}
+                      onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    />
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label>Description *</label>
-                  <textarea
-                    required
-                    rows={3}
-                    placeholder="Write a brief overview of the company, role in tournament, or products..."
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  />
-                </div>
-
-                <div className="admin-modal-actions">
-                  <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setModal(null)}>
+                <div className="admin-modal-footer">
+                  <button type="button" className="admin-btn admin-btn-ghost" onClick={() => setModal(null)}>
                     Cancel
                   </button>
                   <button type="submit" className="admin-btn admin-btn-primary" disabled={saving}>
@@ -495,14 +498,14 @@ export default function AdminSponsorsPage() {
                 <h2>Remove Sponsor</h2>
                 <button className="admin-modal-close" onClick={() => setModal(null)}><X size={18} /></button>
               </div>
-              <div style={{ padding: '20px 0', color: 'var(--text)' }}>
+              <div className="admin-modal-body">
                 <p>Are you sure you want to remove <strong>{selected.name}</strong> from sponsors?</p>
-                <p style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '8px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--adm-text-muted)', marginTop: '8px' }}>
                   This will immediately remove the sponsor from the public tournament website.
                 </p>
               </div>
-              <div className="admin-modal-actions">
-                <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setModal(null)}>
+              <div className="admin-modal-footer">
+                <button type="button" className="admin-btn admin-btn-ghost" onClick={() => setModal(null)}>
                   Cancel
                 </button>
                 <button type="button" className="admin-btn admin-btn-danger" onClick={confirmDelete} disabled={saving}>
