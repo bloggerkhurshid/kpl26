@@ -211,7 +211,7 @@ export default function AdminSponsorsPage() {
         {/* Page Header */}
         <div className="admin-page-header">
           <div>
-            <h1>Tournament Sponsors</h1>
+            <h1><Sparkles size={22} /> Tournament Sponsors</h1>
             <p>
               Manage official tournament sponsors, partner brands, media tiers, and website visibility.
             </p>
@@ -244,25 +244,24 @@ export default function AdminSponsorsPage() {
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: '24px',
-              marginTop: '16px'
+              gap: '18px',
+              marginTop: '8px'
             }}
           >
             {sponsors.map((sponsor) => (
               <div
                 key={sponsor.id}
+                className="admin-card"
                 style={{
-                  background: 'rgba(11, 26, 45, 0.75)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '16px',
+                  padding: 0,
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.35)'
+                  transition: 'border-color 0.15s ease, transform 0.15s ease',
                 }}
               >
                 {/* Image preview & tier */}
-                <div style={{ position: 'relative', width: '100%', height: '180px', background: '#020813' }}>
+                <div style={{ position: 'relative', width: '100%', height: '180px', background: 'var(--adm-input-bg)', borderBottom: '1px solid var(--adm-border)' }}>
                   <img
                     src={getImageUrl(sponsor.logo)}
                     alt={sponsor.name}
@@ -272,7 +271,7 @@ export default function AdminSponsorsPage() {
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      background: 'linear-gradient(180deg, transparent 40%, rgba(11, 26, 45, 0.95) 100%)'
+                      background: 'linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, 0.6) 100%)'
                     }}
                   />
                   <span
@@ -285,12 +284,13 @@ export default function AdminSponsorsPage() {
                       gap: '4px',
                       padding: '4px 10px',
                       borderRadius: '9999px',
-                      background: 'rgba(4, 13, 26, 0.85)',
+                      background: 'rgba(5, 8, 14, 0.85)',
+                      backdropFilter: 'blur(4px)',
                       border: `1px solid ${sponsor.tierBadgeColor}66`,
                       color: sponsor.tierBadgeColor,
                       fontSize: '11px',
-                      fontWeight: 800,
-                      letterSpacing: '0.05em',
+                      fontWeight: 700,
+                      letterSpacing: '0.04em',
                       textTransform: 'uppercase'
                     }}
                   >
@@ -300,9 +300,9 @@ export default function AdminSponsorsPage() {
                 </div>
 
                 {/* Details */}
-                <div style={{ padding: '20px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: '18px 20px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', margin: 0 }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--adm-text-primary)', margin: 0 }}>
                       {sponsor.name}
                     </h3>
                     {sponsor.website && (
@@ -311,7 +311,7 @@ export default function AdminSponsorsPage() {
                         target="_blank"
                         rel="noreferrer"
                         title="Website"
-                        style={{ color: 'var(--green-mint)' }}
+                        style={{ color: 'var(--adm-emerald)' }}
                       >
                         <ExternalLink size={15} />
                       </a>
@@ -319,7 +319,7 @@ export default function AdminSponsorsPage() {
                   </div>
 
                   {sponsor.highlight && (
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--green-mint)', marginBottom: '10px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--adm-emerald)', marginBottom: '10px' }}>
                       • {sponsor.highlight}
                     </div>
                   )}
@@ -327,9 +327,9 @@ export default function AdminSponsorsPage() {
                   <p
                     style={{
                       fontSize: '13px',
-                      color: 'var(--text)',
-                      lineHeight: '1.6',
-                      margin: '0 0 20px',
+                      color: 'var(--adm-text-secondary)',
+                      lineHeight: '1.55',
+                      margin: '0 0 16px',
                       flexGrow: 1
                     }}
                   >
@@ -337,13 +337,13 @@ export default function AdminSponsorsPage() {
                   </p>
 
                   {/* Actions */}
-                  <div style={{ display: 'flex', gap: '10px', paddingTop: '14px', borderTop: '1px solid var(--adm-border)' }}>
+                  <div style={{ display: 'flex', gap: '8px', paddingTop: '14px', borderTop: '1px solid var(--adm-border)' }}>
                     <button
                       className="admin-btn admin-btn-ghost"
                       style={{ flex: 1, justifyContent: 'center' }}
                       onClick={() => openEdit(sponsor)}
                     >
-                      <Edit2 size={14} /> Edit
+                      <Edit2 size={13} /> Edit
                     </button>
                     <button
                       className="admin-btn admin-btn-danger"
@@ -351,7 +351,7 @@ export default function AdminSponsorsPage() {
                       title="Remove Sponsor"
                       onClick={() => openDelete(sponsor)}
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>

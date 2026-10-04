@@ -210,31 +210,31 @@ export default function AdminManagementPage() {
                     <tr key={member.id}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <div style={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', background: '#1e293b', border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', background: 'var(--adm-surface-hover)', border: '1px solid var(--adm-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             {member.photo_url ? (
                               <img src={getImageUrl(member.photo_url)} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
-                              <UserCheck size={20} color="#10b981" />
+                              <UserCheck size={18} color="var(--adm-emerald)" />
                             )}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: 14, color: '#f8fafc' }}>{member.name}</div>
-                            <div style={{ fontSize: 12, color: '#94a3b8' }}>Order: #{member.display_order || 0}</div>
+                            <div style={{ fontWeight: 600, fontSize: 13.5, color: 'var(--adm-text-primary)' }}>{member.name}</div>
+                            <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)' }}>Order: #{member.display_order || 0}</div>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <span className="admin-status-badge" style={{ background: 'rgba(212, 175, 55, 0.12)', color: '#d4af37', borderColor: 'rgba(212, 175, 55, 0.3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <span className="admin-status-badge" style={{ background: 'rgba(212, 175, 55, 0.1)', color: '#eab308', borderColor: 'rgba(212, 175, 55, 0.25)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <Award size={12} /> {member.designation}
                         </span>
                       </td>
                       <td>
                         {member.contact ? (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#e2e8f0', fontWeight: 600 }}>
-                            <Phone size={13} style={{ color: '#10b981' }} /> {member.contact}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--adm-text-secondary)', fontWeight: 500 }}>
+                            <Phone size={13} style={{ color: 'var(--adm-emerald)' }} /> {member.contact}
                           </span>
                         ) : (
-                          <span style={{ color: '#64748b' }}>—</span>
+                          <span style={{ color: 'var(--adm-text-muted)' }}>—</span>
                         )}
                       </td>
                       <td>
@@ -243,27 +243,24 @@ export default function AdminManagementPage() {
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: 8 }}>
+                        <div className="dt-actions" style={{ justifyContent: 'flex-end' }}>
                           <button
                             onClick={() => toggleStatus(member)}
-                            className="admin-btn admin-btn-ghost"
-                            style={{ padding: '6px 10px' }}
-                            title={member.status === 'active' ? 'Disable' : 'Enable'}
+                            className="dt-btn"
+                            title={member.status === 'active' ? 'Disable Member' : 'Enable Member'}
                           >
-                            {member.status === 'active' ? <ToggleRight size={16} color="#10b981" /> : <ToggleLeft size={16} />}
+                            {member.status === 'active' ? <ToggleRight size={15} color="var(--adm-emerald)" /> : <ToggleLeft size={15} />}
                           </button>
                           <button
                             onClick={() => openEditModal(member)}
-                            className="admin-btn admin-btn-secondary"
-                            style={{ padding: '6px 10px' }}
+                            className="dt-btn"
                             title="Edit"
                           >
                             <Edit2 size={14} />
                           </button>
                           <button
                             onClick={() => handleDelete(member.id, member.name)}
-                            className="admin-btn admin-btn-danger"
-                            style={{ padding: '6px 10px' }}
+                            className="dt-btn dt-btn-danger"
                             title="Delete"
                           >
                             <Trash2 size={14} />

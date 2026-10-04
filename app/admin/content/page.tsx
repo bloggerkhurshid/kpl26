@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { Save, Loader2, LayoutTemplate, Type, Eye, EyeOff } from 'lucide-react';
+import { Save, Loader2, LayoutTemplate, Type, Eye, EyeOff, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { kplApi } from '@/lib/api';
 
 
@@ -62,15 +62,15 @@ export default function ContentPage() {
 
   return (
     <AdminLayout>
-    <div className="admin-content-page">
-      <div className="admin-page-header">
-        <div>
-          <h1>Homepage Sections</h1>
-          <p>Toggle sections on or off and edit content displayed on the homepage.</p>
+      <div className="admin-page">
+        <div className="admin-page-header">
+          <div>
+            <h1><FileText size={22} /> Homepage Sections</h1>
+            <p>Toggle sections on or off and edit headlines and texts displayed on the public landing page.</p>
+          </div>
         </div>
-      </div>
 
-      <form onSubmit={saveContent} className="admin-cms-grid">
+        <form onSubmit={saveContent} className="admin-cms-grid">
         
         {/* HERO SECTION */}
         <div className="settings-section">
@@ -239,10 +239,18 @@ export default function ContentPage() {
 
 
         <div className="admin-actions">
-          {status === 'success' && <span className="status-success">Content saved successfully!</span>}
-          {status === 'error' && <span className="status-error">Failed to save content.</span>}
-          <button type="submit" className="button button-gold" disabled={saving}>
-            {saving ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
+          {status === 'success' && (
+            <span className="status-success">
+              <CheckCircle2 size={15} /> Content saved successfully!
+            </span>
+          )}
+          {status === 'error' && (
+            <span className="status-error">
+              <AlertCircle size={15} /> Failed to save content.
+            </span>
+          )}
+          <button type="submit" className="admin-btn admin-btn-primary" disabled={saving}>
+            {saving ? <Loader2 size={15} className="spin" /> : <Save size={15} />}
             Save Content
           </button>
         </div>

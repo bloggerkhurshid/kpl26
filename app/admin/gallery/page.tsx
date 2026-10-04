@@ -84,8 +84,8 @@ export default function AdminGalleryPage() {
       <div className="admin-page">
         <div className="admin-page-header">
           <div>
-            <h1>Photo Gallery Manager</h1>
-            <p>Upload single or multiple tournament photos without captions. Drag & drop photos anywhere below.</p>
+            <h1><Camera size={22} /> Photo Gallery Manager</h1>
+            <p>Upload tournament photos and action captures. Drag & drop single or bulk files directly into the gallery.</p>
           </div>
         </div>
 
@@ -95,13 +95,13 @@ export default function AdminGalleryPage() {
           onDragLeave={() => setDragActive(false)}
           onDrop={handleDrop}
           style={{
-            border: `2px dashed ${dragActive ? '#10b981' : '#334155'}`,
-            borderRadius: 16,
-            padding: '40px 24px',
+            border: `2px dashed ${dragActive ? 'var(--adm-emerald)' : 'var(--adm-border)'}`,
+            borderRadius: 'var(--adm-radius-lg)',
+            padding: '36px 24px',
             textAlign: 'center',
-            background: dragActive ? 'rgba(16, 185, 129, 0.05)' : '#0f172a',
-            marginBottom: 32,
-            transition: 'all 0.2s ease',
+            background: dragActive ? 'var(--adm-emerald-subtle)' : 'var(--adm-surface)',
+            marginBottom: 24,
+            transition: 'all 0.15s ease',
             cursor: 'pointer',
             position: 'relative'
           }}
@@ -116,14 +116,14 @@ export default function AdminGalleryPage() {
             style={{ display: 'none' }}
           />
 
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            {uploading ? <Loader2 size={28} className="spin" /> : <Upload size={28} />}
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--adm-emerald-subtle)', color: 'var(--adm-emerald)', border: '1px solid var(--adm-emerald-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+            {uploading ? <Loader2 size={24} className="spin" /> : <Upload size={22} />}
           </div>
 
-          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6, color: '#f8fafc' }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4, color: 'var(--adm-text-primary)' }}>
             {uploading ? 'Uploading Photos...' : 'Click or Drag & Drop Photos Here'}
           </h3>
-          <p style={{ color: '#94a3b8', fontSize: 14, maxWidth: 450, margin: '0 auto' }}>
+          <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, maxWidth: 450, margin: '0 auto' }}>
             Select single or multiple photos to upload directly to the KPL public gallery grid.
           </p>
         </div>
@@ -131,8 +131,8 @@ export default function AdminGalleryPage() {
         {/* Gallery Grid */}
         <div className="admin-card" style={{ padding: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Camera size={20} color="#10b981" /> Uploaded Gallery Photos ({photos.length})
+            <h2 style={{ fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, margin: 0, color: 'var(--adm-text-primary)' }}>
+              <Camera size={18} color="var(--adm-emerald)" /> Uploaded Gallery Photos ({photos.length})
             </h2>
           </div>
 

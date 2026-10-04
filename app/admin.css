@@ -2606,6 +2606,131 @@
 }
 
 /* ==========================================================================
+   HOMEPAGE CMS SECTIONS MANAGER (.admin-cms-grid)
+   ========================================================================== */
+.admin-cms-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-cms-grid .settings-section {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius-md);
+  padding: 22px 24px;
+  margin-bottom: 0;
+  transition: border-color 0.15s ease;
+}
+
+.admin-cms-grid .settings-section:hover {
+  border-color: var(--adm-border-hover);
+}
+
+.admin-cms-grid .form-row {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-cms-grid .form-row:last-child {
+  margin-bottom: 0;
+}
+
+.admin-cms-grid .form-row label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--adm-text-secondary);
+}
+
+.admin-cms-grid .form-row input[type="text"],
+.admin-cms-grid .form-row input[type="date"],
+.admin-cms-grid .form-row textarea {
+  width: 100%;
+  background: var(--adm-input-bg);
+  border: 1px solid var(--adm-border);
+  color: var(--adm-text-primary);
+  padding: 9px 12px;
+  border-radius: var(--adm-radius-sm);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.admin-cms-grid .form-row input:focus,
+.admin-cms-grid .form-row textarea:focus {
+  border-color: var(--adm-border-focus);
+  box-shadow: 0 0 0 1px var(--adm-border-focus);
+  background: var(--adm-surface);
+}
+
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--adm-border);
+  background: var(--adm-input-bg);
+  color: var(--adm-text-muted);
+  transition: all 0.15s ease;
+}
+
+.toggle-btn:hover {
+  border-color: var(--adm-border-hover);
+  color: var(--adm-text-primary);
+}
+
+.toggle-btn.active {
+  background: var(--adm-emerald-subtle);
+  border-color: var(--adm-emerald-glow);
+  color: var(--adm-emerald);
+}
+
+.toggle-btn svg {
+  flex-shrink: 0;
+}
+
+.admin-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius-md);
+  position: sticky;
+  bottom: 16px;
+  z-index: 25;
+  box-shadow: var(--adm-shadow-md);
+}
+
+.admin-actions .status-success {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--adm-emerald);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-actions .status-error {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--adm-danger);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ==========================================================================
    RESPONSIVE QUERIES
    ========================================================================== */
 @media (max-width: 1280px) {

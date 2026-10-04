@@ -128,41 +128,45 @@ export default function HighlightsPage() {
 
   return (
     <AdminLayout>
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">Gallery Highlights</h1>
-          <p className="admin-page-desc">Manage the photos shown in the landing page highlights section.</p>
-        </div>
-        <div className="admin-page-actions">
-          <button className="admin-btn admin-btn-primary" onClick={openCreate}>
-            <Plus size={16} /> Add Photo
-          </button>
-        </div>
-      </div>
+      <div className="admin-page">
+        {toast && (
+          <div className={`admin-toast ${toast.type === 'error' ? 'admin-toast-error' : ''}`}>
+            {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+            {toast.msg}
+          </div>
+        )}
 
-      {toast && (
-        <div className={`admin-toast ${toast.type === 'error' ? 'admin-toast-error' : ''}`}>
-          {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
-          {toast.msg}
+        <div className="admin-page-header">
+          <div>
+            <h1><ImageIcon size={22} /> Gallery Highlights</h1>
+            <p>Manage the curated photos and aspect ratios shown in the landing page highlights grid.</p>
+          </div>
+          <div className="admin-header-actions">
+            <button className="admin-btn admin-btn-primary" onClick={openCreate}>
+              <Plus size={16} /> Add Photo
+            </button>
+          </div>
         </div>
-      )}
 
-      {loading ? (
-        <div className="admin-loading"><Loader2 className="spin" size={24} /> Loading highlights...</div>
-      ) : highlights.length === 0 ? (
-        <div className="admin-empty-state">
-          <ImageIcon size={48} />
-          <h3>No highlights found</h3>
-          <p>Upload some photos to display in your gallery.</p>
-          <button className="admin-btn admin-btn-outline" onClick={openCreate}>
-            Add Photo
-          </button>
-        </div>
-      ) : (
-        <div className="admin-card">
-          <DataTable data={highlights} columns={columns} />
-        </div>
-      )}
+        {loading ? (
+          <div className="admin-card" style={{ padding: 48, textAlign: 'center' }}>
+            <Loader2 className="spin" size={24} style={{ margin: '0 auto 12px', color: 'var(--adm-emerald)' }} />
+            <div style={{ color: 'var(--adm-text-muted)', fontSize: 13 }}>Loading highlights...</div>
+          </div>
+        ) : highlights.length === 0 ? (
+          <div className="admin-card" style={{ padding: 60, textAlign: 'center' }}>
+            <ImageIcon size={44} style={{ margin: '0 auto 12px', color: 'var(--adm-text-muted)' }} />
+            <h3 style={{ margin: '0 0 6px', color: 'var(--adm-text-primary)', fontSize: 16 }}>No highlights found</h3>
+            <p style={{ margin: '0 0 20px', color: 'var(--adm-text-muted)', fontSize: 13 }}>Upload featured photos to display in your landing page gallery grid.</p>
+            <button className="admin-btn admin-btn-primary" onClick={openCreate}>
+              <Plus size={15} /> Add Photo
+            </button>
+          </div>
+        ) : (
+          <div className="admin-card">
+            <DataTable data={highlights} columns={columns} />
+          </div>
+        )}
 
       {/* Form Modal */}
       {(modal === 'create' || modal === 'edit') && (
@@ -238,6 +242,7 @@ export default function HighlightsPage() {
           </div>
         </div>
       )}
+      </div>
     </AdminLayout>
   );
 }
