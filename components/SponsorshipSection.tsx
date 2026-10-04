@@ -166,7 +166,9 @@ export function SponsorshipSection() {
                     </div>
                   )}
 
-                  <p className="sponsor-description">{sponsor.description}</p>
+                  <p className="sponsor-description" title={sponsor.description}>
+                    {sponsor.description}
+                  </p>
                 </div>
               </div>
             </div>
