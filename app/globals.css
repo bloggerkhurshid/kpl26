@@ -2913,60 +2913,73 @@ h2 em {
 .wa-contact-info small { font-size: 11px; color: var(--green-mint); }
 
 /* =========================================================
-   SPONSORSHIP SECTION DESIGN SYSTEM
+   SPONSORSHIP SECTION DESIGN SYSTEM (PREMIUM TURF EDITION)
    ========================================================= */
 .sponsorship-section {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(4, 13, 26, 0.4) 0%, rgba(11, 26, 45, 0.6) 50%, rgba(4, 13, 26, 0.8) 100%);
-  border-top: 1px solid rgba(34, 197, 94, 0.12);
-  border-bottom: 1px solid rgba(34, 197, 94, 0.12);
+  background: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.08), transparent 60%),
+              linear-gradient(180deg, #040d1a 0%, #071526 50%, #040d1a 100%);
+  border-top: 1px solid rgba(34, 197, 94, 0.15);
+  border-bottom: 1px solid rgba(34, 197, 94, 0.15);
+  padding: 80px 0;
+}
+
+.sponsor-grid-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none;
+  opacity: 0.6;
 }
 
 .sponsor-bg-glow {
   position: absolute;
-  width: 500px;
-  height: 500px;
+  width: 550px;
+  height: 550px;
   border-radius: 50%;
-  filter: blur(140px);
+  filter: blur(150px);
   pointer-events: none;
-  opacity: 0.25;
+  opacity: 0.22;
   z-index: 1;
 }
 
 .sponsor-bg-glow-left {
-  top: -100px;
-  left: -150px;
+  top: -80px;
+  left: -120px;
   background: radial-gradient(circle, var(--green) 0%, transparent 70%);
 }
 
 .sponsor-bg-glow-right {
-  bottom: -100px;
-  right: -150px;
+  bottom: -80px;
+  right: -120px;
   background: radial-gradient(circle, var(--gold) 0%, transparent 70%);
 }
 
 .sponsorship-header {
   text-align: center;
-  max-width: 720px;
-  margin: 0 auto 52px;
+  max-width: 760px;
+  margin: 0 auto 48px;
 }
 
 .sponsorship-badge-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 16px;
+  padding: 6px 18px;
   border-radius: 9999px;
   background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-  font-size: 12px;
-  font-weight: 700;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  font-size: 11.5px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   color: var(--green-mint);
   margin-bottom: 18px;
-  box-shadow: 0 0 16px rgba(34, 197, 94, 0.15);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.18);
 }
 
 .sponsorship-badge-icon {
@@ -2974,17 +2987,17 @@ h2 em {
 }
 
 .sponsorship-display-title {
-  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  font-size: clamp(2.1rem, 4.5vw, 3.4rem);
   font-weight: 900;
   color: #ffffff;
   line-height: 1.15;
-  margin-bottom: 16px;
-  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+  letter-spacing: -0.025em;
 }
 
 .sponsorship-display-title em {
   font-style: normal;
-  background: linear-gradient(135deg, #22c55e 0%, #4ade80 50%, #fbbf24 100%);
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 40%, #fbbf24 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -2992,16 +3005,52 @@ h2 em {
 .sponsorship-display-subtitle {
   font-size: 15.5px;
   color: var(--muted);
-  line-height: 1.6;
+  line-height: 1.65;
   margin: 0 auto;
+}
+
+/* Category Filter Buttons */
+.sponsor-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.sponsor-filter-btn {
+  background: rgba(11, 26, 45, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
+}
+
+.sponsor-filter-btn:hover {
+  color: #ffffff;
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.sponsor-filter-btn.is-active {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(21, 128, 61, 0.35) 100%);
+  border-color: var(--green);
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.25);
 }
 
 /* Sponsor Grid */
 .sponsorship-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 24px;
-  margin-bottom: 48px;
+  margin-bottom: 52px;
 }
 
 @media (min-width: 1024px) {
@@ -3011,21 +3060,21 @@ h2 em {
 }
 
 .sponsor-card {
-  background: rgba(11, 26, 45, 0.55);
+  background: rgba(11, 26, 45, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   position: relative;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 .sponsor-card:hover {
   transform: translateY(-6px);
-  border-color: rgba(34, 197, 94, 0.4);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.45);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55), 0 0 35px rgba(34, 197, 94, 0.18);
 }
 
 .sponsor-card-inner {
@@ -3037,9 +3086,9 @@ h2 em {
 .sponsor-logo-box {
   position: relative;
   width: 100%;
-  height: 180px;
+  height: 190px;
   overflow: hidden;
-  background: #020813;
+  background: #020711;
 }
 
 .sponsor-logo-img {
@@ -3050,13 +3099,13 @@ h2 em {
 }
 
 .sponsor-card:hover .sponsor-logo-img {
-  transform: scale(1.08);
+  transform: scale(1.07);
 }
 
 .sponsor-logo-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(4, 13, 26, 0.1) 0%, rgba(11, 26, 45, 0.95) 100%);
+  background: linear-gradient(180deg, rgba(4, 13, 26, 0.15) 0%, rgba(11, 26, 45, 0.8) 75%, rgba(11, 26, 45, 0.98) 100%);
 }
 
 .sponsor-tier-badge {
@@ -3070,15 +3119,15 @@ h2 em {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 9999px;
-  background: rgba(4, 13, 26, 0.85);
+  background: rgba(4, 13, 26, 0.88);
   border: 1px solid;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
 }
 
 .sponsor-content {
-  padding: 20px 22px 24px;
+  padding: 22px 24px 26px;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
@@ -3089,35 +3138,35 @@ h2 em {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .sponsor-title {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 800;
   color: #ffffff;
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .sponsor-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  border: 1px solid rgba(34, 197, 94, 0.35);
   color: var(--green-mint);
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
 }
 
 .sponsor-link:hover {
   background: var(--green);
   color: #040d1a;
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.05);
 }
 
 .sponsor-highlight {
@@ -3125,7 +3174,7 @@ h2 em {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--green-mint);
   margin-bottom: 12px;
 }
@@ -3140,7 +3189,7 @@ h2 em {
 
 .sponsor-description {
   font-size: 13.5px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--text);
   margin: 0;
 }
@@ -3151,25 +3200,25 @@ h2 em {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  background: linear-gradient(135deg, rgba(11, 26, 45, 0.85) 0%, rgba(21, 128, 61, 0.2) 100%);
+  background: linear-gradient(135deg, rgba(11, 26, 45, 0.9) 0%, rgba(21, 128, 61, 0.25) 100%);
   border: 1px solid rgba(34, 197, 94, 0.35);
-  border-radius: 18px;
-  padding: 24px 32px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 26px 36px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
   flex-wrap: wrap;
 }
 
 .sponsor-cta-info {
   display: flex;
   align-items: center;
-  gap: 18px;
-  max-width: 650px;
+  gap: 20px;
+  max-width: 680px;
 }
 
 .sponsor-cta-icon-wrap {
-  width: 50px;
-  height: 50px;
-  border-radius: 14px;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
   background: rgba(34, 197, 94, 0.15);
   border: 1px solid rgba(34, 197, 94, 0.4);
   color: var(--green-mint);
@@ -3177,17 +3226,18 @@ h2 em {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
 }
 
 .sponsor-cta-title {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 800;
   color: #ffffff;
-  margin: 0 0 4px;
+  margin: 0 0 5px;
 }
 
 .sponsor-cta-sub {
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--muted);
   margin: 0;
 }
@@ -3196,29 +3246,32 @@ h2 em {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px;
+  padding: 13px 26px;
   border-radius: 12px;
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: #040d1a;
   font-size: 14px;
   font-weight: 800;
   text-decoration: none;
-  box-shadow: 0 4px 18px rgba(34, 197, 94, 0.4);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
 .sponsor-cta-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.55);
+  box-shadow: 0 8px 28px rgba(34, 197, 94, 0.6);
   color: #ffffff;
 }
 
 @media (max-width: 768px) {
+  .sponsorship-section {
+    padding: 56px 0;
+  }
   .sponsor-cta-banner {
     flex-direction: column;
     align-items: stretch;
-    padding: 20px;
+    padding: 22px 20px;
   }
   .sponsor-cta-btn {
     justify-content: center;

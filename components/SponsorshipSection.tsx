@@ -55,6 +55,7 @@ const defaultSponsors: Sponsor[] = [
 
 export function SponsorshipSection() {
   const [sponsors, setSponsors] = useState<Sponsor[]>(defaultSponsors);
+  const [selectedFilter, setSelectedFilter] = useState<string>('All');
 
   useEffect(() => {
     async function load() {
@@ -71,33 +72,55 @@ export function SponsorshipSection() {
   }, []);
 
   if (sponsors.length === 0) return null;
+
+  const tiers = ['All', ...Array.from(new Set(sponsors.map((s) => s.tier)))];
+  const filteredSponsors = selectedFilter === 'All' 
+    ? sponsors 
+    : sponsors.filter((s) => s.tier === selectedFilter);
+
   return (
     <section id="sponsors" className="section-pad sponsorship-section">
       {/* Background ambient lighting */}
       <div className="sponsor-bg-glow sponsor-bg-glow-left" />
       <div className="sponsor-bg-glow sponsor-bg-glow-right" />
+      <div className="sponsor-grid-pattern" />
 
       <div className="page-width" style={{ position: 'relative', zIndex: 2 }}>
         {/* Header */}
         <div className="sponsorship-header">
           <div className="sponsorship-badge-pill">
             <Sparkles size={14} className="sponsorship-badge-icon" />
-            <span>Official Partners &amp; Backers</span>
+            <span>Official Tournament Backers</span>
           </div>
           <h2 className="sponsorship-display-title">
-            Tournament <em>Sponsors</em>
+            Season 3 <em>Partners &amp; Sponsors</em>
           </h2>
           <p className="sponsorship-display-subtitle">
-            We are proud to collaborate with esteemed brands and organizations empowering grassroots cricket and community sports talent at Khoraghat Premier League Season 3.
+            Powering grassroots cricket excellence in Assam. Honoring the premier brands and visionary organizations backing Khoraghat Premier League 2026.
           </p>
+
+          {/* Filter Pills */}
+          {tiers.length > 2 && (
+            <div className="sponsor-filter-row">
+              {tiers.map((tier) => (
+                <button
+                  key={tier}
+                  onClick={() => setSelectedFilter(tier)}
+                  className={`sponsor-filter-btn ${selectedFilter === tier ? 'is-active' : ''}`}
+                >
+                  {tier}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Sponsor Cards Grid */}
         <div className="sponsorship-grid">
-          {sponsors.map((sponsor) => (
+          {filteredSponsors.map((sponsor) => (
             <div key={sponsor.id} className="sponsor-card">
               <div className="sponsor-card-inner">
-                {/* Image / Logo Banner */}
+                {/* Brand Showcase Area */}
                 <div className="sponsor-logo-box">
                   <img
                     src={getImageUrl(sponsor.logo)}
@@ -131,7 +154,7 @@ export function SponsorshipSection() {
                         className="sponsor-link"
                         title="Visit Partner Website"
                       >
-                        <ArrowUpRight size={16} />
+                        <ArrowUpRight size={15} />
                       </a>
                     )}
                   </div>
@@ -159,7 +182,7 @@ export function SponsorshipSection() {
             <div>
               <h4 className="sponsor-cta-title">Want to sponsor Khoraghat Premier League 2026?</h4>
               <p className="sponsor-cta-sub">
-                Put your brand in front of thousands of passionate fans in Kokrajhar &amp; across digital live streams.
+                Put your brand in front of thousands of passionate stadium fans and high-engagement live streams.
               </p>
             </div>
           </div>
@@ -169,7 +192,7 @@ export function SponsorshipSection() {
             rel="noreferrer"
             className="sponsor-cta-btn"
           >
-            <span>Become a Sponsor</span>
+            <span>Partner With Us</span>
             <ExternalLink size={15} />
           </a>
         </div>
