@@ -840,152 +840,197 @@ export default function PlayersPage() {
           </div>
         </div>
 
-        {/* Pending Approvals Notice Banner */}
-        {pendingCount > 0 && activeTab !== 'pending' && (
-          <div className="admin-approval-banner">
-            <div className="admin-approval-banner-info">
-              <div className="admin-approval-banner-icon">
-                <Clock size={20} />
-              </div>
-              <div className="admin-approval-banner-text">
-                <h4>{pendingCount} Self-Registered Player{pendingCount > 1 ? 's' : ''} Awaiting Admin Approval</h4>
-                <p>Review submitted identity proofs, cricket profiles, and approve or reject player applications.</p>
-              </div>
-            </div>
-            <button className="admin-approval-banner-btn" onClick={() => setActiveTab('pending')}>
-              Review Pending Players ({pendingCount}) <ArrowRight size={14} />
+        {/* Sleek Single-Line Unified Filter Bar */}
+        <div
+          style={{
+            background: 'var(--adm-surface)',
+            border: '1px solid var(--adm-border)',
+            borderRadius: 'var(--adm-radius-md)',
+            padding: '8px 12px',
+            marginBottom: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
+          }}
+        >
+          {/* Status Tabs */}
+          <div className="admin-quick-tabs" style={{ margin: 0, padding: 0, flexShrink: 0 }}>
+            <button
+              type="button"
+              className={`admin-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveTab('all')}
+            >
+              All <span className="admin-tab-badge">{players.length}</span>
+            </button>
+            <button
+              type="button"
+              className={`admin-tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
+              onClick={() => setActiveTab('pending')}
+            >
+              <Clock size={12} color="#facc15" /> Pending <span className={`admin-tab-badge ${pendingCount > 0 ? 'pending' : ''}`}>{pendingCount}</span>
+            </button>
+            <button
+              type="button"
+              className={`admin-tab-btn ${activeTab === 'active' ? 'active' : ''}`}
+              onClick={() => setActiveTab('active')}
+            >
+              Active <span className="admin-tab-badge">{activeCount}</span>
+            </button>
+            <button
+              type="button"
+              className={`admin-tab-btn ${activeTab === 'self' ? 'active' : ''}`}
+              onClick={() => setActiveTab('self')}
+            >
+              Self-Reg <span className="admin-tab-badge">{selfCount}</span>
             </button>
           </div>
-        )}
 
-        {/* Super Clean Unified Filter & Search Bar */}
-        <div style={{ background: 'var(--adm-surface)', border: '1px solid var(--adm-border)', borderRadius: 'var(--adm-radius-md)', padding: '12px 14px', marginBottom: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          
-          {/* Top Row: Primary Status Segments + View Counter */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-            <div className="admin-quick-tabs" style={{ margin: 0, padding: 0 }}>
-              <button
-                type="button"
-                className={`admin-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
-                onClick={() => setActiveTab('all')}
-              >
-                All Players <span className="admin-tab-badge">{players.length}</span>
-              </button>
-              <button
-                type="button"
-                className={`admin-tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
-                onClick={() => setActiveTab('pending')}
-              >
-                <Clock size={13} color="#facc15" /> Pending Review <span className={`admin-tab-badge ${pendingCount > 0 ? 'pending' : ''}`}>{pendingCount}</span>
-              </button>
-              <button
-                type="button"
-                className={`admin-tab-btn ${activeTab === 'active' ? 'active' : ''}`}
-                onClick={() => setActiveTab('active')}
-              >
-                Active / Approved <span className="admin-tab-badge">{activeCount}</span>
-              </button>
-              <button
-                type="button"
-                className={`admin-tab-btn ${activeTab === 'self' ? 'active' : ''}`}
-                onClick={() => setActiveTab('self')}
-              >
-                Website Registrations <span className="admin-tab-badge">{selfCount}</span>
-              </button>
-            </div>
+          <div style={{ width: '1px', height: '24px', background: 'var(--adm-border)', flexShrink: 0 }} />
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--adm-text-muted)' }}>
-              <UserCheck size={14} color="var(--adm-emerald)" />
-              <strong style={{ color: 'var(--adm-text-primary)' }}>{filtered.length}</strong> of {players.length} players
-              {(roleFilter !== 'all' || filterTeam || filterAuction || searchQuery || activeTab !== 'all') && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('all');
-                    setRoleFilter('all');
-                    setFilterTeam('');
-                    setFilterAuction('');
-                    setSearchQuery('');
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#f87171',
-                    fontSize: '11.5px',
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                    padding: '2px 6px',
-                    marginLeft: '6px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '3px'
-                  }}
-                >
-                  <X size={12} /> Reset Filters
-                </button>
-              )}
-            </div>
+          {/* Search Box */}
+          <div
+            style={{
+              flex: '1 1 200px',
+              minWidth: '160px',
+              maxWidth: '280px',
+              background: 'var(--adm-input-bg)',
+              border: '1px solid var(--adm-border)',
+              borderRadius: 'var(--adm-radius-sm)',
+              padding: '6px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              flexShrink: 0,
+            }}
+          >
+            <Search size={13} color="var(--adm-text-muted)" />
+            <input
+              type="text"
+              placeholder="Search player, phone, ID..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{
+                background: 'none',
+                border: 'none',
+                outline: 'none',
+                color: 'var(--adm-text-primary)',
+                fontSize: '12px',
+                width: '100%',
+              }}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer', padding: 0 }}
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
 
-          {/* Bottom Row: Search Box + Role Selector + Team Selector + Auction Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {/* Search Box */}
-            <div style={{ flex: '1', minWidth: '220px', maxWidth: '320px', background: 'var(--adm-input-bg)', border: '1px solid var(--adm-border)', borderRadius: 'var(--adm-radius-sm)', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Search size={14} color="var(--adm-text-muted)" />
-              <input
-                type="text"
-                placeholder="Search name, phone, reg ID..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--adm-text-primary)', fontSize: '12.5px', width: '100%' }}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer', padding: '0 2px' }}
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
+          {/* Role Dropdown */}
+          <select
+            value={roleFilter}
+            onChange={e => setRoleFilter(e.target.value)}
+            style={{
+              background: 'var(--adm-input-bg)',
+              border: '1px solid var(--adm-border)',
+              color: 'var(--adm-text-primary)',
+              padding: '6px 10px',
+              borderRadius: 'var(--adm-radius-sm)',
+              fontSize: '12px',
+              outline: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <option value="all">🏏 All Roles</option>
+            <option value="batsman">Batsman ({batsmanCount})</option>
+            <option value="bowler">Bowler ({bowlerCount})</option>
+            <option value="all_rounder">All-Rounder ({allRounderCount})</option>
+            <option value="keeper">Wicket Keeper ({keeperCount})</option>
+          </select>
 
-            {/* Cricket Role Filter */}
-            <select
-              value={roleFilter}
-              onChange={e => setRoleFilter(e.target.value)}
-              style={{ background: 'var(--adm-input-bg)', border: '1px solid var(--adm-border)', color: 'var(--adm-text-primary)', padding: '7px 11px', borderRadius: 'var(--adm-radius-sm)', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
-            >
-              <option value="all">🏏 All Roles ({players.length})</option>
-              <option value="batsman">Batsman ({batsmanCount})</option>
-              <option value="bowler">Bowler ({bowlerCount})</option>
-              <option value="all_rounder">All-Rounder ({allRounderCount})</option>
-              <option value="keeper">Wicket Keeper ({keeperCount})</option>
-            </select>
+          {/* Team Dropdown */}
+          <select
+            value={filterTeam}
+            onChange={e => setFilterTeam(e.target.value)}
+            style={{
+              background: 'var(--adm-input-bg)',
+              border: '1px solid var(--adm-border)',
+              color: 'var(--adm-text-primary)',
+              padding: '6px 10px',
+              borderRadius: 'var(--adm-radius-sm)',
+              fontSize: '12px',
+              outline: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <option value="">🛡️ All Teams</option>
+            <option value="unassigned">Unassigned Only</option>
+            {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
 
-            {/* Franchise Team Filter */}
-            <select
-              value={filterTeam}
-              onChange={e => setFilterTeam(e.target.value)}
-              style={{ background: 'var(--adm-input-bg)', border: '1px solid var(--adm-border)', color: 'var(--adm-text-primary)', padding: '7px 11px', borderRadius: 'var(--adm-radius-sm)', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
-            >
-              <option value="">🛡️ All Teams</option>
-              <option value="unassigned">Unassigned Only</option>
-              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
+          {/* Auction Dropdown */}
+          <select
+            value={filterAuction}
+            onChange={e => setFilterAuction(e.target.value)}
+            style={{
+              background: 'var(--adm-input-bg)',
+              border: '1px solid var(--adm-border)',
+              color: 'var(--adm-text-primary)',
+              padding: '6px 10px',
+              borderRadius: 'var(--adm-radius-sm)',
+              fontSize: '12px',
+              outline: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <option value="">🔨 Auction Pool</option>
+            <option value="eligible">Eligible</option>
+            <option value="ineligible">Disabled</option>
+          </select>
 
-            {/* Auction Status Filter */}
-            <select
-              value={filterAuction}
-              onChange={e => setFilterAuction(e.target.value)}
-              style={{ background: 'var(--adm-input-bg)', border: '1px solid var(--adm-border)', color: 'var(--adm-text-primary)', padding: '7px 11px', borderRadius: 'var(--adm-radius-sm)', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
-            >
-              <option value="">🔨 All Auction Pool</option>
-              <option value="eligible">Auction Eligible</option>
-              <option value="ineligible">Auction Disabled</option>
-            </select>
+          {/* Player Count & Reset */}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--adm-text-muted)', flexShrink: 0 }}>
+            <span style={{ whiteSpace: 'nowrap' }}>
+              <strong style={{ color: 'var(--adm-text-primary)' }}>{filtered.length}</strong> / {players.length}
+            </span>
+            {(roleFilter !== 'all' || filterTeam !== '' || filterAuction !== '' || searchQuery !== '' || activeTab !== 'all') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('all');
+                  setRoleFilter('all');
+                  setFilterTeam('');
+                  setFilterAuction('');
+                  setSearchQuery('');
+                }}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  color: '#f87171',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  padding: '4px 8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  whiteSpace: 'nowrap',
+                }}
+                title="Reset all filters"
+              >
+                <X size={11} /> Reset
+              </button>
+            )}
           </div>
-
         </div>
 
         {/* Loading Skeletons */}
