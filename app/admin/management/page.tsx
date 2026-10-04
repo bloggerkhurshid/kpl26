@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import DataTable, { Column } from '@/components/admin/DataTable';
 import {
   UserCheck, Plus, Edit2, Trash2, X, Phone, Loader2, Search,
   Award, Shield, ToggleLeft, ToggleRight, AlertCircle, CheckCircle2
@@ -140,11 +141,122 @@ export default function AdminManagementPage() {
     }
   };
 
-  const filteredMembers = members.filter(
-    m =>
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.designation.toLowerCase().includes(search.toLowerCase())
-  );
+  const activeCount = members.filter(m => m.status === 'active').length;
+  const disabledCount = members.filter(m => m.status === 'disabled').length;
+
+  const columns: Column<ManagementMember>[] = [
+    {
+      key: 'name',
+      label: 'Personnel / Leader',
+      sortable: true,
+      render: (m) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: '50%',
+              overflow: 'hidden',
+              background: 'var(--adm-surface-hover)',
+              border: '1px solid var(--adm-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            {m.photo_url ? (
+              <img
+                src={getImageUrl(m.photo_url)}
+                alt={m.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <UserCheck size={16} color="var(--adm-emerald)" />
+            )}
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--adm-text-primary)' }}>{m.name}</div>
+            <div style={{ fontSize: 11, color: 'var(--adm-text-muted)' }}>Display Order: #{m.display_order || 0}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'designation',
+      label: 'Designation / Title',
+      sortable: true,
+      render: (m) => (
+        <span
+          className="admin-status-badge"
+          style={{
+            background: 'rgba(212, 175, 55, 0.1)',
+            color: '#eab308',
+            borderColor: 'rgba(212, 175, 55, 0.25)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            fontWeight: 600,
+          }}
+        >
+          <Award size={12} /> {m.designation}
+        </span>
+      ),
+    },
+    {
+      key: 'contact',
+      label: 'Contact Info',
+      sortable: true,
+      render: (m) => (
+        m.contact ? (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--adm-text-secondary)', fontWeight: 500 }}>
+            <Phone size={12} style={{ color: 'var(--adm-emerald)' }} /> {m.contact}
+          </span>
+        ) : (
+          <span style={{ color: 'var(--adm-text-muted)' }}>—</span>
+        )
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (m) => (
+        <span className={`admin-status-badge admin-status-${m.status || 'active'}`}>
+          {m.status || 'active'}
+        </span>
+      ),
+    },
+    {
+      key: 'id',
+      label: 'Actions',
+      render: (m) => (
+        <div className="dt-actions" style={{ justifyContent: 'flex-end' }}>
+          <button
+            onClick={() => toggleStatus(m)}
+            className="dt-btn"
+            title={m.status === 'active' ? 'Disable Personnel' : 'Enable Personnel'}
+          >
+            {m.status === 'active' ? <ToggleRight size={15} color="var(--adm-emerald)" /> : <ToggleLeft size={15} />}
+          </button>
+          <button
+            onClick={() => openEditModal(m)}
+            className="dt-btn"
+            title="Edit Member Details"
+          >
+            <Edit2 size={13} />
+          </button>
+          <button
+            onClick={() => handleDelete(m.id, m.name)}
+            className="dt-btn dt-btn-danger"
+            title="Delete Member"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <AdminLayout>
@@ -156,124 +268,73 @@ export default function AdminManagementPage() {
           </div>
         )}
 
+        {/* Standard Page Header */}
         <div className="admin-page-header">
           <div>
             <h1><Shield size={22} /> Management Committee</h1>
-            <p>Manage executive board members, designations, photos, and contact information.</p>
+            <p>Manage tournament board members, designations, contact directory, and website hierarchy.</p>
           </div>
           <button className="admin-btn admin-btn-primary" onClick={openAddModal}>
             <Plus size={16} /> Add Member
           </button>
         </div>
 
-        {/* Search */}
-        <div className="admin-filter-bar" style={{ marginBottom: 24 }}>
-          <div className="admin-search-wrap" style={{ flex: 1, maxWidth: 400 }}>
-            <Search size={16} />
-            <input
-              type="text"
-              placeholder="Search by name or designation..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
+        {/* Top Metric Cards - matching other sections */}
+        <div className="admin-stats-grid">
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <Shield size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Total Committee</div>
+              <div className="admin-stat-value">{members.length}</div>
+              <div className="admin-stat-sub">Official organizers & board</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <UserCheck size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Active Members</div>
+              <div className="admin-stat-value">{activeCount}</div>
+              <div className="admin-stat-sub">Published to live site</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <Award size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Key Roles</div>
+              <div className="admin-stat-value">{new Set(members.map(m => m.designation).filter(Boolean)).size}</div>
+              <div className="admin-stat-sub">Distinct committee roles</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <Phone size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Contact Listed</div>
+              <div className="admin-stat-value">{members.filter(m => !!m.contact).length}</div>
+              <div className="admin-stat-sub">{disabledCount} disabled members</div>
+            </div>
           </div>
         </div>
 
-        {/* Members Cards / Table */}
-        <div className="admin-card" style={{ padding: 0, overflow: 'hidden' }}>
-          {loading ? (
-            <div className="admin-loading-rows" style={{ padding: 24 }}>
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="admin-skeleton-row" style={{ height: 48, marginBottom: 12 }} />
-              ))}
-            </div>
-          ) : filteredMembers.length === 0 ? (
-            <div className="admin-empty" style={{ padding: 48, textAlign: 'center' }}>
-              <UserCheck size={40} style={{ margin: '0 auto 12px', color: '#64748b' }} />
-              <h3>No Committee Members Found</h3>
-              <p style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>Add your league presidents, secretaries, and organizers.</p>
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Personnel</th>
-                    <th>Designation</th>
-                    <th>Contact</th>
-                    <th>Status</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredMembers.map(member => (
-                    <tr key={member.id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', background: 'var(--adm-surface-hover)', border: '1px solid var(--adm-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            {member.photo_url ? (
-                              <img src={getImageUrl(member.photo_url)} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                              <UserCheck size={18} color="var(--adm-emerald)" />
-                            )}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: 13.5, color: 'var(--adm-text-primary)' }}>{member.name}</div>
-                            <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)' }}>Order: #{member.display_order || 0}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="admin-status-badge" style={{ background: 'rgba(212, 175, 55, 0.1)', color: '#eab308', borderColor: 'rgba(212, 175, 55, 0.25)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          <Award size={12} /> {member.designation}
-                        </span>
-                      </td>
-                      <td>
-                        {member.contact ? (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--adm-text-secondary)', fontWeight: 500 }}>
-                            <Phone size={13} style={{ color: 'var(--adm-emerald)' }} /> {member.contact}
-                          </span>
-                        ) : (
-                          <span style={{ color: 'var(--adm-text-muted)' }}>—</span>
-                        )}
-                      </td>
-                      <td>
-                        <span className={`admin-status-badge admin-status-${member.status || 'active'}`}>
-                          {member.status || 'active'}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div className="dt-actions" style={{ justifyContent: 'flex-end' }}>
-                          <button
-                            onClick={() => toggleStatus(member)}
-                            className="dt-btn"
-                            title={member.status === 'active' ? 'Disable Member' : 'Enable Member'}
-                          >
-                            {member.status === 'active' ? <ToggleRight size={15} color="var(--adm-emerald)" /> : <ToggleLeft size={15} />}
-                          </button>
-                          <button
-                            onClick={() => openEditModal(member)}
-                            className="dt-btn"
-                            title="Edit"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(member.id, member.name)}
-                            className="dt-btn dt-btn-danger"
-                            title="Delete"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {/* Members Data Table with Built-In Search & Sorting */}
+        <DataTable
+          columns={columns}
+          data={members}
+          loading={loading}
+          searchKeys={['name', 'designation', 'contact']}
+          searchPlaceholder="Search by name, designation, or phone..."
+          emptyMessage="No management personnel found. Click 'Add Member' to create one!"
+        />
 
         {/* Create / Edit Modal */}
         {modalOpen && (
