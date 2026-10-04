@@ -397,7 +397,7 @@ export default function PaymentsPage() {
                 <p style={{ fontSize: 13, color: '#64748b', marginBottom: 12, fontWeight: 500 }}>
                   {selectedScreenshot.title}
                 </p>
-                <div style={{ maxHeight: '65vh', overflowY: 'auto', borderRadius: 8, border: '1px solid #e2e8f0', background: '#0f172a', padding: '8px' }}>
+                <div style={{ maxHeight: '65vh', overflowY: 'auto', borderRadius: 8, border: '1px solid var(--adm-border)', background: 'var(--adm-input-bg)', padding: '8px' }}>
                   <img
                     src={selectedScreenshot.url}
                     alt="Payment Screenshot"

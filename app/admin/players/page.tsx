@@ -1142,7 +1142,7 @@ export default function PlayersPage() {
               <form className="admin-modal-form" style={{ maxHeight: '70vh', overflowY: 'auto' }} onSubmit={savePlayer}>
                 
                 {/* 1. Basic Info */}
-                <h4 style={{ margin: '10px 0', color: '#0f172a', textTransform: 'uppercase', fontSize: '13px' }}>1. Basic Info</h4>
+                <h4 style={{ margin: '10px 0', color: 'var(--adm-emerald)', textTransform: 'uppercase', fontSize: '13px', fontWeight: 700, letterSpacing: '0.8px' }}>1. Basic Info</h4>
                 <div className="admin-form-grid">
                   <div className="admin-form-field">
                     <label>Player Name *</label>
@@ -1226,7 +1226,7 @@ export default function PlayersPage() {
                 </div>
 
                 {/* 2. Cricket Profile */}
-                <h4 style={{ margin: '20px 0 10px', color: '#0f172a', textTransform: 'uppercase', fontSize: '13px' }}>2. Cricket Profile</h4>
+                <h4 style={{ margin: '20px 0 10px', color: 'var(--adm-emerald)', textTransform: 'uppercase', fontSize: '13px', fontWeight: 700, letterSpacing: '0.8px' }}>2. Cricket Profile</h4>
                 <div className="admin-form-grid">
                   <div className="admin-form-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px', gridColumn: '1 / -1' }}>
                     <label className="admin-checkbox-label"><input type="checkbox" checked={form.batsman} onChange={e => setForm({ ...form, batsman: e.target.checked })} /> Batsman</label>
@@ -1263,7 +1263,7 @@ export default function PlayersPage() {
                 </div>
 
                 {/* 3. Admin & Auction Controls */}
-                <h4 style={{ margin: '20px 0 10px', color: '#0f172a', textTransform: 'uppercase', fontSize: '13px' }}>3. Admin Controls</h4>
+                <h4 style={{ margin: '20px 0 10px', color: 'var(--adm-emerald)', textTransform: 'uppercase', fontSize: '13px', fontWeight: 700, letterSpacing: '0.8px' }}>3. Admin Controls</h4>
                 <div className="admin-form-grid">
                   <div className="admin-form-field">
                     <label>Registered By</label>

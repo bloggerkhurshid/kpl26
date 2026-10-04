@@ -256,7 +256,7 @@ export default function TeamsPage() {
           {t.logo_url ? (
             <img src={getImageUrl(t.logo_url)} alt={t.name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', background: '#fff' }} />
           ) : (
-            <div className="dt-team-crest" style={{ background: '#f8fafc', color: '#0f172a', border: '1px solid #e2e8f0' }}>{t.short_code || t.name[0]}</div>
+            <div className="dt-team-crest">{t.short_code || t.name[0]}</div>
           )}
           <div>
             <div className="dt-team-name">{t.name}</div>
