@@ -5,7 +5,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import { kplApi } from '@/lib/api';
 import {
   Gavel, Play, Square, UserCheck, UserX,
-  CheckCircle2, AlertCircle, Loader2, Trophy,
+  CheckCircle2, AlertCircle, Loader2, Trophy, Users, DollarSign, Search, X
 } from 'lucide-react';
 
 interface Team { id: string; name: string; short_code: string; accent_color: string; }
@@ -37,6 +37,7 @@ export default function AuctionPage() {
   const [saving, setSaving] = useState(false);
   const [sellModal, setSellModal] = useState<Player | null>(null);
   const [sellForm, setSellForm] = useState({ team_id: '', sold_price: '' });
+  const [playerSearch, setPlayerSearch] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
@@ -149,19 +150,153 @@ export default function AuctionPage() {
           </button>
         </div>
 
-        {/* Auction status banner */}
-        <div className={`admin-auction-banner ${auctionConfig.is_active ? 'admin-auction-live' : 'admin-auction-off'}`}>
-          <div className="admin-auction-status">
-            {auctionConfig.is_active ? (
-              <><span className="live-dot" /> Auction Live</>
-            ) : (
-              <><Square size={14} /> Auction Stopped</>
+        {/* Standard Metric Overview Cards */}
+        <div className="admin-stats-grid">
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <UserCheck size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Auction Pool</div>
+              <div className="admin-stat-value">{eligible.length}</div>
+              <div className="admin-stat-sub">Players ready for bidding</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <Trophy size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Players Sold</div>
+              <div className="admin-stat-value">{sold.length}</div>
+              <div className="admin-stat-sub">Assigned to franchises</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <UserX size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Disabled / Unsold</div>
+              <div className="admin-stat-value">{disabled.length}</div>
+              <div className="admin-stat-sub">Inactive or pass-out pool</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <DollarSign size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Total Purse Spent</div>
+              <div className="admin-stat-value">
+                ₹{sold.reduce((acc, p) => acc + (Number(p.sold_price) || 0), 0).toLocaleString('en-IN')}
+              </div>
+              <div className="admin-stat-sub">Across all {teams.length} franchise teams</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sleek Single-Line Search / Filter Toolbar */}
+        <div
+          style={{
+            background: 'var(--adm-surface)',
+            border: '1px solid var(--adm-border)',
+            borderRadius: 'var(--adm-radius-md)',
+            padding: '8px 12px',
+            marginBottom: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
+          }}
+        >
+          {/* Search Box */}
+          <div
+            style={{
+              flex: '1 1 200px',
+              minWidth: '160px',
+              maxWidth: '320px',
+              background: 'var(--adm-input-bg)',
+              border: '1px solid var(--adm-border)',
+              borderRadius: 'var(--adm-radius-sm)',
+              padding: '6px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              flexShrink: 0,
+            }}
+          >
+            <Search size={13} color="var(--adm-text-muted)" />
+            <input
+              type="text"
+              placeholder="Search auction pool players..."
+              value={playerSearch}
+              onChange={e => setPlayerSearch(e.target.value)}
+              style={{
+                background: 'none',
+                border: 'none',
+                outline: 'none',
+                color: 'var(--adm-text-primary)',
+                fontSize: '12px',
+                width: '100%',
+              }}
+            />
+            {playerSearch && (
+              <button
+                type="button"
+                onClick={() => setPlayerSearch('')}
+                style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer', padding: 0 }}
+              >
+                <X size={12} />
+              </button>
             )}
           </div>
-          <div className="admin-auction-stats">
-            <span><UserCheck size={14} /> {eligible.length} in pool</span>
-            <span><Trophy size={14} /> {sold.length} sold</span>
-            <span><UserX size={14} /> {disabled.length} disabled</span>
+
+          {/* Session Indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--adm-text-secondary)', flexShrink: 0 }}>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: auctionConfig.is_active ? 'var(--adm-emerald)' : 'var(--adm-text-muted)',
+                display: 'inline-block',
+                boxShadow: auctionConfig.is_active ? '0 0 8px var(--adm-emerald)' : undefined,
+              }}
+            />
+            <strong>{auctionConfig.is_active ? 'Live Auction Active' : 'Auction Session Inactive'}</strong>
+          </div>
+
+          {/* Counter & Reset */}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--adm-text-muted)', flexShrink: 0 }}>
+            <span>
+              Total Roster: <strong style={{ color: 'var(--adm-text-primary)' }}>{players.length}</strong>
+            </span>
+            {playerSearch && (
+              <button
+                type="button"
+                onClick={() => setPlayerSearch('')}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  color: '#f87171',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  padding: '4px 8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                }}
+              >
+                <X size={11} /> Clear
+              </button>
+            )}
           </div>
         </div>
 
@@ -200,12 +335,14 @@ export default function AuctionPage() {
             {/* Eligible pool */}
             <div className="admin-auction-col">
               <div className="admin-auction-col-header admin-auction-col-eligible">
-                <UserCheck size={16} /> Pool ({eligible.length})
+                <UserCheck size={16} /> Pool ({eligible.filter(p => !playerSearch || p.player_name.toLowerCase().includes(playerSearch.toLowerCase())).length})
               </div>
               {eligible.length === 0 ? (
                 <div className="admin-empty-col">No eligible players.</div>
               ) : (
-                eligible.map(p => (
+                eligible
+                  .filter(p => !playerSearch || p.player_name.toLowerCase().includes(playerSearch.toLowerCase()))
+                  .map(p => (
                   <div key={p.id} className={`admin-auction-player-card ${p.id === auctionConfig.current_player_id ? 'admin-auction-current' : ''}`}>
                     <div className="admin-auction-player-info">
                       <strong>{p.player_name}</strong>

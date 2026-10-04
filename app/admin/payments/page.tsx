@@ -273,45 +273,157 @@ export default function PaymentsPage() {
           </div>
         </div>
 
-        {/* Summary stats */}
-        <div className="admin-pay-summary">
-          {[
-            { label: 'Total Collected', value: `₹${totalCollected.toLocaleString('en-IN')}`, color: '#10b981' },
-            { label: 'Successful', value: payments.filter(p => p.status === 'success').length, color: '#10b981' },
-            { label: 'Pending', value: payments.filter(p => p.status === 'pending').length, color: '#f59e0b' },
-            { label: 'Failed', value: payments.filter(p => p.status === 'failed').length, color: '#ef4444' },
-            { label: 'Cashfree', value: payments.filter(p => p.gateway === 'cashfree').length, color: '#6366f1' },
-            { label: 'Razorpay', value: payments.filter(p => p.gateway === 'razorpay').length, color: '#3b82f6' },
-          ].map(s => (
-            <div className="admin-pay-stat" key={s.label}>
-              <div className="admin-pay-stat-value" style={{ color: s.color }}>{s.value}</div>
-              <div className="admin-pay-stat-label">{s.label}</div>
+        {/* Standard Metric Overview Cards */}
+        <div className="admin-stats-grid">
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <CreditCard size={18} />
             </div>
-          ))}
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Total Revenue</div>
+              <div className="admin-stat-value">₹{totalCollected.toLocaleString('en-IN')}</div>
+              <div className="admin-stat-sub">Verified UPI & gateway collections</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <CheckCircle2 size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Successful</div>
+              <div className="admin-stat-value">
+                {payments.filter(p => p.status === 'success' || p.status === 'completed').length}
+              </div>
+              <div className="admin-stat-sub">Confirmed registrations</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon" style={{ color: payments.filter(p => p.status === 'pending' || p.status === 'pending_verification').length > 0 ? '#facc15' : undefined }}>
+              <AlertCircle size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Pending Verification</div>
+              <div className="admin-stat-value">
+                {payments.filter(p => p.status === 'pending' || p.status === 'pending_verification').length}
+              </div>
+              <div className="admin-stat-sub">UTR screenshots awaiting review</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <RefreshCw size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Total Records</div>
+              <div className="admin-stat-value">{payments.length}</div>
+              <div className="admin-stat-sub">{payments.filter(p => (p.payment_gateway || p.gateway) === 'upi_direct').length} Direct UPI scans</div>
+            </div>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="admin-filters">
-          <select value={filterGateway} onChange={e => setFilterGateway(e.target.value)}>
-            <option value="">All Gateways</option>
-            <option value="cashfree">Cashfree</option>
-            <option value="razorpay">Razorpay</option>
+        {/* Sleek Single-Line Filter Toolbar */}
+        <div
+          style={{
+            background: 'var(--adm-surface)',
+            border: '1px solid var(--adm-border)',
+            borderRadius: 'var(--adm-radius-md)',
+            padding: '8px 12px',
+            marginBottom: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
+          }}
+        >
+          {/* Gateway Filter */}
+          <select
+            value={filterGateway}
+            onChange={e => setFilterGateway(e.target.value)}
+            style={{
+              background: 'var(--adm-input-bg)',
+              border: '1px solid var(--adm-border)',
+              color: 'var(--adm-text-primary)',
+              padding: '6px 10px',
+              borderRadius: 'var(--adm-radius-sm)',
+              fontSize: '12px',
+              outline: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <option value="">⚡ All Payment Channels</option>
+            <option value="upi_direct">Free Direct UPI (QR)</option>
+            <option value="cashfree">Cashfree PG</option>
+            <option value="razorpay">Razorpay PG</option>
           </select>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-            <option value="">All Status</option>
+
+          {/* Status Filter */}
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+            style={{
+              background: 'var(--adm-input-bg)',
+              border: '1px solid var(--adm-border)',
+              color: 'var(--adm-text-primary)',
+              padding: '6px 10px',
+              borderRadius: 'var(--adm-radius-sm)',
+              fontSize: '12px',
+              outline: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <option value="">Status: All Records</option>
+            <option value="completed">Completed / Verified</option>
             <option value="success">Success</option>
+            <option value="pending_verification">Pending UTR Review</option>
             <option value="pending">Pending</option>
+            <option value="rejected">Rejected</option>
             <option value="failed">Failed</option>
-            <option value="refunded">Refunded</option>
           </select>
+
+          {/* Counter and Reset */}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--adm-text-muted)', flexShrink: 0 }}>
+            <span>
+              Showing <strong style={{ color: 'var(--adm-text-primary)' }}>{filtered.length}</strong> of {payments.length}
+            </span>
+            {(filterGateway || filterStatus) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterGateway('');
+                  setFilterStatus('');
+                }}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  color: '#f87171',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  padding: '4px 8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                }}
+              >
+                <X size={11} /> Reset
+              </button>
+            )}
+          </div>
         </div>
 
         <DataTable
           columns={columns}
           data={filtered}
           loading={loading}
-          searchKeys={['order_id', 'payment_id', 'name', 'payer_name', 'contact_phone']}
-          searchPlaceholder="Search by order ID, payer..."
+          searchKeys={['order_id', 'payment_id', 'name', 'payer_name', 'phone', 'payer_phone', 'registration_id']}
+          searchPlaceholder="Search by UTR, order ID, phone, name..."
           emptyMessage="No payment records found."
         />
 

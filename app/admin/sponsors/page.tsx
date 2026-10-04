@@ -5,7 +5,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import { kplApi, getImageUrl } from '@/lib/api';
 import {
   Plus, Edit2, Trash2, X, Loader2, Sparkles, Award, ExternalLink,
-  CheckCircle2, AlertCircle, Building2, Globe
+  CheckCircle2, AlertCircle, Building2, Globe, Search
 } from 'lucide-react';
 import { Sponsor } from '@/components/SponsorshipSection';
 
@@ -71,6 +71,8 @@ const EMPTY_FORM: Omit<Sponsor, 'id'> = {
 export default function AdminSponsorsPage() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [selectedTier, setSelectedTier] = useState('');
   const [modal, setModal] = useState<'create' | 'edit' | 'delete' | null>(null);
   const [selected, setSelected] = useState<Sponsor | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -223,16 +225,182 @@ export default function AdminSponsorsPage() {
           </div>
         </div>
 
+        {/* Standard Metric Overview Cards */}
+        <div className="admin-stats-grid">
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <Sparkles size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Total Sponsors</div>
+              <div className="admin-stat-value">{sponsors.length}</div>
+              <div className="admin-stat-sub">Active brand partners</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <Award size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Sponsorship Tiers</div>
+              <div className="admin-stat-value">{new Set(sponsors.map(s => s.tier)).size}</div>
+              <div className="admin-stat-sub">Distinct tier categories</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <Globe size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">With Website</div>
+              <div className="admin-stat-value">{sponsors.filter(s => !!s.website).length}</div>
+              <div className="admin-stat-sub">Direct external brand links</div>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div className="admin-stat-icon">
+              <Building2 size={18} />
+            </div>
+            <div className="admin-stat-body" style={{ minWidth: 0, flex: 1 }}>
+              <div className="admin-stat-label">Title / Co-Powered</div>
+              <div className="admin-stat-value">
+                {sponsors.filter(s => s.tier === 'Title Sponsor' || s.tier === 'Co-Powered By').length}
+              </div>
+              <div className="admin-stat-sub">Premium tier placements</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Single-Line Filter Toolbar */}
+        <div
+          style={{
+            background: 'var(--adm-surface)',
+            border: '1px solid var(--adm-border)',
+            borderRadius: 'var(--adm-radius-md)',
+            padding: '8px 12px',
+            marginBottom: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
+          }}
+        >
+          {/* Search Box */}
+          <div
+            style={{
+              flex: '1 1 200px',
+              minWidth: '160px',
+              maxWidth: '300px',
+              background: 'var(--adm-input-bg)',
+              border: '1px solid var(--adm-border)',
+              borderRadius: 'var(--adm-radius-sm)',
+              padding: '6px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              flexShrink: 0,
+            }}
+          >
+            <Search size={13} color="var(--adm-text-muted)" />
+            <input
+              type="text"
+              placeholder="Search sponsor name, description..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                background: 'none',
+                border: 'none',
+                outline: 'none',
+                color: 'var(--adm-text-primary)',
+                fontSize: '12px',
+                width: '100%',
+              }}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer', padding: 0 }}
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Tier Dropdown Filter */}
+          <select
+            value={selectedTier}
+            onChange={e => setSelectedTier(e.target.value)}
+            style={{
+              background: 'var(--adm-input-bg)',
+              border: '1px solid var(--adm-border)',
+              color: 'var(--adm-text-primary)',
+              padding: '6px 10px',
+              borderRadius: 'var(--adm-radius-sm)',
+              fontSize: '12px',
+              outline: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <option value="">🏆 All Sponsor Tiers</option>
+            {TIERS.map(t => (
+              <option key={t.label} value={t.label}>{t.label}</option>
+            ))}
+          </select>
+
+          {/* Counter & Reset */}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--adm-text-muted)', flexShrink: 0 }}>
+            <span>
+              Showing <strong style={{ color: 'var(--adm-text-primary)' }}>
+                {sponsors.filter(s => {
+                  const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.description.toLowerCase().includes(search.toLowerCase());
+                  const matchTier = !selectedTier || s.tier === selectedTier;
+                  return matchSearch && matchTier;
+                }).length}
+              </strong> of {sponsors.length}
+            </span>
+            {(search || selectedTier) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setSelectedTier('');
+                }}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  color: '#f87171',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  padding: '4px 8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                }}
+              >
+                <X size={11} /> Reset
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Sponsor Grid View */}
         {loading ? (
           <div className="admin-loading-rows" style={{ padding: '40px 0', textAlign: 'center' }}>
-            <Loader2 className="spin" size={32} style={{ color: 'var(--green-mint)', margin: '0 auto' }} />
+            <Loader2 className="spin" size={32} style={{ color: 'var(--adm-emerald)', margin: '0 auto' }} />
           </div>
         ) : sponsors.length === 0 ? (
           <div className="admin-empty-state" style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <Building2 size={48} style={{ color: 'var(--muted)', margin: '0 auto 16px' }} />
-            <h3 style={{ color: '#fff', fontSize: '18px', marginBottom: '8px' }}>No sponsors added yet</h3>
-            <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '24px' }}>
+            <Building2 size={48} style={{ color: 'var(--adm-text-muted)', margin: '0 auto 16px' }} />
+            <h3 style={{ color: 'var(--adm-text-primary)', fontSize: '18px', marginBottom: '8px' }}>No sponsors added yet</h3>
+            <p style={{ color: 'var(--adm-text-muted)', fontSize: '14px', marginBottom: '24px' }}>
               Add your first tournament sponsor or partner brand to display them on the homepage.
             </p>
             <button className="admin-btn admin-btn-primary" onClick={openCreate}>
@@ -248,7 +416,13 @@ export default function AdminSponsorsPage() {
               marginTop: '8px'
             }}
           >
-            {sponsors.map((sponsor) => (
+            {sponsors
+              .filter(s => {
+                const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.description.toLowerCase().includes(search.toLowerCase());
+                const matchTier = !selectedTier || s.tier === selectedTier;
+                return matchSearch && matchTier;
+              })
+              .map((sponsor) => (
               <div
                 key={sponsor.id}
                 className="admin-card"
