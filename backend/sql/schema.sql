@@ -160,6 +160,23 @@ CREATE TABLE IF NOT EXISTS `gallery` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
+-- Table: sponsors (Tournament Sponsors & Partners)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `sponsors` (
+  `id` VARCHAR(36) NOT NULL PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `tier` VARCHAR(100) NOT NULL DEFAULT 'Official Partner',
+  `tier_badge_color` VARCHAR(50) DEFAULT '#22c55e',
+  `logo_url` LONGTEXT NOT NULL,
+  `description` TEXT NOT NULL,
+  `highlight` VARCHAR(255) DEFAULT '',
+  `website` VARCHAR(255) DEFAULT '',
+  `display_order` INT DEFAULT 0,
+  `status` VARCHAR(20) DEFAULT 'active',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
 -- Default Seed Data
 -- ------------------------------------------------------------
 

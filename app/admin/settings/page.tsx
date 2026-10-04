@@ -154,7 +154,7 @@ export default function SettingsPage() {
         <div className="settings-info-banner">
           <Info size={16} />
           <div>
-            <strong>Keys are stored in Supabase.</strong> Secret values are masked in this view. To update a key, simply type the new value — unchanged masked fields will be skipped during save.
+            <strong>Settings are saved securely.</strong> Secret values are masked in this view. To update a key, simply type the new value — unchanged masked fields will be skipped during save.
           </div>
         </div>
 
@@ -301,7 +301,7 @@ export default function SettingsPage() {
             {/* Security note */}
             <div className="settings-security-note">
               <ShieldCheck size={15} />
-              <span>Keys are stored in your Supabase database and used server-side only. Secret keys are never exposed to the browser or included in client-side code.</span>
+              <span>Keys are stored securely in your database and used server-side only. Secret keys are never exposed to the browser or included in client-side code.</span>
             </div>
 
             {/* Save */}

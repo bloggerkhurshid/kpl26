@@ -37,6 +37,7 @@ import {
 import { kplApi, getImageUrl } from '@/lib/api';
 import { ManagementSection } from '@/components/ManagementSection';
 import { GallerySection } from '@/components/GallerySection';
+import { SponsorshipSection } from '@/components/SponsorshipSection';
 import { UpiPaymentModal } from '@/components/UpiPaymentModal';
 
 
@@ -549,6 +550,7 @@ export default function Home() {
             {content.show_teams === 'true' && <button onClick={(e) => scrollTo('teams', e)}>Teams</button>}
             {content.show_management === 'true' && <button onClick={(e) => scrollTo('management', e)}>Management</button>}
             {content.show_gallery === 'true' && <button onClick={(e) => scrollTo('gallery', e)}>Gallery</button>}
+            <button onClick={(e) => scrollTo('sponsors', e)}>Sponsors</button>
             
             {/* Redesigned Nav Register Button */}
             <div className="nav-cta-wrapper">
@@ -1170,6 +1172,7 @@ export default function Home() {
 
       {content.show_management === 'true' && <ManagementSection />}
       {content.show_gallery === 'true' && <GallerySection />}
+      <SponsorshipSection />
 
       {/* Fullscreen Image Modal */}
       {selectedImage && (
@@ -1198,6 +1201,7 @@ export default function Home() {
               <button onClick={(e) => scrollTo('players', e)}>Players</button>
               <button onClick={(e) => scrollTo('management', e)}>Management</button>
               <button onClick={(e) => scrollTo('gallery', e)}>Gallery</button>
+              <button onClick={(e) => scrollTo('sponsors', e)}>Sponsors</button>
             </div>
           </div>
           <div className="footer-bottom">

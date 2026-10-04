@@ -21,6 +21,7 @@ import {
   Camera,
   Sun,
   Moon,
+  Sparkles,
 } from 'lucide-react';
 import { isLoggedIn, adminLogout } from '@/lib/adminAuth';
 
@@ -29,6 +30,7 @@ const navItems = [
   { href: '/admin/teams', label: 'Teams', icon: Shield },
   { href: '/admin/players', label: 'Players', icon: Users },
   { href: '/admin/management', label: 'Management', icon: UserCheck },
+  { href: '/admin/sponsors', label: 'Sponsors', icon: Sparkles },
   { href: '/admin/gallery', label: 'Photo Gallery', icon: Camera },
   { href: '/admin/payments', label: 'Payments', icon: CreditCard },
   { href: '/admin/content', label: 'Home Sections', icon: FileText },

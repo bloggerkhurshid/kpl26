@@ -272,6 +272,67 @@ export const kplApi = {
     });
   },
 
+  // Sponsors API (Dedicated MySQL `sponsors` table + fallback)
+  async getSponsors(status: string = 'active') {
+    try {
+      const res = await fetchFromPhpApi(`api/sponsors.php?status=${status}`);
+      if (Array.isArray(res)) return res;
+      if (Array.isArray(res?.data)) return res.data;
+    } catch (e) {
+      // Fallback to content.php if table not yet created on remote
+    }
+    const content = await fetchFromPhpApi('api/content.php');
+    if (content?.sponsors_data) {
+      try {
+        return typeof content.sponsors_data === 'string' ? JSON.parse(content.sponsors_data) : content.sponsors_data;
+      } catch (err) {}
+    }
+    return null;
+  },
+
+  async createSponsor(sponsorData: any) {
+    try {
+      return await fetchFromPhpApi('api/sponsors.php', {
+        method: 'POST',
+        body: JSON.stringify(sponsorData),
+      });
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async updateSponsor(id: string, sponsorData: any) {
+    try {
+      return await fetchFromPhpApi(`api/sponsors.php?id=${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(sponsorData),
+      });
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async deleteSponsor(id: string) {
+    try {
+      return await fetchFromPhpApi(`api/sponsors.php?id=${id}`, {
+        method: 'DELETE',
+      });
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async saveSponsors(sponsors: any[]) {
+    // Saves to both sponsors.php and content.php backup
+    try {
+      await fetchFromPhpApi('api/content.php', {
+        method: 'POST',
+        body: JSON.stringify({ sponsors_data: JSON.stringify(sponsors) }),
+      });
+    } catch (e) {}
+    return sponsors;
+  },
+
   // 8. Fee Settings API
   async getFeeSettings() {
     return fetchFromPhpApi('api/settings.php');
