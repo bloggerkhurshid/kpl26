@@ -102,7 +102,10 @@
    ========================================================================== */
 .admin-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   width: 100%;
   background: var(--adm-bg);
   color: var(--adm-text-secondary);
@@ -110,7 +113,7 @@
   letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   position: relative;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* Sidebar Navigation */
@@ -278,20 +281,28 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   background: var(--adm-bg);
+  position: relative;
 }
 
 .admin-header {
   height: 56px;
+  min-height: 56px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 28px;
   border-bottom: 1px solid var(--adm-border);
   background: var(--adm-surface);
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 30;
   backdrop-filter: blur(10px);
 }
@@ -365,7 +376,30 @@
 
 .admin-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-content::-webkit-scrollbar {
+  width: 8px;
+}
+.admin-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+.admin-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+:root.light-mode .admin-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+:root.light-mode .admin-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .admin-page {
