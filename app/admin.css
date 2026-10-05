@@ -1190,6 +1190,75 @@
   padding-bottom: 2px;
 }
 
+/* Alphabet Filter / Quick Jump Strip */
+.admin-alphabet-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius-md);
+  padding: 6px 10px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-alphabet-bar::-webkit-scrollbar {
+  height: 3px;
+}
+
+.admin-alphabet-bar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+.admin-alphabet-btn {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--adm-radius-sm);
+  color: var(--adm-text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.admin-alphabet-btn:hover:not(:disabled) {
+  background: var(--adm-surface-hover);
+  color: var(--adm-text-primary);
+  border-color: var(--adm-border);
+}
+
+.admin-alphabet-btn.active {
+  background: var(--adm-emerald);
+  color: #ffffff;
+  border-color: var(--adm-emerald);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+}
+
+.admin-alphabet-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.admin-alphabet-btn.admin-alphabet-all {
+  min-width: 44px;
+  padding: 0 10px;
+  font-weight: 700;
+}
+
+
 .admin-tab-btn {
   background: var(--adm-surface);
   border: 1px solid var(--adm-border);

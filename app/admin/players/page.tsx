@@ -10,7 +10,7 @@ import {
   UserCheck, UserX, Gavel, FileText, Printer,
   Phone, Mail, MapPin, Calendar, Hash, User, Shield, Target, Zap,
   Check, Clock, XCircle, ArrowRight, ShieldCheck, CreditCard, Image as ImageIcon, Upload,
-  LayoutGrid, List, RefreshCw, Search, IdCard
+  LayoutGrid, List, RefreshCw, Search, IdCard, ArrowUpDown, ArrowUpAZ
 } from 'lucide-react';
 import { RegistrationSlipModal } from '@/components/RegistrationSlipModal';
 
@@ -73,6 +73,8 @@ export default function PlayersPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'self' | 'active'>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [letterFilter, setLetterFilter] = useState<string>('all');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [searchQuery, setSearchQuery] = useState('');
   const [syncing, setSyncing] = useState(false);
@@ -513,7 +515,22 @@ export default function PlayersPage() {
       if (!matchName && !matchReg && !matchPhone && !matchEmail && !matchRole) return false;
     }
 
+    // 6. Letter filter (A-Z or '#' for non-alphabetic)
+    if (letterFilter !== 'all') {
+      const firstChar = (p.player_name || '').trim().charAt(0).toUpperCase();
+      if (letterFilter === '#') {
+        if (/^[A-Z]$/.test(firstChar)) return false;
+      } else {
+        if (firstChar !== letterFilter) return false;
+      }
+    }
+
     return true;
+  }).sort((a, b) => {
+    const nameA = (a.player_name || '').trim();
+    const nameB = (b.player_name || '').trim();
+    const cmp = nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true });
+    return sortDirection === 'asc' ? cmp : -cmp;
   });
 
   const columns: Column<Player>[] = [
@@ -1001,7 +1018,7 @@ export default function PlayersPage() {
             <span style={{ whiteSpace: 'nowrap' }}>
               <strong style={{ color: 'var(--adm-text-primary)' }}>{filtered.length}</strong> / {players.length}
             </span>
-            {(roleFilter !== 'all' || filterTeam !== '' || filterAuction !== '' || searchQuery !== '' || activeTab !== 'all') && (
+            {(roleFilter !== 'all' || filterTeam !== '' || filterAuction !== '' || searchQuery !== '' || activeTab !== 'all' || letterFilter !== 'all') && (
               <button
                 type="button"
                 onClick={() => {
@@ -1010,6 +1027,7 @@ export default function PlayersPage() {
                   setFilterTeam('');
                   setFilterAuction('');
                   setSearchQuery('');
+                  setLetterFilter('all');
                 }}
                 style={{
                   background: 'rgba(239, 68, 68, 0.1)',
@@ -1031,6 +1049,73 @@ export default function PlayersPage() {
               </button>
             )}
           </div>
+        </div>
+
+        {/* Alphabet Letter Sorting & Filtering Bar */}
+        <div className="admin-alphabet-bar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '6px', flexShrink: 0 }}>
+            <button
+              type="button"
+              className="admin-btn"
+              onClick={() => setSortDirection(d => d === 'asc' ? 'desc' : 'asc')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '4px 10px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                color: 'var(--adm-emerald)',
+                background: 'var(--adm-emerald-subtle)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                borderRadius: 'var(--adm-radius-sm)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+              title={`Sorting by name: ${sortDirection === 'asc' ? 'A → Z (Click to reverse)' : 'Z → A (Click to reverse)'}`}
+            >
+              <ArrowUpAZ size={13} style={{ transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+              <span>{sortDirection === 'asc' ? 'A → Z' : 'Z → A'}</span>
+            </button>
+            <div style={{ width: '1px', height: '18px', background: 'var(--adm-border)' }} />
+          </div>
+
+          <button
+            type="button"
+            className={`admin-alphabet-btn admin-alphabet-all ${letterFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setLetterFilter('all')}
+          >
+            All
+          </button>
+
+          {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(letter => {
+            const hasPlayers = players.some(p => (p.player_name || '').trim().toUpperCase().startsWith(letter));
+            const countForLetter = players.filter(p => (p.player_name || '').trim().toUpperCase().startsWith(letter)).length;
+            return (
+              <button
+                key={letter}
+                type="button"
+                className={`admin-alphabet-btn ${letterFilter === letter ? 'active' : ''}`}
+                onClick={() => setLetterFilter(letterFilter === letter ? 'all' : letter)}
+                disabled={!hasPlayers}
+                title={hasPlayers ? `${letter} — ${countForLetter} player${countForLetter === 1 ? '' : 's'}` : `No players starting with ${letter}`}
+              >
+                {letter}
+              </button>
+            );
+          })}
+
+          {/* Non-letter # button for names starting with numbers or symbols */}
+          {players.some(p => !/^[A-Z]/i.test((p.player_name || '').trim())) && (
+            <button
+              type="button"
+              className={`admin-alphabet-btn ${letterFilter === '#' ? 'active' : ''}`}
+              onClick={() => setLetterFilter(letterFilter === '#' ? 'all' : '#')}
+              title="Other characters"
+            >
+              #
+            </button>
+          )}
         </div>
 
         {/* Loading Skeletons */}
