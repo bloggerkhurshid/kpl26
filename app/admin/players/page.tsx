@@ -94,11 +94,27 @@ export default function PlayersPage() {
   } | null>(null);
   const [attachingScreenshot, setAttachingScreenshot] = useState(false);
 
-  function openAddressProof(proofUrl: string | null | undefined, title: string = 'Address Proof', player?: Player) {
-    if (!proofUrl) return;
+  async function openAddressProof(proofUrl: string | null | undefined, title: string = 'Address Proof', player?: Player) {
+    let effectiveProof = proofUrl;
+    if (!effectiveProof && player?.id) {
+      try {
+        const full = await kplApi.getPlayer(player.id);
+        const data = full?.data || full;
+        if (data?.address_proof) {
+          effectiveProof = data.address_proof;
+          setPlayers(prev => prev.map(item => item.id === player.id ? { ...item, address_proof: data.address_proof } : item));
+        }
+      } catch (e) {
+        console.error('Failed to fetch player document:', e);
+      }
+    }
+    if (!effectiveProof) {
+      showToast('No address proof uploaded for this player', 'error');
+      return;
+    }
     const pay = player ? getPlayerPayment(player) : null;
     setProofModal({
-      url: proofUrl,
+      url: effectiveProof,
       title: title,
       player: player,
       payment: pay,
@@ -300,8 +316,34 @@ export default function PlayersPage() {
       declaration_accepted: p.declaration_accepted || false,
     });
     setSelected(p); setModal('edit');
+
+    // If documents are not yet loaded in memory for this player, load them in background
+    if (!p.address_proof || !p.player_signature) {
+      kplApi.getPlayer(p.id).then(full => {
+        const data = full?.data || full;
+        if (data) {
+          setForm(prev => ({
+            ...prev,
+            address_proof: prev.address_proof || data.address_proof || '',
+            player_signature: prev.player_signature || data.player_signature || '',
+          }));
+        }
+      }).catch(() => {});
+    }
   }
-  function openView(p: Player) { setSelected(p); setModal('view'); }
+  function openView(p: Player) {
+    setSelected(p);
+    setModal('view');
+    if (!p.address_proof) {
+      kplApi.getPlayer(p.id).then(full => {
+        const data = full?.data || full;
+        if (data?.address_proof) {
+          setSelected(prev => (prev && prev.id === p.id ? { ...prev, address_proof: data.address_proof } : prev));
+          setPlayers(prev => prev.map(item => item.id === p.id ? { ...item, address_proof: data.address_proof } : item));
+        }
+      }).catch(() => {});
+    }
+  }
   function openDelete(p: Player) { setSelected(p); setModal('delete'); }
 
   async function handleApprove(p: Player) {

@@ -54,10 +54,18 @@ class Player {
         return (int)($res['count'] ?? 0);
     }
 
-    public static function all(array $filters = [], int $limit = 500): array {
+    public static function all(array $filters = [], int $limit = 500, bool $includeDocuments = false): array {
         self::ensureSchema();
+        $fields = $includeDocuments 
+            ? "p.*" 
+            : "p.id, p.player_name, p.father_name, p.date_of_birth, p.age, p.present_address, 
+               p.role, p.contact_number, p.email, p.photo, p.batsman, p.batting_hand, p.wicket_keeper, 
+               p.player_category, p.previously_played, p.all_rounder, p.bowler, p.bowling_type, 
+               p.declaration_accepted, p.approval, p.registration_number, p.registered_by, 
+               p.team_id, p.auction_eligible, p.base_price, p.sold_price, p.status, p.notes, p.created_at";
+
         $sql = "
-            SELECT p.*, 
+            SELECT {$fields}, 
                    t.name as team_name, 
                    t.short_code as team_short_code, 
                    t.accent_color as team_accent_color

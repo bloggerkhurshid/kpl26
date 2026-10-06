@@ -92,12 +92,16 @@ export interface GalleryPhoto {
 
 export const kplApi = {
   // 1. Players API
-  async getPlayers(params: { status?: string; limit?: number; team_id?: string; count_only?: boolean; approval?: string; registered_by?: string } = {}) {
+  async getPlayers(params: { status?: string; limit?: number; team_id?: string; count_only?: boolean; approval?: string; registered_by?: string; include_documents?: boolean } = {}) {
     if (params.count_only) {
       return fetchFromPhpApi(`api/players.php?count_only=true&status=${params.status || 'active'}`);
     }
     const query = new URLSearchParams(params as any).toString();
     return fetchFromPhpApi(`api/players.php?${query}`);
+  },
+
+  async getPlayer(id: string) {
+    return fetchFromPhpApi(`api/players.php?id=${id}`);
   },
 
   async createPlayer(playerData: any) {

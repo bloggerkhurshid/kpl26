@@ -50,12 +50,30 @@ export default function PlayersPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const [visibleCount, setVisibleCount] = useState(24);
+
   useEffect(() => {
+    // 1. Instant cache load (0ms waiting on repeat visits)
+    try {
+      const cached = localStorage.getItem('kpl_public_players_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPlayers(parsed);
+          setLoading(false);
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch fresh data in the background
     kplApi
       .getPlayers({ status: 'active', limit: 1000 })
       .then((data) => {
         if (Array.isArray(data)) {
           setPlayers(data as Player[]);
+          try {
+            localStorage.setItem('kpl_public_players_cache', JSON.stringify(data));
+          } catch (e) {}
         }
       })
       .catch((err) => {
@@ -131,38 +149,59 @@ export default function PlayersPage() {
               {filteredPlayers.length === 0 ? (
                 <p className="lead text-gray-400">No players found matching your search.</p>
               ) : (
-                filteredPlayers.map((player) => (
-                  <div className="player-card" key={player.id}>
-                    {player.photo ? (
-                      <img
-                        src={getImageUrl(player.photo)}
-                        alt={player.player_name}
-                        className="player-photo"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : (
-                      <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: 'var(--bg-subtle)' }}>
-                        <Users size={48} color="var(--green-mint)" />
-                      </div>
-                    )}
-                    <div className="player-info">
-                      <h3 className="sport-heading text-white">{player.player_name}</h3>
-                      <div className="player-badge-wrap">
-                        <span className="player-role-badge">{formatPlayerRole(player.role)}</span>
-                        {player.player_category && (
-                          <span className="player-category-badge">{player.player_category}</span>
-                        )}
-                      </div>
-                      {player.registration_number && (
-                        <div style={{ marginTop: '12px', fontSize: '11px', color: '#64748b', letterSpacing: '0.5px' }}>
-                          ID: {player.registration_number}
+                <>
+                  {filteredPlayers.slice(0, visibleCount).map((player) => (
+                    <div className="player-card" key={player.id}>
+                      {player.photo ? (
+                        <img
+                          src={getImageUrl(player.photo)}
+                          alt={player.player_name}
+                          className="player-photo"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <div className="player-photo" style={{ display: 'grid', placeItems: 'center', background: 'var(--bg-subtle)' }}>
+                          <Users size={48} color="var(--green-mint)" />
                         </div>
                       )}
+                      <div className="player-info">
+                        <h3 className="sport-heading text-white">{player.player_name}</h3>
+                        <div className="player-badge-wrap">
+                          <span className="player-role-badge">{formatPlayerRole(player.role)}</span>
+                          {player.player_category && (
+                            <span className="player-category-badge">{player.player_category}</span>
+                          )}
+                        </div>
+                        {player.registration_number && (
+                          <div style={{ marginTop: '12px', fontSize: '11px', color: '#64748b', letterSpacing: '0.5px' }}>
+                            ID: {player.registration_number}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </>
               )}
+            </div>
+          )}
+
+          {filteredPlayers.length > visibleCount && !loading && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '36px' }}>
+              <button
+                type="button"
+                onClick={() => setVisibleCount((prev) => prev + 24)}
+                className="btn-primary"
+                style={{
+                  padding: '12px 28px',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '15px'
+                }}
+              >
+                Load More Players ({filteredPlayers.length - visibleCount} remaining)
+              </button>
             </div>
           )}
         </div>

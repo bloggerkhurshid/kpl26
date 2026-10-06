@@ -12,6 +12,13 @@ use Kpl\Utils\FileUploader;
 class PlayerController {
 
     public function index(): void {
+        if (isset($_GET['count_only']) && ($_GET['count_only'] === 'true' || $_GET['count_only'] === '1')) {
+            $status = $_GET['status'] ?? 'active';
+            $count = Player::count($status);
+            Response::json(['count' => $count]);
+            return;
+        }
+
         $filters = [
             'status' => $_GET['status'] ?? null,
             'approval' => $_GET['approval'] ?? null,
@@ -20,8 +27,9 @@ class PlayerController {
             'auction_eligible' => $_GET['auction_eligible'] ?? null,
         ];
 
+        $includeDocuments = isset($_GET['include_documents']) && ($_GET['include_documents'] === 'true' || $_GET['include_documents'] === '1');
         $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 500;
-        $players = Player::all($filters, $limit);
+        $players = Player::all($filters, $limit, $includeDocuments);
 
         Response::json($players);
     }
