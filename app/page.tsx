@@ -31,8 +31,6 @@ import {
   Target,
   Activity,
   Swords,
-  Volume2,
-  VolumeX,
 } from 'lucide-react';
 import { kplApi, getImageUrl } from '@/lib/api';
 import { ManagementSection } from '@/components/ManagementSection';
@@ -179,57 +177,7 @@ export default function Home() {
   const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null);
   const [modal, setModal] = useState<ModalType>(null);
 
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
 
-  const toggleAudio = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play().catch(e => console.log('Audio play failed:', e));
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  useEffect(() => {
-    const attemptPlay = () => {
-      if (audioRef.current && audioRef.current.paused) {
-        audioRef.current.play()
-          .then(() => {
-            setIsPlaying(true);
-            // Only remove listeners if playback actually succeeded
-            document.removeEventListener('click', attemptPlay);
-            document.removeEventListener('touchstart', attemptPlay);
-            window.removeEventListener('scroll', attemptPlay);
-          })
-          .catch(e => console.log('Autoplay blocked by browser:', e));
-      }
-    };
-
-    document.addEventListener('click', attemptPlay);
-    document.addEventListener('touchstart', attemptPlay);
-    window.addEventListener('scroll', attemptPlay);
-
-    // Also attempt to play immediately if the browser allows it
-    if (audioRef.current && audioRef.current.paused) {
-      audioRef.current.play()
-        .then(() => {
-          setIsPlaying(true);
-          document.removeEventListener('click', attemptPlay);
-          document.removeEventListener('touchstart', attemptPlay);
-          window.removeEventListener('scroll', attemptPlay);
-        })
-        .catch(e => console.log('Initial autoplay blocked:', e));
-    }
-
-    return () => {
-      document.removeEventListener('click', attemptPlay);
-      document.removeEventListener('touchstart', attemptPlay);
-      window.removeEventListener('scroll', attemptPlay);
-    };
-  }, []);
 
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -516,23 +464,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Background Audio Element */}
-      <audio ref={audioRef} autoPlay loop src="https://kpl.projuktisoft.com/uploads/gallery/background-audio.mp3" style={{ display: 'none' }} />
 
-      {/* Audio Control Floating Widget (Positioned above WhatsApp) */}
-      <button
-        onClick={toggleAudio}
-        className="wa-float-btn"
-        style={{
-          bottom: '90px',
-          backgroundColor: '#0f172a',
-          border: '2px solid #d4af37',
-          zIndex: 9999,
-        }}
-        aria-label="Toggle Background Music"
-      >
-        {isPlaying ? <Volume2 size={24} color="#d4af37" /> : <VolumeX size={24} color="#fff" />}
-      </button>
 
       <nav className={`site-nav ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="nav-container max-w-7xl mx-auto w-full flex items-center justify-between">
