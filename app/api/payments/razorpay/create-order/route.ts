@@ -1,0 +1,46 @@
+import { NextRequest, NextResponse } from 'next/server';
+import Razorpay from 'razorpay';
+import { resolveKey } from '@/lib/gatewaySettings';
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { amount, currency = 'INR', receipt, notes } = body;
+
+    // Resolve keys: DB first, then env var fallback
+    const [keyId, keySecret] = await Promise.all([
+      resolveKey('gateway_razorpay_key_id', 'RAZORPAY_KEY_ID'),
+      resolveKey('gateway_razorpay_key_secret', 'RAZORPAY_KEY_SECRET'),
+    ]);
+
+    if (!keyId || !keySecret) {
+      return NextResponse.json({ error: 'Razorpay credentials not configured. Please add them in Admin → Settings.' }, { status: 500 });
+    }
+
+    if (keyId.includes('XXXXX') || keySecret.includes('XXXXX')) {
+      return NextResponse.json({ 
+        error: 'Razorpay keys are not configured. Please use UPI Direct payment or configure active Razorpay keys in Admin Settings.' 
+      }, { status: 400 });
+    }
+
+    const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
+
+    const order = await razorpay.orders.create({
+      amount: Math.round(amount * 100), // paise
+      currency,
+      receipt: receipt || `kpl_${Date.now()}`,
+      notes: notes || {},
+    });
+
+    return NextResponse.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId, // Pass keyId to frontend
+    });
+  } catch (err: any) {
+    console.error('Razorpay create-order error:', err);
+    const msg = err?.error?.description || err?.message || 'Failed to initiate Razorpay order';
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
