@@ -105,56 +105,7 @@ const renderCategoryBadge = (category?: string | null) => {
   if (!category) return null;
   const cat = category.toLowerCase().trim();
   const isForeign = cat.includes('foreign');
-  const isGradeA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
-  const isGradeB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
-
-  if (isGradeA) {
-    return (
-      <span
-        className="player-category-badge"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '4px',
-          background: 'rgba(234, 179, 8, 0.18)',
-          color: '#facc15',
-          border: '1px solid rgba(234, 179, 8, 0.55)',
-          padding: '3px 8px',
-          borderRadius: '4px',
-          fontSize: '10px',
-          fontWeight: 800,
-          textTransform: 'uppercase',
-          letterSpacing: '0.4px',
-        }}
-      >
-        ⭐ Local (Grade A)
-      </span>
-    );
-  }
-
-  if (isGradeB) {
-    return (
-      <span
-        className="player-category-badge"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '4px',
-          background: 'rgba(6, 182, 212, 0.18)',
-          color: '#22d3ee',
-          border: '1px solid rgba(6, 182, 212, 0.55)',
-          padding: '3px 8px',
-          borderRadius: '4px',
-          fontSize: '10px',
-          fontWeight: 800,
-          textTransform: 'uppercase',
-          letterSpacing: '0.4px',
-        }}
-      >
-        🔹 Local (Grade B)
-      </span>
-    );
-  }
+  const isLocalB = !isForeign && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
 
   if (isForeign) {
     return (
@@ -175,7 +126,31 @@ const renderCategoryBadge = (category?: string | null) => {
           letterSpacing: '0.4px',
         }}
       >
-        ✈️ Foreign
+        ✈️ Foreigner
+      </span>
+    );
+  }
+
+  if (isLocalB) {
+    return (
+      <span
+        className="player-category-badge"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'rgba(6, 182, 212, 0.18)',
+          color: '#22d3ee',
+          border: '1px solid rgba(6, 182, 212, 0.55)',
+          padding: '3px 8px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          fontWeight: 800,
+          textTransform: 'uppercase',
+          letterSpacing: '0.4px',
+        }}
+      >
+        🔹 Local-B
       </span>
     );
   }
@@ -187,9 +162,9 @@ const renderCategoryBadge = (category?: string | null) => {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '4px',
-        background: 'rgba(16, 185, 129, 0.18)',
-        color: '#34d399',
-        border: '1px solid rgba(16, 185, 129, 0.55)',
+        background: 'rgba(234, 179, 8, 0.18)',
+        color: '#facc15',
+        border: '1px solid rgba(234, 179, 8, 0.55)',
         padding: '3px 8px',
         borderRadius: '4px',
         fontSize: '10px',
@@ -198,7 +173,7 @@ const renderCategoryBadge = (category?: string | null) => {
         letterSpacing: '0.4px',
       }}
     >
-      📍 Local
+      ⭐ Local-A
     </span>
   );
 };
@@ -347,7 +322,7 @@ export default function Home() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [playerCount, setPlayerCount] = useState(0);
-  const [homeCategoryFilter, setHomeCategoryFilter] = useState<'all' | 'grade-a' | 'grade-b' | 'local' | 'foreign'>('all');
+  const [homeCategoryFilter, setHomeCategoryFilter] = useState<'all' | 'local-a' | 'local-b' | 'foreigner'>('all');
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [heroIndex, setHeroIndex] = useState(0);
 
@@ -1115,77 +1090,63 @@ export default function Home() {
             </button>
             <button
               type="button"
-              onClick={() => setHomeCategoryFilter('grade-a')}
+              onClick={() => setHomeCategoryFilter('local-a')}
               style={{
                 padding: '6px 14px',
                 borderRadius: '8px',
                 fontSize: '12px',
                 fontWeight: 700,
-                border: homeCategoryFilter === 'grade-a' ? '1px solid #eab308' : '1px solid rgba(234, 179, 8, 0.3)',
-                background: homeCategoryFilter === 'grade-a' ? '#eab308' : 'rgba(234, 179, 8, 0.12)',
-                color: homeCategoryFilter === 'grade-a' ? '#0f172a' : '#facc15',
+                border: homeCategoryFilter === 'local-a' ? '1px solid #eab308' : '1px solid rgba(234, 179, 8, 0.3)',
+                background: homeCategoryFilter === 'local-a' ? '#eab308' : 'rgba(234, 179, 8, 0.12)',
+                color: homeCategoryFilter === 'local-a' ? '#0f172a' : '#facc15',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
             >
-              ⭐ Grade A ({players.filter(p => {
+              ⭐ Local-A ({players.filter(p => {
                 const c = (p.player_category || '').toLowerCase();
-                return c.includes('local') && (c.includes('a') || c.includes('(a)') || c.includes('grade a') || c.endsWith(' a'));
+                const isFor = c.includes('foreign');
+                const isB = !isFor && (c.includes('b') || c.includes('-b') || c.includes('(b)') || c.includes('grade b') || c.endsWith(' b'));
+                return !isFor && !isB;
               }).length})
             </button>
             <button
               type="button"
-              onClick={() => setHomeCategoryFilter('grade-b')}
+              onClick={() => setHomeCategoryFilter('local-b')}
               style={{
                 padding: '6px 14px',
                 borderRadius: '8px',
                 fontSize: '12px',
                 fontWeight: 700,
-                border: homeCategoryFilter === 'grade-b' ? '1px solid #06b6d4' : '1px solid rgba(6, 182, 212, 0.3)',
-                background: homeCategoryFilter === 'grade-b' ? '#06b6d4' : 'rgba(6, 182, 212, 0.12)',
-                color: homeCategoryFilter === 'grade-b' ? '#0f172a' : '#22d3ee',
+                border: homeCategoryFilter === 'local-b' ? '1px solid #06b6d4' : '1px solid rgba(6, 182, 212, 0.3)',
+                background: homeCategoryFilter === 'local-b' ? '#06b6d4' : 'rgba(6, 182, 212, 0.12)',
+                color: homeCategoryFilter === 'local-b' ? '#0f172a' : '#22d3ee',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
             >
-              🔹 Grade B ({players.filter(p => {
+              🔹 Local-B ({players.filter(p => {
                 const c = (p.player_category || '').toLowerCase();
-                return c.includes('local') && (c.includes('b') || c.includes('(b)') || c.includes('grade b') || c.endsWith(' b'));
+                const isFor = c.includes('foreign');
+                return !isFor && (c.includes('b') || c.includes('-b') || c.includes('(b)') || c.includes('grade b') || c.endsWith(' b'));
               }).length})
             </button>
             <button
               type="button"
-              onClick={() => setHomeCategoryFilter('local')}
+              onClick={() => setHomeCategoryFilter('foreigner')}
               style={{
                 padding: '6px 14px',
                 borderRadius: '8px',
                 fontSize: '12px',
                 fontWeight: 700,
-                border: homeCategoryFilter === 'local' ? '1px solid #10b981' : '1px solid rgba(16, 185, 129, 0.3)',
-                background: homeCategoryFilter === 'local' ? '#10b981' : 'rgba(16, 185, 129, 0.12)',
-                color: homeCategoryFilter === 'local' ? '#0f172a' : '#34d399',
+                border: homeCategoryFilter === 'foreigner' ? '1px solid #3b82f6' : '1px solid rgba(59, 130, 246, 0.3)',
+                background: homeCategoryFilter === 'foreigner' ? '#3b82f6' : 'rgba(59, 130, 246, 0.12)',
+                color: homeCategoryFilter === 'foreigner' ? '#0f172a' : '#60a5fa',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
             >
-              📍 Local ({players.filter(p => (p.player_category || '').toLowerCase().includes('local')).length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setHomeCategoryFilter('foreign')}
-              style={{
-                padding: '6px 14px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 700,
-                border: homeCategoryFilter === 'foreign' ? '1px solid #3b82f6' : '1px solid rgba(59, 130, 246, 0.3)',
-                background: homeCategoryFilter === 'foreign' ? '#3b82f6' : 'rgba(59, 130, 246, 0.12)',
-                color: homeCategoryFilter === 'foreign' ? '#0f172a' : '#60a5fa',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              ✈️ Foreign ({players.filter(p => (p.player_category || '').toLowerCase().includes('foreign')).length})
+              ✈️ Foreigner ({players.filter(p => (p.player_category || '').toLowerCase().includes('foreign')).length})
             </button>
           </div>
           
@@ -1197,10 +1158,11 @@ export default function Home() {
                 .filter(player => {
                   if (homeCategoryFilter === 'all') return true;
                   const c = (player.player_category || '').toLowerCase();
-                  if (homeCategoryFilter === 'grade-a') return c.includes('local') && (c.includes('a') || c.includes('(a)') || c.includes('grade a') || c.endsWith(' a'));
-                  if (homeCategoryFilter === 'grade-b') return c.includes('local') && (c.includes('b') || c.includes('(b)') || c.includes('grade b') || c.endsWith(' b'));
-                  if (homeCategoryFilter === 'local') return c.includes('local');
-                  if (homeCategoryFilter === 'foreign') return c.includes('foreign');
+                  const isFor = c.includes('foreign');
+                  const isB = !isFor && (c.includes('b') || c.includes('-b') || c.includes('(b)') || c.includes('grade b') || c.endsWith(' b'));
+                  if (homeCategoryFilter === 'local-a') return !isFor && !isB;
+                  if (homeCategoryFilter === 'local-b') return isB;
+                  if (homeCategoryFilter === 'foreigner') return isFor;
                   return true;
                 })
                 .slice(0, 36)
@@ -1535,8 +1497,9 @@ export default function Home() {
                       <label>Player Category *</label>
                       <select required value={playerForm.player_category} onChange={(e) => setPlayerForm({ ...playerForm, player_category: e.target.value })}>
                         <option value="">Select Category...</option>
-                        <option value="Local">Local</option>
-                        <option value="Foreign">Foreign</option>
+                        <option value="Local-A">Local-A</option>
+                        <option value="Local-B">Local-B</option>
+                        <option value="Foreigner">Foreigner</option>
                       </select>
                     </div>
                     <div className="form-row">

@@ -634,14 +634,16 @@ export default function PlayersPage() {
   const bowlerCount = players.filter(p => p.bowler || (p.role || '').toLowerCase().includes('bowl')).length;
   const allRounderCount = players.filter(p => p.all_rounder || (p.role || '').toLowerCase().includes('all')).length;
   const keeperCount = players.filter(p => p.wicket_keeper || (p.role || '').toLowerCase().includes('keep')).length;
-  const localCategoryCount = players.filter(p => (p.player_category || '').toLowerCase().includes('local')).length;
   const localACount = players.filter(p => {
     const cat = (p.player_category || '').toLowerCase();
-    return cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
+    const isFor = cat.includes('foreign');
+    const isB = !isFor && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+    return !isFor && !isB;
   }).length;
   const localBCount = players.filter(p => {
     const cat = (p.player_category || '').toLowerCase();
-    return cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+    const isFor = cat.includes('foreign');
+    return !isFor && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
   }).length;
   const foreignCategoryCount = players.filter(p => (p.player_category || '').toLowerCase().includes('foreign')).length;
 
@@ -666,16 +668,18 @@ export default function PlayersPage() {
       if (roleFilter === 'keeper' && !p.wicket_keeper && !r.includes('keep')) return false;
     }
 
-    // 2.5 Category filter (Local / Local A / Local B / Foreign)
-    if (categoryFilter === 'local') {
-      if (!(p.player_category || '').toLowerCase().includes('local')) return false;
-    } else if (categoryFilter === 'local_a') {
+    // 2.5 Category filter (Local-A / Local-B / Foreigner)
+    if (categoryFilter === 'local_a') {
       const cat = (p.player_category || '').toLowerCase();
-      if (!cat.includes('local') || !(cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'))) return false;
+      const isFor = cat.includes('foreign');
+      const isB = !isFor && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+      if (isFor || isB) return false;
     } else if (categoryFilter === 'local_b') {
       const cat = (p.player_category || '').toLowerCase();
-      if (!cat.includes('local') || !(cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'))) return false;
-    } else if (categoryFilter === 'foreign') {
+      const isFor = cat.includes('foreign');
+      const isB = !isFor && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+      if (isFor || !isB) return false;
+    } else if (categoryFilter === 'foreign' || categoryFilter === 'foreigner') {
       if (!(p.player_category || '').toLowerCase().includes('foreign')) return false;
     }
 
@@ -808,15 +812,15 @@ export default function PlayersPage() {
       render: p => {
         const cat = (p.player_category || '').toLowerCase();
         const isForeign = cat.includes('foreign');
-        const isGradeA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
-        const isGradeB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+        const isLocalB = !isForeign && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+        const currentVal = isForeign ? 'Foreigner' : isLocalB ? 'Local-B' : 'Local-A';
 
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={e => e.stopPropagation()}>
             <select
-              value={isForeign ? 'Foreign' : isGradeA ? 'Local (Grade A)' : isGradeB ? 'Local (Grade B)' : 'Local'}
+              value={currentVal}
               onChange={e => setPlayerCategoryGrade(p, e.target.value)}
-              title="Click to change player category / grade"
+              title="Click to change player category"
               style={{
                 fontSize: '11px',
                 fontWeight: 700,
@@ -826,31 +830,24 @@ export default function PlayersPage() {
                 outline: 'none',
                 border: isForeign 
                   ? '1px solid #3b82f6' 
-                  : isGradeA 
-                  ? '1px solid #eab308' 
-                  : isGradeB 
+                  : isLocalB 
                   ? '1px solid #06b6d4' 
-                  : '1px solid #10b981',
+                  : '1px solid #eab308',
                 background: isForeign 
                   ? 'rgba(59, 130, 246, 0.12)' 
-                  : isGradeA 
-                  ? 'rgba(234, 179, 8, 0.15)' 
-                  : isGradeB 
+                  : isLocalB 
                   ? 'rgba(6, 182, 212, 0.15)' 
-                  : 'rgba(16, 185, 129, 0.12)',
+                  : 'rgba(234, 179, 8, 0.15)',
                 color: isForeign 
                   ? '#60a5fa' 
-                  : isGradeA 
-                  ? '#facc15' 
-                  : isGradeB 
+                  : isLocalB 
                   ? '#22d3ee' 
-                  : '#34d399',
+                  : '#facc15',
               }}
             >
-              <option value="Local (Grade A)" style={{ background: '#0f172a', color: '#facc15' }}>⭐ Local A</option>
-              <option value="Local (Grade B)" style={{ background: '#0f172a', color: '#22d3ee' }}>🔹 Local B</option>
-              <option value="Local" style={{ background: '#0f172a', color: '#34d399' }}>📍 Local</option>
-              <option value="Foreign" style={{ background: '#0f172a', color: '#60a5fa' }}>✈️ Foreign</option>
+              <option value="Local-A" style={{ background: '#0f172a', color: '#facc15' }}>⭐ Local-A</option>
+              <option value="Local-B" style={{ background: '#0f172a', color: '#22d3ee' }}>🔹 Local-B</option>
+              <option value="Foreigner" style={{ background: '#0f172a', color: '#60a5fa' }}>✈️ Foreigner</option>
             </select>
           </div>
         );
@@ -1382,7 +1379,7 @@ export default function PlayersPage() {
             <option value="keeper">Wicket Keeper ({keeperCount})</option>
           </select>
 
-          {/* Category Dropdown (Local / Local A / Local B / Foreign) */}
+          {/* Category Dropdown (Local-A / Local-B / Foreigner) */}
           <select
             value={categoryFilter}
             onChange={e => setCategoryFilter(e.target.value)}
@@ -1399,10 +1396,9 @@ export default function PlayersPage() {
             }}
           >
             <option value="all">🌍 All Categories</option>
-            <option value="local">📍 Local (All: {localCategoryCount})</option>
-            <option value="local_a">⭐ ↳ Local Grade A ({localACount})</option>
-            <option value="local_b">🔹 ↳ Local Grade B ({localBCount})</option>
-            <option value="foreign">✈️ Foreign ({foreignCategoryCount})</option>
+            <option value="local_a">⭐ Local-A ({localACount})</option>
+            <option value="local_b">🔹 Local-B ({localBCount})</option>
+            <option value="foreigner">✈️ Foreigner ({foreignCategoryCount})</option>
           </select>
 
           {/* Team Dropdown */}
@@ -1623,20 +1619,19 @@ export default function PlayersPage() {
                       {(() => {
                         const cat = (p.player_category || '').toLowerCase();
                         const isForeign = cat.includes('foreign');
-                        const isGradeA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
-                        const isGradeB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+                        const isLocalB = !isForeign && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
                         return (
                           <span
                             className="player-card-pill"
                             style={{
-                              border: isForeign ? '1px solid rgba(59, 130, 246, 0.5)' : isGradeA ? '1px solid rgba(234, 179, 8, 0.5)' : isGradeB ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid rgba(16, 185, 129, 0.5)',
-                              background: isForeign ? 'rgba(59, 130, 246, 0.12)' : isGradeA ? 'rgba(234, 179, 8, 0.15)' : isGradeB ? 'rgba(6, 182, 212, 0.15)' : 'rgba(16, 185, 129, 0.12)',
-                              color: isForeign ? '#60a5fa' : isGradeA ? '#facc15' : isGradeB ? '#22d3ee' : '#34d399',
+                              border: isForeign ? '1px solid rgba(59, 130, 246, 0.5)' : isLocalB ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid rgba(234, 179, 8, 0.5)',
+                              background: isForeign ? 'rgba(59, 130, 246, 0.12)' : isLocalB ? 'rgba(6, 182, 212, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                              color: isForeign ? '#60a5fa' : isLocalB ? '#22d3ee' : '#facc15',
                               fontWeight: 700,
                               fontSize: '10px',
                             }}
                           >
-                            {isForeign ? '✈️ Foreign' : isGradeA ? '⭐ Local (A)' : isGradeB ? '🔹 Local (B)' : '📍 Local'}
+                            {isForeign ? '✈️ Foreigner' : isLocalB ? '🔹 Local-B' : '⭐ Local-A'}
                           </span>
                         );
                       })()}
@@ -1662,9 +1657,8 @@ export default function PlayersPage() {
                           {(() => {
                             const cat = (p.player_category || '').toLowerCase();
                             const isForeign = cat.includes('foreign');
-                            const isGradeA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
-                            const isGradeB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
-                            const currentVal = isForeign ? 'Foreign' : isGradeA ? 'Local (Grade A)' : isGradeB ? 'Local (Grade B)' : 'Local';
+                            const isLocalB = !isForeign && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+                            const currentVal = isForeign ? 'Foreigner' : isLocalB ? 'Local-B' : 'Local-A';
 
                             return (
                               <select
@@ -1680,31 +1674,24 @@ export default function PlayersPage() {
                                   outline: 'none',
                                   border: isForeign 
                                     ? '1px solid #3b82f6' 
-                                    : isGradeA 
-                                    ? '1px solid #eab308' 
-                                    : isGradeB 
+                                    : isLocalB 
                                     ? '1px solid #06b6d4' 
-                                    : '1px solid #10b981',
+                                    : '1px solid #eab308',
                                   background: isForeign 
                                     ? 'rgba(59, 130, 246, 0.12)' 
-                                    : isGradeA 
-                                    ? 'rgba(234, 179, 8, 0.15)' 
-                                    : isGradeB 
+                                    : isLocalB 
                                     ? 'rgba(6, 182, 212, 0.15)' 
-                                    : 'rgba(16, 185, 129, 0.12)',
+                                    : 'rgba(234, 179, 8, 0.15)',
                                   color: isForeign 
                                     ? '#60a5fa' 
-                                    : isGradeA 
-                                    ? '#facc15' 
-                                    : isGradeB 
+                                    : isLocalB 
                                     ? '#22d3ee' 
-                                    : '#34d399',
+                                    : '#facc15',
                                 }}
                               >
-                                <option value="Local (Grade A)" style={{ background: '#0f172a', color: '#facc15' }}>⭐ Local (Grade A)</option>
-                                <option value="Local (Grade B)" style={{ background: '#0f172a', color: '#22d3ee' }}>🔹 Local (Grade B)</option>
-                                <option value="Local" style={{ background: '#0f172a', color: '#34d399' }}>📍 Local</option>
-                                <option value="Foreign" style={{ background: '#0f172a', color: '#60a5fa' }}>✈️ Foreign</option>
+                                <option value="Local-A" style={{ background: '#0f172a', color: '#facc15' }}>⭐ Local-A</option>
+                                <option value="Local-B" style={{ background: '#0f172a', color: '#22d3ee' }}>🔹 Local-B</option>
+                                <option value="Foreigner" style={{ background: '#0f172a', color: '#60a5fa' }}>✈️ Foreigner</option>
                               </select>
                             );
                           })()}
@@ -1939,10 +1926,9 @@ export default function PlayersPage() {
                     <label>Player Category</label>
                     <select value={form.player_category} onChange={e => setForm({ ...form, player_category: e.target.value })}>
                       <option value="">Select Category...</option>
-                      <option value="Local (Grade A)">⭐ Local (Grade A)</option>
-                      <option value="Local (Grade B)">🔹 Local (Grade B)</option>
-                      <option value="Local">📍 Local (General)</option>
-                      <option value="Foreign">✈️ Foreign</option>
+                      <option value="Local-A">⭐ Local-A</option>
+                      <option value="Local-B">🔹 Local-B</option>
+                      <option value="Foreigner">✈️ Foreigner</option>
                     </select>
                   </div>
                 </div>
@@ -2576,33 +2562,25 @@ export default function PlayersPage() {
                           {(() => {
                             const cat = (player.player_category || '').toLowerCase();
                             const isFor = cat.includes('foreign');
-                            const isA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
-                            const isB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+                            const isB = !isFor && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
                             
                             if (isFor) {
                               return (
                                 <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe' }}>
-                                  Foreign
-                                </span>
-                              );
-                            }
-                            if (isA) {
-                              return (
-                                <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: '#fefce8', color: '#854d0e', border: '1px solid #fef08a' }}>
-                                  Local (Grade A)
+                                  Foreigner
                                 </span>
                               );
                             }
                             if (isB) {
                               return (
                                 <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: '#ecfeff', color: '#155e75', border: '1px solid #a5f3fc' }}>
-                                  Local (Grade B)
+                                  Local-B
                                 </span>
                               );
                             }
                             return (
-                              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0' }}>
-                                Local
+                              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: '#fefce8', color: '#854d0e', border: '1px solid #fef08a' }}>
+                                Local-A
                               </span>
                             );
                           })()}
@@ -2717,7 +2695,7 @@ export default function PlayersPage() {
             <button
               type="button"
               disabled={bulkUpdatingCategory}
-              onClick={() => handleBulkUpdateCategory('Local (Grade A)')}
+              onClick={() => handleBulkUpdateCategory('Local-A')}
               className="admin-btn"
               style={{
                 padding: '5px 11px',
@@ -2729,14 +2707,14 @@ export default function PlayersPage() {
                 borderRadius: '6px',
                 cursor: bulkUpdatingCategory ? 'not-allowed' : 'pointer',
               }}
-              title="Update all selected players to Local (Grade A)"
+              title="Update all selected players to Local-A"
             >
-              ⭐ Local A
+              ⭐ Local-A
             </button>
             <button
               type="button"
               disabled={bulkUpdatingCategory}
-              onClick={() => handleBulkUpdateCategory('Local (Grade B)')}
+              onClick={() => handleBulkUpdateCategory('Local-B')}
               className="admin-btn"
               style={{
                 padding: '5px 11px',
@@ -2748,33 +2726,14 @@ export default function PlayersPage() {
                 borderRadius: '6px',
                 cursor: bulkUpdatingCategory ? 'not-allowed' : 'pointer',
               }}
-              title="Update all selected players to Local (Grade B)"
+              title="Update all selected players to Local-B"
             >
-              🔹 Local B
+              🔹 Local-B
             </button>
             <button
               type="button"
               disabled={bulkUpdatingCategory}
-              onClick={() => handleBulkUpdateCategory('Local')}
-              className="admin-btn"
-              style={{
-                padding: '5px 11px',
-                fontSize: '11.5px',
-                fontWeight: 700,
-                background: 'rgba(16, 185, 129, 0.16)',
-                border: '1px solid rgba(16, 185, 129, 0.45)',
-                color: '#34d399',
-                borderRadius: '6px',
-                cursor: bulkUpdatingCategory ? 'not-allowed' : 'pointer',
-              }}
-              title="Update all selected players to Local"
-            >
-              📍 Local
-            </button>
-            <button
-              type="button"
-              disabled={bulkUpdatingCategory}
-              onClick={() => handleBulkUpdateCategory('Foreign')}
+              onClick={() => handleBulkUpdateCategory('Foreigner')}
               className="admin-btn"
               style={{
                 padding: '5px 11px',
@@ -2786,9 +2745,9 @@ export default function PlayersPage() {
                 borderRadius: '6px',
                 cursor: bulkUpdatingCategory ? 'not-allowed' : 'pointer',
               }}
-              title="Update all selected players to Foreign"
+              title="Update all selected players to Foreigner"
             >
-              ✈️ Foreign
+              ✈️ Foreigner
             </button>
           </div>
 

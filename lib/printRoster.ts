@@ -318,10 +318,9 @@ export function printPlayerRoster(
       ${players.map((p, i) => {
         const cat = (p.player_category || '').toLowerCase();
         const isForeign = cat.includes('foreign');
-        const isLocalA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
-        const isLocalB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
-        const categoryLabel = isForeign ? 'Foreign' : isLocalA ? 'Local (Grade A)' : isLocalB ? 'Local (Grade B)' : 'Local';
-        const categoryClass = isForeign ? 'badge-foreign' : isLocalA ? 'badge-local-a' : isLocalB ? 'badge-local-b' : 'badge-local';
+        const isLocalB = !isForeign && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+        const categoryLabel = isForeign ? 'Foreigner' : isLocalB ? 'Local-B' : 'Local-A';
+        const categoryClass = isForeign ? 'badge-foreign' : isLocalB ? 'badge-local-b' : 'badge-local-a';
         const team = getPlayerTeam(p);
         const teamColor = team?.color || '#10b981';
 
