@@ -51,6 +51,9 @@ interface Player {
   notes: string;
   created_at: string;
   teams?: Team | null;
+  team_name?: string | null;
+  team_short_code?: string | null;
+  team_accent_color?: string | null;
 }
 
 const EMPTY_FORM = {
@@ -251,9 +254,9 @@ export default function PlayersPage() {
       const tList = tRes?.data || tRes || [];
       const payList = payRes?.data || payRes || [];
 
-      const teamMap = new Map((tList || []).map((t: any) => [String(t.id), t]));
+      const teamMap = new Map<string, any>((tList || []).map((t: any) => [String(t.id), t]));
       const enrichedPlayers = pList.map((p: any) => {
-        const team = p.team_id ? teamMap.get(String(p.team_id)) : null;
+        const team: any = p.team_id ? teamMap.get(String(p.team_id)) : null;
         const teamObj = team ? {
           id: team.id,
           name: team.name,
@@ -783,7 +786,9 @@ export default function PlayersPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span className="dt-player-name">{p.player_name}</span>
               {(p.role || '').toLowerCase().includes('captain') && (
-                <Crown size={13} color="#eab308" fill="#eab308" title="Team Captain" />
+                <span title="Team Captain" style={{ display: 'inline-flex' }}>
+                  <Crown size={13} color="#eab308" fill="#eab308" />
+                </span>
               )}
               {p.registered_by?.toLowerCase().includes('self') ? (
                 <span className="admin-source-badge self" title="Self-registered from website">Self Reg</span>
@@ -1613,8 +1618,28 @@ export default function PlayersPage() {
 
                     <div className="player-card-badges">
                       <span className="player-card-pill" style={{ background: 'rgba(212, 175, 55, 0.15)', color: '#d4af37' }}>
-                        {p.role || p.player_category || 'Player'}
+                        {p.role || 'Player'}
                       </span>
+                      {(() => {
+                        const cat = (p.player_category || '').toLowerCase();
+                        const isForeign = cat.includes('foreign');
+                        const isGradeA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
+                        const isGradeB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+                        return (
+                          <span
+                            className="player-card-pill"
+                            style={{
+                              border: isForeign ? '1px solid rgba(59, 130, 246, 0.5)' : isGradeA ? '1px solid rgba(234, 179, 8, 0.5)' : isGradeB ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid rgba(16, 185, 129, 0.5)',
+                              background: isForeign ? 'rgba(59, 130, 246, 0.12)' : isGradeA ? 'rgba(234, 179, 8, 0.15)' : isGradeB ? 'rgba(6, 182, 212, 0.15)' : 'rgba(16, 185, 129, 0.12)',
+                              color: isForeign ? '#60a5fa' : isGradeA ? '#facc15' : isGradeB ? '#22d3ee' : '#34d399',
+                              fontWeight: 700,
+                              fontSize: '10px',
+                            }}
+                          >
+                            {isForeign ? '✈️ Foreign' : isGradeA ? '⭐ Local (A)' : isGradeB ? '🔹 Local (B)' : '📍 Local'}
+                          </span>
+                        );
+                      })()}
                       {(() => {
                         const team = p.teams || (p.team_name || p.team_short_code ? { short_code: p.team_short_code || p.team_name, accent_color: p.team_accent_color || '#10b981' } : null);
                         return team ? (
@@ -1631,6 +1656,60 @@ export default function PlayersPage() {
                     </div>
 
                     <div className="player-card-details">
+                      <div className="player-card-detail-item">
+                        <span className="player-card-detail-label">Category</span>
+                        <span className="player-card-detail-val">
+                          {(() => {
+                            const cat = (p.player_category || '').toLowerCase();
+                            const isForeign = cat.includes('foreign');
+                            const isGradeA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
+                            const isGradeB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+                            const currentVal = isForeign ? 'Foreign' : isGradeA ? 'Local (Grade A)' : isGradeB ? 'Local (Grade B)' : 'Local';
+
+                            return (
+                              <select
+                                value={currentVal}
+                                onChange={e => setPlayerCategoryGrade(p, e.target.value)}
+                                title="Click to change player category"
+                                style={{
+                                  fontSize: '10.5px',
+                                  fontWeight: 700,
+                                  padding: '2px 5px',
+                                  borderRadius: '5px',
+                                  cursor: 'pointer',
+                                  outline: 'none',
+                                  border: isForeign 
+                                    ? '1px solid #3b82f6' 
+                                    : isGradeA 
+                                    ? '1px solid #eab308' 
+                                    : isGradeB 
+                                    ? '1px solid #06b6d4' 
+                                    : '1px solid #10b981',
+                                  background: isForeign 
+                                    ? 'rgba(59, 130, 246, 0.12)' 
+                                    : isGradeA 
+                                    ? 'rgba(234, 179, 8, 0.15)' 
+                                    : isGradeB 
+                                    ? 'rgba(6, 182, 212, 0.15)' 
+                                    : 'rgba(16, 185, 129, 0.12)',
+                                  color: isForeign 
+                                    ? '#60a5fa' 
+                                    : isGradeA 
+                                    ? '#facc15' 
+                                    : isGradeB 
+                                    ? '#22d3ee' 
+                                    : '#34d399',
+                                }}
+                              >
+                                <option value="Local (Grade A)" style={{ background: '#0f172a', color: '#facc15' }}>⭐ Local (Grade A)</option>
+                                <option value="Local (Grade B)" style={{ background: '#0f172a', color: '#22d3ee' }}>🔹 Local (Grade B)</option>
+                                <option value="Local" style={{ background: '#0f172a', color: '#34d399' }}>📍 Local</option>
+                                <option value="Foreign" style={{ background: '#0f172a', color: '#60a5fa' }}>✈️ Foreign</option>
+                              </select>
+                            );
+                          })()}
+                        </span>
+                      </div>
                       <div className="player-card-detail-item">
                         <span className="player-card-detail-label">Batting / Bowling</span>
                         <span className="player-card-detail-val" title={`${p.batting_hand || 'RHB'} • ${p.bowling_type || 'None'}`}>
@@ -2462,7 +2541,7 @@ export default function PlayersPage() {
                     <th style={{ padding: '8px 8px', textAlign: 'left', border: '1px solid #94a3b8' }}>PLAYER NAME</th>
                     <th style={{ padding: '8px 8px', textAlign: 'left', border: '1px solid #94a3b8' }}>ADDRESS</th>
                     <th style={{ padding: '8px 8px', textAlign: 'center', border: '1px solid #94a3b8', width: '110px' }}>MOBILE NO</th>
-                    <th style={{ padding: '8px 8px', textAlign: 'center', border: '1px solid #94a3b8', width: '95px' }}>LOCAL / FOREIGN</th>
+                    <th style={{ padding: '8px 8px', textAlign: 'center', border: '1px solid #94a3b8', width: '125px' }}>CATEGORY</th>
                     <th style={{ padding: '8px 8px', textAlign: 'center', border: '1px solid #94a3b8', width: '120px' }}>ASSIGNED TEAM</th>
                   </tr>
                 </thead>
@@ -2510,14 +2589,14 @@ export default function PlayersPage() {
                             if (isA) {
                               return (
                                 <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: '#fefce8', color: '#854d0e', border: '1px solid #fef08a' }}>
-                                  Local (A)
+                                  Local (Grade A)
                                 </span>
                               );
                             }
                             if (isB) {
                               return (
                                 <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: '#ecfeff', color: '#155e75', border: '1px solid #a5f3fc' }}>
-                                  Local (B)
+                                  Local (Grade B)
                                 </span>
                               );
                             }

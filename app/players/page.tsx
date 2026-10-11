@@ -176,10 +176,10 @@ export default function PlayersPage() {
       .then(([playersData, teamsData]: [any, any]) => {
         const pList = Array.isArray(playersData) ? playersData : playersData?.data || [];
         const tList = Array.isArray(teamsData) ? teamsData : teamsData?.data || [];
-        const teamMap = new Map((tList || []).map((t: any) => [String(t.id), t]));
+        const teamMap = new Map<string, any>((tList || []).map((t: any) => [String(t.id), t]));
 
         const enrichedList = (pList as any[]).map((p: any) => {
-          const matchedTeam = p.team_id ? teamMap.get(String(p.team_id)) : null;
+          const matchedTeam: any = p.team_id ? teamMap.get(String(p.team_id)) : null;
           return {
             ...p,
             team_name: p.team_name || matchedTeam?.name || null,
@@ -914,12 +914,20 @@ export default function PlayersPage() {
                     <th style={{ padding: '8px 8px', textAlign: 'left', border: '1px solid #94a3b8' }}>PLAYER NAME</th>
                     <th style={{ padding: '8px 8px', textAlign: 'left', border: '1px solid #94a3b8' }}>ADDRESS</th>
                     <th style={{ padding: '8px 8px', textAlign: 'center', border: '1px solid #94a3b8', width: '120px' }}>MOBILE NO</th>
-                    <th style={{ padding: '8px 8px', textAlign: 'center', border: '1px solid #94a3b8', width: '110px' }}>LOCAL / FOREIGN</th>
+                    <th style={{ padding: '8px 8px', textAlign: 'center', border: '1px solid #94a3b8', width: '125px' }}>CATEGORY</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(selectedIds.size > 0 ? filteredPlayers.filter((p) => selectedIds.has(p.id)) : filteredPlayers).map((player, index) => {
-                    const isForeign = (player.player_category || '').toLowerCase().includes('foreign');
+                    const cat = (player.player_category || '').toLowerCase();
+                    const isForeign = cat.includes('foreign');
+                    const isGradeA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
+                    const isGradeB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+                    const categoryLabel = isForeign ? 'Foreign' : isGradeA ? 'Local (Grade A)' : isGradeB ? 'Local (Grade B)' : 'Local';
+                    const badgeBg = isForeign ? '#eff6ff' : isGradeA ? '#fefce8' : isGradeB ? '#ecfeff' : '#ecfdf5';
+                    const badgeColor = isForeign ? '#1e40af' : isGradeA ? '#854d0e' : isGradeB ? '#155e75' : '#065f46';
+                    const badgeBorder = isForeign ? '#bfdbfe' : isGradeA ? '#fef08a' : isGradeB ? '#a5f3fc' : '#a7f3d0';
+
                     return (
                       <tr key={player.id} style={{ borderBottom: '1px solid #cbd5e1', background: index % 2 === 1 ? '#f8fafc' : '#fff' }}>
                         <td style={{ padding: '6px', textAlign: 'center', border: '1px solid #cbd5e1', fontWeight: 600 }}>{index + 1}</td>
@@ -940,11 +948,11 @@ export default function PlayersPage() {
                             padding: '2px 8px',
                             borderRadius: '4px',
                             fontSize: '11px',
-                            background: isForeign ? '#eff6ff' : '#ecfdf5',
-                            color: isForeign ? '#1e40af' : '#065f46',
-                            border: isForeign ? '1px solid #bfdbfe' : '1px solid #a7f3d0',
+                            background: badgeBg,
+                            color: badgeColor,
+                            border: `1px solid ${badgeBorder}`,
                           }}>
-                            {isForeign ? 'Foreign' : 'Local'}
+                            {categoryLabel}
                           </span>
                         </td>
                       </tr>

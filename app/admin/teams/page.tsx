@@ -1176,7 +1176,11 @@ export default function TeamsPage() {
                                   <div>
                                     <div style={{ fontWeight: 700, fontSize: '13px', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                       <span>{p.player_name}</span>
-                                      {isCaptain && <Crown size={13} color="#eab308" fill="#eab308" title="Team Captain" />}
+                                      {isCaptain && (
+                                        <span title="Team Captain" style={{ display: 'inline-flex' }}>
+                                          <Crown size={13} color="#eab308" fill="#eab308" />
+                                        </span>
+                                      )}
                                     </div>
                                     <div style={{ fontSize: '11.5px', color: '#94a3b8' }}>
                                       {p.role?.replace(/captain\s*(&\s*)?/gi, '').trim() || 'Player'} • ID: {p.registration_number || 'N/A'} • {p.contact_number || 'No phone'}

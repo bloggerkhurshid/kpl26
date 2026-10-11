@@ -310,7 +310,7 @@ export function printPlayerRoster(
         <th>PLAYER NAME</th>
         <th>ADDRESS</th>
         <th class="center" style="width: 110px;">MOBILE NO</th>
-        <th class="center" style="width: 95px;">LOCAL / FOREIGN</th>
+        <th class="center" style="width: 125px;">CATEGORY</th>
         <th class="center" style="width: 120px;">ASSIGNED TEAM</th>
       </tr>
     </thead>
@@ -320,7 +320,7 @@ export function printPlayerRoster(
         const isForeign = cat.includes('foreign');
         const isLocalA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
         const isLocalB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
-        const categoryLabel = isForeign ? 'Foreign' : isLocalA ? 'Local (A)' : isLocalB ? 'Local (B)' : 'Local';
+        const categoryLabel = isForeign ? 'Foreign' : isLocalA ? 'Local (Grade A)' : isLocalB ? 'Local (Grade B)' : 'Local';
         const categoryClass = isForeign ? 'badge-foreign' : isLocalA ? 'badge-local-a' : isLocalB ? 'badge-local-b' : 'badge-local';
         const team = getPlayerTeam(p);
         const teamColor = team?.color || '#10b981';

@@ -362,10 +362,10 @@ export default function Home() {
       const parsedGallery = Array.isArray(h) ? h.map((item: any) => ({ title: item.title || '', image: item.image_url || item.image || '', size: item.size || 'normal' })) : [];
       const tList = Array.isArray(t) ? t : (t as any)?.data || [];
       const pList = Array.isArray(p) ? p : (p as any)?.data || [];
-      const teamMap = new Map((tList || []).map((team: any) => [String(team.id), team]));
+      const teamMap = new Map<string, any>((tList || []).map((team: any) => [String(team.id), team]));
 
       const enrichedPlayers = (pList as any[]).map((player: any) => {
-        const matchedTeam = player.team_id ? teamMap.get(String(player.team_id)) : null;
+        const matchedTeam: any = player.team_id ? teamMap.get(String(player.team_id)) : null;
         return {
           ...player,
           team_name: player.team_name || matchedTeam?.name || null,
