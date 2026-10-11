@@ -101,6 +101,108 @@ const formatPlayerRole = (roleStr?: string) => {
   return roleStr.toUpperCase();
 };
 
+const renderCategoryBadge = (category?: string | null) => {
+  if (!category) return null;
+  const cat = category.toLowerCase().trim();
+  const isForeign = cat.includes('foreign');
+  const isGradeA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
+  const isGradeB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+
+  if (isGradeA) {
+    return (
+      <span
+        className="player-category-badge"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'rgba(234, 179, 8, 0.18)',
+          color: '#facc15',
+          border: '1px solid rgba(234, 179, 8, 0.55)',
+          padding: '3px 8px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          fontWeight: 800,
+          textTransform: 'uppercase',
+          letterSpacing: '0.4px',
+        }}
+      >
+        ⭐ Local (Grade A)
+      </span>
+    );
+  }
+
+  if (isGradeB) {
+    return (
+      <span
+        className="player-category-badge"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'rgba(6, 182, 212, 0.18)',
+          color: '#22d3ee',
+          border: '1px solid rgba(6, 182, 212, 0.55)',
+          padding: '3px 8px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          fontWeight: 800,
+          textTransform: 'uppercase',
+          letterSpacing: '0.4px',
+        }}
+      >
+        🔹 Local (Grade B)
+      </span>
+    );
+  }
+
+  if (isForeign) {
+    return (
+      <span
+        className="player-category-badge"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'rgba(59, 130, 246, 0.18)',
+          color: '#60a5fa',
+          border: '1px solid rgba(59, 130, 246, 0.55)',
+          padding: '3px 8px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          fontWeight: 800,
+          textTransform: 'uppercase',
+          letterSpacing: '0.4px',
+        }}
+      >
+        ✈️ Foreign
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className="player-category-badge"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        background: 'rgba(16, 185, 129, 0.18)',
+        color: '#34d399',
+        border: '1px solid rgba(16, 185, 129, 0.55)',
+        padding: '3px 8px',
+        borderRadius: '4px',
+        fontSize: '10px',
+        fontWeight: 800,
+        textTransform: 'uppercase',
+        letterSpacing: '0.4px',
+      }}
+    >
+      📍 Local
+    </span>
+  );
+};
+
 function SectionLabel({ children }: { children: string }) {
   return <p className="section-label"><span />{children}</p>;
 }
@@ -245,31 +347,14 @@ export default function Home() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [playerCount, setPlayerCount] = useState(0);
+  const [homeCategoryFilter, setHomeCategoryFilter] = useState<'all' | 'grade-a' | 'grade-b' | 'local' | 'foreign'>('all');
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [heroIndex, setHeroIndex] = useState(0);
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    
-    // 1. Instantly load from local cache if available (Stale-While-Revalidate)
-    const cachedData = localStorage.getItem('kpl_home_cache');
-    if (cachedData) {
-      try {
-        const parsed = JSON.parse(cachedData);
-        if (parsed.t) setTeams(parsed.t);
-        if (parsed.p) setPlayers(parsed.p);
-        if (parsed.count !== undefined) setPlayerCount(parsed.count);
-        if (parsed.h) setGallery(parsed.h);
-        if (parsed.f) setFees(parsed.f);
-        if (parsed.c) { setContent(parsed.c); setLoadingContent(false); }
-      } catch(e) {}
-    }
-
-    // 2. Fetch fresh data in the background from PHP API (https://kpl.projuktisoft.com/)
+  const fetchFreshHomeData = () => {
     Promise.all([
       kplApi.getTeams('active').catch(() => []),
-      kplApi.getPlayers({ status: 'active', limit: 12 }).catch(() => []),
+      kplApi.getPlayers({ status: 'active', limit: 100 }).catch(() => []),
       kplApi.getHighlights(6).catch(() => []),
       kplApi.getFeeSettings().catch(() => null),
       kplApi.getContentSettings().catch(() => null),
@@ -312,19 +397,64 @@ export default function Home() {
         setLoadingContent(false);
       }
 
-      // 3. Update local cache
-      localStorage.setItem('kpl_home_cache', JSON.stringify({
-        t: tList || [],
-        p: enrichedPlayers || [],
-        count: Array.isArray(enrichedPlayers) ? enrichedPlayers.length : 0,
-        h: parsedGallery,
-        f: f || fees,
-        c: c || {}
-      }));
+      // Safe caching without base64 to prevent QuotaExceededError
+      try {
+        const leanPlayers = (enrichedPlayers || []).slice(0, 24).map((item: any) => ({
+          id: item.id,
+          player_name: item.player_name,
+          role: item.role,
+          player_category: item.player_category,
+          photo: item.photo && !item.photo.startsWith('data:') ? item.photo : null,
+          team_id: item.team_id,
+          team_name: item.team_name,
+          team_short_code: item.team_short_code,
+          team_accent_color: item.team_accent_color,
+        }));
+        localStorage.setItem('kpl_home_cache', JSON.stringify({
+          t: tList || [],
+          p: leanPlayers,
+          count: Array.isArray(enrichedPlayers) ? enrichedPlayers.length : 0,
+          h: parsedGallery,
+          f: f || fees,
+          c: c || {}
+        }));
+      } catch (e) {}
     }).catch(console.error);
+  };
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    
+    // 1. Instantly load from local cache if available (Stale-While-Revalidate)
+    try {
+      const cachedData = localStorage.getItem('kpl_home_cache');
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        if (parsed.t) setTeams(parsed.t);
+        if (parsed.p) setPlayers(parsed.p);
+        if (parsed.count !== undefined) setPlayerCount(parsed.count);
+        if (parsed.h) setGallery(parsed.h);
+        if (parsed.f) setFees(parsed.f);
+        if (parsed.c) { setContent(parsed.c); setLoadingContent(false); }
+      }
+    } catch(e) {}
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    // 2. Fetch fresh data in the background from PHP API
+    fetchFreshHomeData();
+
+    // 3. Listen to cache invalidation from admin panel updates
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || e.key === 'kpl_cache_bust' || e.key === 'kpl_home_cache' || e.key === 'kpl_public_players_cache') {
+        fetchFreshHomeData();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   const heroPhotos = gallery.filter((g) => g.image).map((g) => g.image);
@@ -640,7 +770,7 @@ export default function Home() {
                   </li>
                   <li className="podium-check-item">
                     <span className="podium-check-icon podium-check-silver"><Check size={11} strokeWidth={3} /></span>
-                    <span>16x Squad Finalist Medals</span>
+                    <span>18x Squad Finalist Medals</span>
                   </li>
                 </ul>
               </div>
@@ -663,7 +793,7 @@ export default function Home() {
                   </li>
                   <li className="podium-check-item">
                     <span className="podium-check-icon"><Check size={11} strokeWidth={3} /></span>
-                    <span>16x Squad Winner Medals</span>
+                    <span>18x Squad Winner Medals</span>
                   </li>
                 </ul>
               </div>
@@ -771,7 +901,7 @@ export default function Home() {
                     </div>
                     <div className="league-pillar-body">
                       <h4>Championship Honors</h4>
-                      <p>₹44,500 total cash rewards, winner and runner-up cups, tournament MVP honors, and 32 squad medals.</p>
+                      <p>₹44,500 total cash rewards, winner and runner-up cups, tournament MVP honors, and 36 squad medals.</p>
                     </div>
                   </div>
 
@@ -880,7 +1010,7 @@ export default function Home() {
                   const teamAccent = team.accent_color || team.color || '#22c55e';
                   const teamShort = team.short_code || team.name.slice(0, 3).toUpperCase();
                   const squadCount = team.squad_count || 0;
-                  const squadLimit = team.squad_limit || 15;
+                  const squadLimit = team.squad_limit || 18;
 
                   return (
                     <article
@@ -964,11 +1094,117 @@ export default function Home() {
             <a className="text-link" href="https://wa.me/918638479115?text=Hi%2C%20I%20want%20to%20register%20to%20play%20in%20KPL%20Season%203." target="_blank" rel="noopener noreferrer">Register to play <ArrowRight size={14} /></a>
           </div>
           
+          {/* Category Filter Pills on Front Page */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '28px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setHomeCategoryFilter('all')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                border: homeCategoryFilter === 'all' ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.12)',
+                background: homeCategoryFilter === 'all' ? '#10b981' : 'rgba(255,255,255,0.04)',
+                color: homeCategoryFilter === 'all' ? '#0f172a' : '#cbd5e1',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              All Players ({players.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setHomeCategoryFilter('grade-a')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                border: homeCategoryFilter === 'grade-a' ? '1px solid #eab308' : '1px solid rgba(234, 179, 8, 0.3)',
+                background: homeCategoryFilter === 'grade-a' ? '#eab308' : 'rgba(234, 179, 8, 0.12)',
+                color: homeCategoryFilter === 'grade-a' ? '#0f172a' : '#facc15',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              ⭐ Grade A ({players.filter(p => {
+                const c = (p.player_category || '').toLowerCase();
+                return c.includes('local') && (c.includes('a') || c.includes('(a)') || c.includes('grade a') || c.endsWith(' a'));
+              }).length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setHomeCategoryFilter('grade-b')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                border: homeCategoryFilter === 'grade-b' ? '1px solid #06b6d4' : '1px solid rgba(6, 182, 212, 0.3)',
+                background: homeCategoryFilter === 'grade-b' ? '#06b6d4' : 'rgba(6, 182, 212, 0.12)',
+                color: homeCategoryFilter === 'grade-b' ? '#0f172a' : '#22d3ee',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              🔹 Grade B ({players.filter(p => {
+                const c = (p.player_category || '').toLowerCase();
+                return c.includes('local') && (c.includes('b') || c.includes('(b)') || c.includes('grade b') || c.endsWith(' b'));
+              }).length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setHomeCategoryFilter('local')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                border: homeCategoryFilter === 'local' ? '1px solid #10b981' : '1px solid rgba(16, 185, 129, 0.3)',
+                background: homeCategoryFilter === 'local' ? '#10b981' : 'rgba(16, 185, 129, 0.12)',
+                color: homeCategoryFilter === 'local' ? '#0f172a' : '#34d399',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              📍 Local ({players.filter(p => (p.player_category || '').toLowerCase().includes('local')).length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setHomeCategoryFilter('foreign')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                border: homeCategoryFilter === 'foreign' ? '1px solid #3b82f6' : '1px solid rgba(59, 130, 246, 0.3)',
+                background: homeCategoryFilter === 'foreign' ? '#3b82f6' : 'rgba(59, 130, 246, 0.12)',
+                color: homeCategoryFilter === 'foreign' ? '#0f172a' : '#60a5fa',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              ✈️ Foreign ({players.filter(p => (p.player_category || '').toLowerCase().includes('foreign')).length})
+            </button>
+          </div>
+          
           <div className="players-grid">
             {players.length === 0 ? (
               <p className="lead">Players will be revealed soon...</p>
             ) : (
-              players.map((player) => {
+              players
+                .filter(player => {
+                  if (homeCategoryFilter === 'all') return true;
+                  const c = (player.player_category || '').toLowerCase();
+                  if (homeCategoryFilter === 'grade-a') return c.includes('local') && (c.includes('a') || c.includes('(a)') || c.includes('grade a') || c.endsWith(' a'));
+                  if (homeCategoryFilter === 'grade-b') return c.includes('local') && (c.includes('b') || c.includes('(b)') || c.includes('grade b') || c.endsWith(' b'));
+                  if (homeCategoryFilter === 'local') return c.includes('local');
+                  if (homeCategoryFilter === 'foreign') return c.includes('foreign');
+                  return true;
+                })
+                .slice(0, 36)
+                .map((player) => {
                 const assignedTeamColor = player.team_accent_color || player.teams?.accent_color;
                 const assignedTeamCode = player.team_short_code || player.teams?.short_code || player.team_name || player.teams?.name;
 
@@ -997,9 +1233,7 @@ export default function Home() {
                       <h3 className="sport-heading">{player.player_name}</h3>
                       <div className="player-badge-wrap">
                         <span className="player-role-badge">{formatPlayerRole(player.role)}</span>
-                        {player.player_category && (
-                          <span className="player-category-badge">{player.player_category}</span>
-                        )}
+                        {renderCategoryBadge(player.player_category)}
                         {assignedTeamCode && (
                           <span
                             className="player-team-badge"

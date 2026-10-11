@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const { password } = await req.json();
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'kpl-admin-123';
 
     if (password !== adminPassword) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 });

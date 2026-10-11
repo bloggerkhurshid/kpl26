@@ -47,13 +47,114 @@ const formatPlayerRole = (roleStr?: string) => {
   return roleStr.toUpperCase();
 };
 
+const renderCategoryBadge = (category?: string | null) => {
+  if (!category) return null;
+  const cat = category.toLowerCase().trim();
+  const isForeign = cat.includes('foreign');
+  const isGradeA = cat.includes('local') && (cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'));
+  const isGradeB = cat.includes('local') && (cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+
+  if (isGradeA) {
+    return (
+      <span
+        className="player-category-badge"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'rgba(234, 179, 8, 0.18)',
+          color: '#facc15',
+          border: '1px solid rgba(234, 179, 8, 0.55)',
+          padding: '3px 8px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          fontWeight: 800,
+          textTransform: 'uppercase',
+          letterSpacing: '0.4px',
+        }}
+      >
+        ⭐ Local (Grade A)
+      </span>
+    );
+  }
+
+  if (isGradeB) {
+    return (
+      <span
+        className="player-category-badge"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'rgba(6, 182, 212, 0.18)',
+          color: '#22d3ee',
+          border: '1px solid rgba(6, 182, 212, 0.55)',
+          padding: '3px 8px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          fontWeight: 800,
+          textTransform: 'uppercase',
+          letterSpacing: '0.4px',
+        }}
+      >
+        🔹 Local (Grade B)
+      </span>
+    );
+  }
+
+  if (isForeign) {
+    return (
+      <span
+        className="player-category-badge"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'rgba(59, 130, 246, 0.18)',
+          color: '#60a5fa',
+          border: '1px solid rgba(59, 130, 246, 0.55)',
+          padding: '3px 8px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          fontWeight: 800,
+          textTransform: 'uppercase',
+          letterSpacing: '0.4px',
+        }}
+      >
+        ✈️ Foreign
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className="player-category-badge"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        background: 'rgba(16, 185, 129, 0.18)',
+        color: '#34d399',
+        border: '1px solid rgba(16, 185, 129, 0.55)',
+        padding: '3px 8px',
+        borderRadius: '4px',
+        fontSize: '10px',
+        fontWeight: 800,
+        textTransform: 'uppercase',
+        letterSpacing: '0.4px',
+      }}
+    >
+      📍 Local
+    </span>
+  );
+};
 
 export default function PlayersPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<'all' | 'local' | 'foreign' | 'assigned'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'grade-a' | 'grade-b' | 'local' | 'foreign' | 'assigned'>('all');
   const [teamFilter, setTeamFilter] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [printModalOpen, setPrintModalOpen] = useState(false);
@@ -67,24 +168,7 @@ export default function PlayersPage() {
 
   const [visibleCount, setVisibleCount] = useState(24);
 
-  useEffect(() => {
-    // 1. Instant cache load (0ms waiting on repeat visits)
-    try {
-      const cached = localStorage.getItem('kpl_public_players_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setPlayers(parsed);
-          setLoading(false);
-        } else if (parsed?.p && Array.isArray(parsed.p) && parsed.p.length > 0) {
-          setPlayers(parsed.p);
-          if (parsed.t) setTeams(parsed.t);
-          setLoading(false);
-        }
-      }
-    } catch (e) {}
-
-    // 2. Fetch fresh data in the background (always revalidating)
+  const fetchFreshPlayers = () => {
     Promise.all([
       kplApi.getPlayers({ status: 'active', limit: 1000 }),
       kplApi.getTeams('active').catch(() => []),
@@ -119,7 +203,13 @@ export default function PlayersPage() {
           setPlayers(enrichedList as Player[]);
           setTeams(tList);
           try {
-            localStorage.setItem('kpl_public_players_cache', JSON.stringify({ p: enrichedList, t: tList }));
+            // Strip any large base64 strings before storing in cache
+            const leanList = enrichedList.map((item: any) => ({
+              ...item,
+              address_proof: item.address_proof && item.address_proof.length > 500 ? '' : item.address_proof,
+              player_signature: item.player_signature && item.player_signature.length > 500 ? '' : item.player_signature,
+            }));
+            localStorage.setItem('kpl_public_players_cache', JSON.stringify({ p: leanList, t: tList }));
           } catch (e) {}
         }
       })
@@ -129,15 +219,62 @@ export default function PlayersPage() {
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    // 1. Instant cache load
+    try {
+      const cached = localStorage.getItem('kpl_public_players_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPlayers(parsed);
+          setLoading(false);
+        } else if (parsed?.p && Array.isArray(parsed.p) && parsed.p.length > 0) {
+          setPlayers(parsed.p);
+          if (parsed.t) setTeams(parsed.t);
+          setLoading(false);
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch fresh data in the background
+    fetchFreshPlayers();
+
+    // 3. Live sync when updated from Admin panel in other tabs/windows
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || e.key === 'kpl_cache_bust' || e.key === 'kpl_public_players_cache' || e.key === 'kpl_home_cache') {
+        fetchFreshPlayers();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
+  const gradeACount = players.filter(p => {
+    const c = (p.player_category || '').toLowerCase();
+    return c.includes('local') && (c.includes('a') || c.includes('(a)') || c.includes('grade a') || c.endsWith(' a'));
+  }).length;
+  const gradeBCount = players.filter(p => {
+    const c = (p.player_category || '').toLowerCase();
+    return c.includes('local') && (c.includes('b') || c.includes('(b)') || c.includes('grade b') || c.endsWith(' b'));
+  }).length;
   const localCount = players.filter((p) => (p.player_category || '').toLowerCase().includes('local')).length;
   const foreignCount = players.filter((p) => (p.player_category || '').toLowerCase().includes('foreign')).length;
   const assignedCount = players.filter((p) => !!(p.team_id || p.team_name || p.team_short_code || p.teams)).length;
 
   const filteredPlayers = players.filter((p) => {
-    // Category Filter: Local vs Foreign vs Assigned
-    if (categoryFilter === 'local') {
+    // Category Filter: Local vs Foreign vs Assigned vs Grade A vs Grade B
+    if (categoryFilter === 'grade-a') {
+      const cat = (p.player_category || '').toLowerCase();
+      if (!cat.includes('local') || !(cat.includes('a') || cat.includes('(a)') || cat.includes('grade a') || cat.endsWith(' a'))) return false;
+    } else if (categoryFilter === 'grade-b') {
+      const cat = (p.player_category || '').toLowerCase();
+      if (!cat.includes('local') || !(cat.includes('b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'))) return false;
+    } else if (categoryFilter === 'local') {
       const cat = (p.player_category || '').toLowerCase();
       if (!cat.includes('local')) return false;
     } else if (categoryFilter === 'foreign') {
@@ -282,7 +419,7 @@ export default function PlayersPage() {
                   }}
                 >
                   <MapPin size={14} />
-                  <span>Local</span>
+                  <span>Local (All)</span>
                   <span style={{
                     fontSize: '11px',
                     padding: '1px 6px',
@@ -290,6 +427,64 @@ export default function PlayersPage() {
                     background: categoryFilter === 'local' ? 'rgba(15, 23, 42, 0.2)' : 'rgba(255, 255, 255, 0.1)',
                   }}>
                     {localCount}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setCategoryFilter('grade-a'); setVisibleCount(24); }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    border: 'none',
+                    background: categoryFilter === 'grade-a' ? '#eab308' : 'transparent',
+                    color: categoryFilter === 'grade-a' ? '#0f172a' : '#facc15',
+                  }}
+                >
+                  <span>⭐ Grade A</span>
+                  <span style={{
+                    fontSize: '11px',
+                    padding: '1px 6px',
+                    borderRadius: '10px',
+                    background: categoryFilter === 'grade-a' ? 'rgba(15, 23, 42, 0.2)' : 'rgba(234, 179, 8, 0.2)',
+                  }}>
+                    {gradeACount}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setCategoryFilter('grade-b'); setVisibleCount(24); }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    border: 'none',
+                    background: categoryFilter === 'grade-b' ? '#06b6d4' : 'transparent',
+                    color: categoryFilter === 'grade-b' ? '#0f172a' : '#22d3ee',
+                  }}
+                >
+                  <span>🔹 Grade B</span>
+                  <span style={{
+                    fontSize: '11px',
+                    padding: '1px 6px',
+                    borderRadius: '10px',
+                    background: categoryFilter === 'grade-b' ? 'rgba(15, 23, 42, 0.2)' : 'rgba(6, 182, 212, 0.2)',
+                  }}>
+                    {gradeBCount}
                   </span>
                 </button>
 
@@ -556,9 +751,7 @@ export default function PlayersPage() {
                         <h3 className="sport-heading text-white">{player.player_name}</h3>
                         <div className="player-badge-wrap">
                           <span className="player-role-badge">{formatPlayerRole(player.role)}</span>
-                          {player.player_category && (
-                            <span className="player-category-badge">{player.player_category}</span>
-                          )}
+                          {renderCategoryBadge(player.player_category)}
                           {assignedTeamCode && (
                             <span
                               className="player-team-badge"

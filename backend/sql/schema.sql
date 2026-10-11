@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `teams` (
   `owner_contact` VARCHAR(50) DEFAULT '',
   `accent_color` VARCHAR(30) DEFAULT '#22c55e',
   `logo_url` LONGTEXT DEFAULT NULL,
-  `squad_limit` INT DEFAULT 15,
+  `squad_limit` INT DEFAULT 18,
   `budget` DECIMAL(12, 2) DEFAULT 100000.00,
   `spent` DECIMAL(12, 2) DEFAULT 0.00,
   `status` VARCHAR(20) DEFAULT 'active',

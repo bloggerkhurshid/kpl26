@@ -11,7 +11,7 @@ import {
   Phone, Mail, MapPin, Calendar, Hash, User, Shield, Target, Zap,
   Check, Clock, XCircle, ArrowRight, ShieldCheck, CreditCard, Image as ImageIcon, Upload,
   LayoutGrid, List, RefreshCw, Search, IdCard, ArrowUpDown, ArrowUpAZ,
-  CheckSquare, Square, Crown
+  CheckSquare, Square, Crown, Tag
 } from 'lucide-react';
 import { RegistrationSlipModal } from '@/components/RegistrationSlipModal';
 import { printPlayerRoster } from '@/lib/printRoster';
@@ -88,6 +88,8 @@ export default function PlayersPage() {
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [slipPlayer, setSlipPlayer] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkUpdatingCategory, setBulkUpdatingCategory] = useState(false);
+  const [bulkCategoryVal, setBulkCategoryVal] = useState('');
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [printSource, setPrintSource] = useState<'all' | 'selected'>('all');
   const [proofModal, setProofModal] = useState<{
@@ -412,6 +414,7 @@ export default function PlayersPage() {
     try {
       localStorage.removeItem('kpl_public_players_cache');
       localStorage.removeItem('kpl_home_cache');
+      localStorage.setItem('kpl_cache_bust', String(Date.now()));
     } catch (e) {}
   }
 
@@ -542,6 +545,38 @@ export default function PlayersPage() {
       loadData(true);
     } catch (err: any) {
       showToast(err.message || 'Failed to update category', 'error');
+    }
+  }
+
+  async function handleBulkUpdateCategory(targetCategory: string) {
+    if (selectedIds.size === 0) {
+      showToast('Please select at least one player first.', 'error');
+      return;
+    }
+    const count = selectedIds.size;
+    const ids = Array.from(selectedIds);
+    setBulkUpdatingCategory(true);
+    try {
+      let successCount = 0;
+      for (let i = 0; i < ids.length; i += 6) {
+        const batch = ids.slice(i, i + 6);
+        const results = await Promise.allSettled(
+          batch.map(id => kplApi.updatePlayer(id, { player_category: targetCategory }))
+        );
+        results.forEach(res => {
+          if (res.status === 'fulfilled') successCount++;
+        });
+      }
+
+      setPlayers(prev => prev.map(p => selectedIds.has(p.id) ? { ...p, player_category: targetCategory } : p));
+      clearPublicCache();
+      setSelectedIds(new Set());
+      showToast(`Updated ${successCount} player${successCount > 1 ? 's' : ''} to "${targetCategory}".`, successCount === count ? 'success' : 'error');
+      loadData(true);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update player categories', 'error');
+    } finally {
+      setBulkUpdatingCategory(false);
     }
   }
 
@@ -1092,6 +1127,57 @@ export default function PlayersPage() {
               <CheckSquare size={14} />
               <span>{isAllFilteredSelected ? `Deselect (${filtered.length})` : selectedIds.size > 0 ? `Selected (${selectedIds.size})` : `Select All (${filtered.length})`}</span>
             </button>
+
+            {/* Bulk Category Updater Control */}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: selectedIds.size > 0 ? 'rgba(234, 179, 8, 0.14)' : 'var(--adm-surface)',
+                border: selectedIds.size > 0 ? '1px solid rgba(234, 179, 8, 0.5)' : '1px solid var(--adm-border)',
+                borderRadius: '6px',
+                padding: '4px 10px',
+                color: selectedIds.size > 0 ? '#facc15' : 'var(--adm-text-muted)',
+                fontSize: '12px',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+              title={selectedIds.size === 0 ? 'Select players first to update category' : `Assign category to ${selectedIds.size} selected players`}
+            >
+              <Tag size={13} color={selectedIds.size > 0 ? '#facc15' : '#94a3b8'} />
+              <span>Set Category{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}:</span>
+              <select
+                disabled={selectedIds.size === 0 || bulkUpdatingCategory}
+                value={bulkCategoryVal}
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val) {
+                    setBulkCategoryVal(val);
+                    handleBulkUpdateCategory(val).finally(() => setBulkCategoryVal(''));
+                  }
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: selectedIds.size > 0 ? '#facc15' : 'var(--adm-text-muted)',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  cursor: selectedIds.size === 0 ? 'not-allowed' : 'pointer',
+                  outline: 'none',
+                  padding: '2px 4px',
+                }}
+              >
+                <option value="" disabled style={{ background: '#0f172a', color: '#94a3b8' }}>
+                  {bulkUpdatingCategory ? 'Updating...' : selectedIds.size === 0 ? 'Select players first' : 'Choose Category...'}
+                </option>
+                <option value="Local (Grade A)" style={{ background: '#0f172a', color: '#facc15' }}>⭐ Local (Grade A)</option>
+                <option value="Local (Grade B)" style={{ background: '#0f172a', color: '#22d3ee' }}>🔹 Local (Grade B)</option>
+                <option value="Local" style={{ background: '#0f172a', color: '#34d399' }}>📍 Local</option>
+                <option value="Foreign" style={{ background: '#0f172a', color: '#60a5fa' }}>✈️ Foreign</option>
+              </select>
+              {bulkUpdatingCategory && <Loader2 size={13} className="animate-spin" color="#facc15" />}
+            </div>
 
             {/* Print Player List Button */}
             <button
@@ -2498,6 +2584,163 @@ export default function PlayersPage() {
           onClose={() => setSlipPlayer(null)} 
           player={slipPlayer} 
         />
+      )}
+
+      {/* Floating Sticky Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            background: 'rgba(15, 23, 42, 0.95)',
+            border: '1.5px solid rgba(16, 185, 129, 0.55)',
+            boxShadow: '0 12px 35px rgba(0, 0, 0, 0.75), 0 0 20px rgba(16, 185, 129, 0.25)',
+            borderRadius: '12px',
+            padding: '10px 18px',
+            backdropFilter: 'blur(16px)',
+            flexWrap: 'wrap',
+            maxWidth: '92vw',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#10b981',
+                color: '#022c22',
+                borderRadius: '50%',
+                width: '24px',
+                height: '24px',
+                fontWeight: 800,
+                fontSize: '12px',
+              }}
+            >
+              {selectedIds.size}
+            </span>
+            <span style={{ color: '#f8fafc', fontWeight: 700, fontSize: '13px' }}>
+              Players Selected
+            </span>
+          </div>
+
+          <div style={{ height: '20px', width: '1px', background: 'rgba(255, 255, 255, 0.15)' }} />
+
+          {/* Quick Category Action Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>Set Category:</span>
+            <button
+              type="button"
+              disabled={bulkUpdatingCategory}
+              onClick={() => handleBulkUpdateCategory('Local (Grade A)')}
+              className="admin-btn"
+              style={{
+                padding: '5px 11px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                background: 'rgba(234, 179, 8, 0.16)',
+                border: '1px solid rgba(234, 179, 8, 0.45)',
+                color: '#facc15',
+                borderRadius: '6px',
+                cursor: bulkUpdatingCategory ? 'not-allowed' : 'pointer',
+              }}
+              title="Update all selected players to Local (Grade A)"
+            >
+              ⭐ Local A
+            </button>
+            <button
+              type="button"
+              disabled={bulkUpdatingCategory}
+              onClick={() => handleBulkUpdateCategory('Local (Grade B)')}
+              className="admin-btn"
+              style={{
+                padding: '5px 11px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                background: 'rgba(6, 182, 212, 0.16)',
+                border: '1px solid rgba(6, 182, 212, 0.45)',
+                color: '#22d3ee',
+                borderRadius: '6px',
+                cursor: bulkUpdatingCategory ? 'not-allowed' : 'pointer',
+              }}
+              title="Update all selected players to Local (Grade B)"
+            >
+              🔹 Local B
+            </button>
+            <button
+              type="button"
+              disabled={bulkUpdatingCategory}
+              onClick={() => handleBulkUpdateCategory('Local')}
+              className="admin-btn"
+              style={{
+                padding: '5px 11px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                background: 'rgba(16, 185, 129, 0.16)',
+                border: '1px solid rgba(16, 185, 129, 0.45)',
+                color: '#34d399',
+                borderRadius: '6px',
+                cursor: bulkUpdatingCategory ? 'not-allowed' : 'pointer',
+              }}
+              title="Update all selected players to Local"
+            >
+              📍 Local
+            </button>
+            <button
+              type="button"
+              disabled={bulkUpdatingCategory}
+              onClick={() => handleBulkUpdateCategory('Foreign')}
+              className="admin-btn"
+              style={{
+                padding: '5px 11px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                background: 'rgba(59, 130, 246, 0.16)',
+                border: '1px solid rgba(59, 130, 246, 0.45)',
+                color: '#60a5fa',
+                borderRadius: '6px',
+                cursor: bulkUpdatingCategory ? 'not-allowed' : 'pointer',
+              }}
+              title="Update all selected players to Foreign"
+            >
+              ✈️ Foreign
+            </button>
+          </div>
+
+          {bulkUpdatingCategory && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#facc15', fontSize: '12px', fontWeight: 600 }}>
+              <Loader2 size={14} className="animate-spin" /> Updating...
+            </div>
+          )}
+
+          <div style={{ height: '20px', width: '1px', background: 'rgba(255, 255, 255, 0.15)' }} />
+
+          {/* Deselect / Cancel */}
+          <button
+            type="button"
+            disabled={bulkUpdatingCategory}
+            onClick={() => setSelectedIds(new Set())}
+            className="admin-btn"
+            style={{
+              padding: '5px 10px',
+              fontSize: '11.5px',
+              fontWeight: 600,
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              color: '#cbd5e1',
+              borderRadius: '6px',
+              cursor: 'pointer',
+            }}
+          >
+            Clear Selection
+          </button>
+        </div>
       )}
     </AdminLayout>
   );

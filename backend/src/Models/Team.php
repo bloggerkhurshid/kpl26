@@ -67,7 +67,7 @@ class Team {
             ':owner_contact' => $data['owner_contact'] ?? '',
             ':accent_color' => $data['accent_color'] ?? ($data['color'] ?? '#22c55e'),
             ':logo_url' => $data['logo_url'] ?? null,
-            ':squad_limit' => isset($data['squad_limit']) ? (int)$data['squad_limit'] : 15,
+            ':squad_limit' => isset($data['squad_limit']) ? (int)$data['squad_limit'] : 18,
             ':budget' => isset($data['budget']) ? (float)$data['budget'] : 100000.00,
             ':spent' => isset($data['spent']) ? (float)$data['spent'] : 0.00,
             ':status' => $data['status'] ?? 'active'

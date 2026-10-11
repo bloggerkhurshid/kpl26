@@ -485,7 +485,7 @@ export default function TeamsPage() {
             title="View squad players and assign captain"
           >
             <Users size={12} />
-            <span>{count} / 15 Players</span>
+            <span>{count} / 18 Players</span>
           </button>
         );
       },
@@ -1133,7 +1133,7 @@ export default function TeamsPage() {
                     <div style={{ marginBottom: '24px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                         <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Users size={15} color="#10b981" /> Current Squad Players ({squadPlayers.length} / 15)
+                          <Users size={15} color="#10b981" /> Current Squad Players ({squadPlayers.length} / 18)
                         </h3>
                         <span style={{ fontSize: '11.5px', color: 'var(--adm-text-muted)' }}>
                           Click &quot;Make Captain&quot; to designate captain from squad
