@@ -979,8 +979,15 @@ export default function Home() {
               ) : (
                 teams.map((team, i) => {
                   const teamOwner = team.owner_name || team.owner || 'Franchise Management';
-                  const captainPlayer = players.find(p => String(p.team_id) === String(team.id) && (p.role || '').toLowerCase().includes('captain'));
-                  const teamCaptain = captainPlayer ? captainPlayer.player_name : (team.captain_name || team.captain || 'TBA');
+                  const retainPlayer = players.find(p => String(p.team_id) === String(team.id) && (
+                    (p.role || '').toLowerCase().includes('retain') ||
+                    (p.player_category || '').toLowerCase().includes('retain')
+                  ));
+                  const ownerPlayer = players.find(p => String(p.team_id) === String(team.id) && (
+                    (p.role || '').toLowerCase().includes('owner') ||
+                    (p.player_name || '').trim().toLowerCase() === teamOwner.trim().toLowerCase()
+                  ));
+                  const retainPlayerName = retainPlayer ? retainPlayer.player_name : (team.captain_name || team.captain || 'TBA');
                   const teamLocation = team.home_location || 'Khoraghat / Dhubri';
                   const teamAccent = team.accent_color || team.color || '#22c55e';
                   const teamShort = team.short_code || team.name.slice(0, 3).toUpperCase();
@@ -1019,14 +1026,32 @@ export default function Home() {
                         <h3 className="sport-heading team-card-title">{team.name}</h3>
                         <p className="team-owner-sub">
                           <span className="team-owner-label">Owner:</span> {teamOwner}
+                          {ownerPlayer && (
+                            <span style={{ marginLeft: 6, fontSize: '11px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.35)', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>
+                              🏏 Plays
+                            </span>
+                          )}
                         </p>
                       </div>
 
                       {/* Team Meta Grid */}
                       <div className="team-meta">
                         <div className="team-meta-cell">
-                          <span>Captain</span>
-                          <div>{teamCaptain}</div>
+                          <span>{ownerPlayer ? 'Playing Owner' : 'Retained Player'}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 700 }}>
+                              {ownerPlayer ? ownerPlayer.player_name : retainPlayerName}
+                            </span>
+                            {ownerPlayer ? (
+                              <span style={{ fontSize: '11px', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '1px 5px', borderRadius: 4, fontWeight: 800 }}>
+                                OWNER
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '11px', color: '#f5c842', background: 'rgba(245, 200, 66, 0.12)', border: '1px solid rgba(245, 200, 66, 0.3)', padding: '1px 5px', borderRadius: 4, fontWeight: 800 }}>
+                                ₹1,500
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="team-meta-cell">
                           <span>Home Base</span>

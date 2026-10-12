@@ -11,10 +11,10 @@ import {
   Phone, Mail, MapPin, Calendar, Hash, User, Shield, Target, Zap,
   Check, Clock, XCircle, ArrowRight, ShieldCheck, CreditCard, Image as ImageIcon, Upload,
   LayoutGrid, List, RefreshCw, Search, IdCard, ArrowUpDown, ArrowUpAZ,
-  CheckSquare, Square, Crown, Tag
+  CheckSquare, Square, Crown, Tag, Award
 } from 'lucide-react';
 import { RegistrationSlipModal } from '@/components/RegistrationSlipModal';
-import { printPlayerRoster } from '@/lib/printRoster';
+import { printPlayerRoster, printTeamDetails } from '@/lib/printRoster';
 
 interface Team { id: string; name: string; short_code: string; accent_color: string; }
 
@@ -583,34 +583,101 @@ export default function PlayersPage() {
     }
   }
 
-  async function toggleCaptain(p: Player) {
+  async function toggleRetained(p: Player) {
     if (!p.team_id) {
-      showToast('Assign player to a team before making captain', 'error');
+      showToast('Assign player to a team before marking as retained', 'error');
       return;
     }
-    const isCap = (p.role || '').toLowerCase().includes('captain');
-    const cleanRole = (p.role || 'Player').replace(/captain\s*(&\s*)?/gi, '').trim() || 'Player';
-    const newRole = isCap ? cleanRole : `Captain & ${cleanRole}`;
+    const isRetained = (p.role || '').toLowerCase().includes('retain');
+    const cleanRole = (p.role || 'Player')
+      .replace(/retained?\s*(player)?\s*(&\s*)?/gi, '')
+      .replace(/owner\s*(&\s*)?/gi, '')
+      .trim() || 'Player';
+    const newRole = isRetained ? cleanRole : `Retained Player & ${cleanRole}`;
 
     try {
-      await kplApi.updatePlayer(p.id, { role: newRole });
+      await kplApi.updatePlayer(p.id, {
+        role: newRole,
+        sold_price: isRetained ? 0 : 1500,
+        auction_eligible: 0,
+      });
 
-      // If making captain, remove captain designation from any other player in the same team
-      if (!isCap) {
-        const others = players.filter(item => String(item.team_id) === String(p.team_id) && item.id !== p.id && (item.role || '').toLowerCase().includes('captain'));
+      // Strict Rule: Just 1 per team — Retain OR Owner
+      if (!isRetained) {
+        const others = players.filter(item => 
+          String(item.team_id) === String(p.team_id) && 
+          item.id !== p.id && 
+          ((item.role || '').toLowerCase().includes('retain') || (item.role || '').toLowerCase().includes('owner'))
+        );
         for (const o of others) {
-          const demoted = (o.role || 'Player').replace(/captain\s*(&\s*)?/gi, '').trim() || 'Player';
-          await kplApi.updatePlayer(o.id, { role: demoted }).catch(() => {});
+          const demoted = (o.role || 'Player')
+            .replace(/retained?\s*(player)?\s*(&\s*)?/gi, '')
+            .replace(/owner\s*(&\s*)?/gi, '')
+            .trim() || 'Player';
+          await kplApi.updatePlayer(o.id, { role: demoted, sold_price: 0 }).catch(() => {});
         }
         await kplApi.updateTeam(p.team_id, { captain_name: p.player_name }).catch(() => {});
       }
 
       clearPublicCache();
-      showToast(isCap ? `${p.player_name} is no longer captain.` : `⭐ ${p.player_name} is now Team Captain!`);
+      showToast(isRetained ? `${p.player_name} is no longer retained.` : `💎 ${p.player_name} is now Retained Player (₹1,500)!`);
       loadData();
     } catch (err: any) {
-      showToast(err.message || 'Failed to update captaincy', 'error');
+      showToast(err.message || 'Failed to update retain status', 'error');
     }
+  }
+
+  async function toggleOwner(p: Player) {
+    if (!p.team_id) {
+      showToast('Assign player to a team before marking as owner', 'error');
+      return;
+    }
+    const isOwner = (p.role || '').toLowerCase().includes('owner');
+    const cleanRole = (p.role || 'Player')
+      .replace(/owner\s*(&\s*)?/gi, '')
+      .replace(/retained?\s*(player)?\s*(&\s*)?/gi, '')
+      .trim() || 'Player';
+    const newRole = isOwner ? cleanRole : `Owner & ${cleanRole}`;
+
+    try {
+      await kplApi.updatePlayer(p.id, {
+        role: newRole,
+        sold_price: 0,
+        auction_eligible: 0,
+      });
+
+      // Strict Rule: Just 1 per team — Retain OR Owner
+      if (!isOwner) {
+        const others = players.filter(item => 
+          String(item.team_id) === String(p.team_id) && 
+          item.id !== p.id && 
+          ((item.role || '').toLowerCase().includes('retain') || (item.role || '').toLowerCase().includes('owner'))
+        );
+        for (const o of others) {
+          const demoted = (o.role || 'Player')
+            .replace(/owner\s*(&\s*)?/gi, '')
+            .replace(/retained?\s*(player)?\s*(&\s*)?/gi, '')
+            .trim() || 'Player';
+          await kplApi.updatePlayer(o.id, { role: demoted, sold_price: 0 }).catch(() => {});
+        }
+
+        await kplApi.updateTeam(p.team_id, {
+          owner: p.player_name,
+          owner_name: p.player_name,
+          captain_name: p.player_name,
+        }).catch(() => {});
+      }
+
+      clearPublicCache();
+      showToast(isOwner ? `${p.player_name} is no longer designated playing owner.` : `👑 ${p.player_name} is now designated Playing Owner!`);
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update owner status', 'error');
+    }
+  }
+
+  async function toggleCaptain(p: Player) {
+    return toggleRetained(p);
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
@@ -789,9 +856,14 @@ export default function PlayersPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span className="dt-player-name">{p.player_name}</span>
-              {(p.role || '').toLowerCase().includes('captain') && (
-                <span title="Team Captain" style={{ display: 'inline-flex' }}>
-                  <Crown size={13} color="#eab308" fill="#eab308" />
+              {(p.role || '').toLowerCase().includes('retain') && (
+                <span title="Retained Player (₹1,500)" style={{ display: 'inline-flex', alignItems: 'center', gap: 2, background: 'rgba(245, 200, 66, 0.2)', color: '#f5c842', border: '1px solid #f5c842', padding: '1px 5px', borderRadius: 4, fontSize: '10px', fontWeight: 800 }}>
+                  <Award size={11} /> RETAINED
+                </span>
+              )}
+              {(p.role || '').toLowerCase().includes('owner') && (
+                <span title="Franchise Owner (Playing)" style={{ display: 'inline-flex', alignItems: 'center', gap: 2, background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '1px 5px', borderRadius: 4, fontSize: '10px', fontWeight: 800 }}>
+                  <Crown size={11} /> OWNER
                 </span>
               )}
               {p.registered_by?.toLowerCase().includes('self') ? (
@@ -1032,18 +1104,34 @@ export default function PlayersPage() {
             <button className="dt-btn dt-btn-icon" title="Edit" onClick={() => openEdit(p)}><Edit2 size={14} /></button>
             {p.team_id && (
               <>
+                {/* Toggle Retained Player (₹1,500) */}
                 <button
                   className="dt-btn dt-btn-icon"
-                  title={(p.role || '').toLowerCase().includes('captain') ? 'Current Captain (Click to demote)' : 'Make Team Captain'}
-                  onClick={() => toggleCaptain(p)}
+                  title={(p.role || '').toLowerCase().includes('retain') ? 'Retained Player (Click to remove)' : 'Mark as Retained Player (₹1,500)'}
+                  onClick={() => toggleRetained(p)}
                   style={{
-                    color: (p.role || '').toLowerCase().includes('captain') ? '#eab308' : undefined,
-                    background: (p.role || '').toLowerCase().includes('captain') ? 'rgba(234, 179, 8, 0.15)' : undefined,
-                    border: (p.role || '').toLowerCase().includes('captain') ? '1px solid #eab308' : undefined,
+                    color: (p.role || '').toLowerCase().includes('retain') ? '#f5c842' : undefined,
+                    background: (p.role || '').toLowerCase().includes('retain') ? 'rgba(245, 200, 66, 0.2)' : undefined,
+                    border: (p.role || '').toLowerCase().includes('retain') ? '1px solid #f5c842' : undefined,
+                  }}
+                >
+                  <Award size={14} />
+                </button>
+
+                {/* Toggle Playing Owner */}
+                <button
+                  className="dt-btn dt-btn-icon"
+                  title={(p.role || '').toLowerCase().includes('owner') ? 'Playing Owner (Click to demote)' : 'Designate as Playing Owner'}
+                  onClick={() => toggleOwner(p)}
+                  style={{
+                    color: (p.role || '').toLowerCase().includes('owner') ? '#38bdf8' : undefined,
+                    background: (p.role || '').toLowerCase().includes('owner') ? 'rgba(56, 189, 248, 0.2)' : undefined,
+                    border: (p.role || '').toLowerCase().includes('owner') ? '1px solid #38bdf8' : undefined,
                   }}
                 >
                   <Crown size={14} />
                 </button>
+
                 <button className="dt-btn dt-btn-icon" title="Unassign from team" onClick={() => unassignPlayer(p)}><UserX size={14} /></button>
               </>
             )}
@@ -1204,7 +1292,36 @@ export default function PlayersPage() {
               title="Print formatted player list with SL No, Reg ID, Name, Address, Mobile, Local/Foreign"
             >
               <Printer size={14} />
-              <span>Print Player List {selectedIds.size > 0 ? `(${selectedIds.size})` : `(${filtered.length})`}</span>
+              <span>Print Players {selectedIds.size > 0 ? `(${selectedIds.size})` : `(${filtered.length})`}</span>
+            </button>
+
+            {/* Print Team Details Button */}
+            <button
+              type="button"
+              className="admin-btn"
+              onClick={() => {
+                if (filterTeam) {
+                  const targetTeam = teams.filter(t => String(t.id) === String(filterTeam));
+                  printTeamDetails(targetTeam.length > 0 ? targetTeam : teams, players);
+                } else {
+                  printTeamDetails(teams, players);
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                color: '#34d399',
+                fontWeight: 600,
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+              title={filterTeam ? "Print selected team details: Team Name, Owner, Retain Player" : "Print all team details: Team Name, Owner, Retain Player"}
+            >
+              <Printer size={14} />
+              <span>Print Team Details {filterTeam ? `(${teams.find(t => String(t.id) === String(filterTeam))?.short_code || 'Selected'})` : ''}</span>
             </button>
 
             <button className="admin-btn admin-btn-primary" onClick={openCreate}>
@@ -2614,22 +2731,6 @@ export default function PlayersPage() {
                   })}
                 </tbody>
               </table>
-
-              {/* Print Signatures Footer */}
-              <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-between', paddingTop: '20px', borderTop: '1px dashed #94a3b8', fontSize: '11px' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ width: '160px', borderBottom: '1px solid #000', marginBottom: '6px' }} />
-                  <span>Prepared By</span>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ width: '160px', borderBottom: '1px solid #000', marginBottom: '6px' }} />
-                  <span>Verified By</span>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ width: '160px', borderBottom: '1px solid #000', marginBottom: '6px' }} />
-                  <span>KPL Committee Authority</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>

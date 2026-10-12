@@ -909,21 +909,6 @@ export default function PlayersPage() {
                   })}
                 </tbody>
               </table>
-
-              <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-between', paddingTop: '20px', borderTop: '1px dashed #94a3b8', fontSize: '11px' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ width: '160px', borderBottom: '1px solid #000', marginBottom: '6px' }} />
-                  <span>Prepared By</span>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ width: '160px', borderBottom: '1px solid #000', marginBottom: '6px' }} />
-                  <span>Verified By</span>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ width: '160px', borderBottom: '1px solid #000', marginBottom: '6px' }} />
-                  <span>KPL Committee Authority</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -8,8 +8,9 @@ import {
   Plus, Edit2, Trash2, ToggleLeft, ToggleRight,
   X, Loader2, CheckCircle2, AlertCircle, Shield,
   CreditCard, Upload, Check, UserCheck, RefreshCw, Eye,
-  Crown, Users, Star, Search, Sparkles
+  Crown, Users, Star, Search, Sparkles, UserPlus, Award, Printer, Coins
 } from 'lucide-react';
+import { printTeamDetails } from '@/lib/printRoster';
 
 interface Team {
   id: string;
@@ -24,12 +25,14 @@ interface Team {
   accent_color?: string;
   home_location?: string;
   logo_url?: string;
+  budget?: number | string;
+  spent?: number | string;
   squad_count?: number;
   status: string;
   created_at: string;
 }
 
-const EMPTY_FORM = { name: '', short_code: '', owner: '', captain: '', home_location: '', logo_url: '' };
+const EMPTY_FORM = { name: '', short_code: '', owner: '', captain: '', home_location: '', logo_url: '', budget: '100000' };
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -39,6 +42,8 @@ export default function TeamsPage() {
   const [syncing, setSyncing] = useState(false);
   const [modal, setModal] = useState<'create' | 'edit' | 'delete' | null>(null);
   const [squadModal, setSquadModal] = useState<Team | null>(null);
+  const [coinModal, setCoinModal] = useState<Team | null>(null);
+  const [coinAmount, setCoinAmount] = useState<string>('');
   const [selected, setSelected] = useState<Team | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedCaptainId, setSelectedCaptainId] = useState<string>('');
@@ -54,6 +59,8 @@ export default function TeamsPage() {
     payment?: any;
   } | null>(null);
   const [attachingScreenshot, setAttachingScreenshot] = useState(false);
+  const [selectedPrintTeamId, setSelectedPrintTeamId] = useState<string>('all');
+  const [printModalOpen, setPrintModalOpen] = useState(false);
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
     setToast({ msg, type });
@@ -64,9 +71,9 @@ export default function TeamsPage() {
     if (!players || !players.length) return null;
     const squad = players.filter(p => String(p.team_id) === String(team.id));
     
-    // 1. Check squad player whose role explicitly mentions captain
-    const roleCaptain = squad.find(p => (p.role || '').toLowerCase().includes('captain'));
-    if (roleCaptain) return roleCaptain;
+    // 1. Check squad player whose role explicitly mentions retain or captain
+    const roleRetainOrCap = squad.find(p => (p.role || '').toLowerCase().includes('retain') || (p.role || '').toLowerCase().includes('captain'));
+    if (roleRetainOrCap) return roleRetainOrCap;
 
     // 2. Check squad player matching captain name
     const capName = (team.captain_name || team.captain || '').trim().toLowerCase();
@@ -82,26 +89,200 @@ export default function TeamsPage() {
     return null;
   }
 
+  function getTeamRetainPlayer(team: Team) {
+    if (!players || !players.length) return null;
+    const squad = players.filter(p => String(p.team_id) === String(team.id));
+    return squad.find(p => (p.role || '').toLowerCase().includes('retain') || (p.player_category || '').toLowerCase().includes('retain')) || null;
+  }
+
+  function getTeamOwnerPlayer(team: Team) {
+    if (!players || !players.length) return null;
+    const squad = players.filter(p => String(p.team_id) === String(team.id));
+    const ownerName = (team.owner_name || team.owner || '').trim().toLowerCase();
+    return squad.find(p => (p.role || '').toLowerCase().includes('owner') || (ownerName && (p.player_name || '').trim().toLowerCase() === ownerName)) || null;
+  }
+
+  async function handleSetRetainedPlayer(team: Team, player: any) {
+    setSaving(true);
+    try {
+      const isAlreadyRetain = (player.role || '').toLowerCase().includes('retain');
+      const cleanOldRole = (player.role || 'Player')
+        .replace(/retained?\s*(player)?\s*(&\s*)?/gi, '')
+        .replace(/owner\s*(&\s*)?/gi, '')
+        .trim() || 'Player';
+      const newRole = isAlreadyRetain ? cleanOldRole : `Retained Player & ${cleanOldRole}`;
+
+      // 1. Assign player to this team, set Retained role, and fix sold_price = 1500 (or clear if demoted)
+      await kplApi.updatePlayer(player.id, {
+        team_id: team.id,
+        role: newRole,
+        sold_price: isAlreadyRetain ? 0 : 1500,
+        auction_eligible: 0,
+      });
+
+      // 2. Clear any other retain OR playing owner in this team (Strict Rule: Just 1 per team — Retain OR Owner)
+      if (!isAlreadyRetain) {
+        const others = players.filter(p => 
+          String(p.team_id) === String(team.id) && 
+          p.id !== player.id && 
+          ((p.role || '').toLowerCase().includes('retain') || (p.role || '').toLowerCase().includes('owner'))
+        );
+        for (const other of others) {
+          const demotedRole = (other.role || 'Player')
+            .replace(/retained?\s*(player)?\s*(&\s*)?/gi, '')
+            .replace(/owner\s*(&\s*)?/gi, '')
+            .trim() || 'Player';
+          await kplApi.updatePlayer(other.id, { role: demotedRole, sold_price: 0 }).catch(() => {});
+        }
+
+        // Update team captain_name / retain attribute
+        await kplApi.updateTeam(team.id, {
+          captain_name: player.player_name,
+        }).catch(() => {});
+      }
+
+      // 3. Clear public caches
+      try {
+        localStorage.removeItem('kpl_public_players_cache');
+        localStorage.removeItem('kpl_home_cache');
+      } catch (e) {}
+
+      showToast(isAlreadyRetain ? `${player.player_name} is no longer retained.` : `💎 ${player.player_name} set as Retained Player (₹1,500) for ${team.name}!`);
+      await loadTeams(true);
+      if (squadModal && squadModal.id === team.id) {
+        setSquadModal({ ...team, captain_name: player.player_name, captain: player.player_name });
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update retained player', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSetOwnerPlayer(team: Team, player: any) {
+    setSaving(true);
+    try {
+      const isAlreadyOwner = (player.role || '').toLowerCase().includes('owner');
+      const cleanOldRole = (player.role || 'Player')
+        .replace(/owner\s*(&\s*)?/gi, '')
+        .replace(/retained?\s*(player)?\s*(&\s*)?/gi, '')
+        .trim() || 'Player';
+      const newRole = isAlreadyOwner ? cleanOldRole : `Owner & ${cleanOldRole}`;
+
+      // Assign to team as playing owner (sold_price = 0, playing owner does not cost 1500 retain fee)
+      await kplApi.updatePlayer(player.id, {
+        team_id: team.id,
+        role: newRole,
+        sold_price: 0,
+        auction_eligible: 0,
+      });
+
+      // Clear any other retain OR playing owner in this team (Strict Rule: Just 1 per team — Retain OR Owner)
+      if (!isAlreadyOwner) {
+        const others = players.filter(p => 
+          String(p.team_id) === String(team.id) && 
+          p.id !== player.id && 
+          ((p.role || '').toLowerCase().includes('retain') || (p.role || '').toLowerCase().includes('owner'))
+        );
+        for (const other of others) {
+          const demotedRole = (other.role || 'Player')
+            .replace(/owner\s*(&\s*)?/gi, '')
+            .replace(/retained?\s*(player)?\s*(&\s*)?/gi, '')
+            .trim() || 'Player';
+          await kplApi.updatePlayer(other.id, { role: demotedRole, sold_price: 0 }).catch(() => {});
+        }
+
+        await kplApi.updateTeam(team.id, {
+          owner: player.player_name,
+          owner_name: player.player_name,
+          captain_name: player.player_name,
+        }).catch(() => {});
+      }
+
+      try {
+        localStorage.removeItem('kpl_public_players_cache');
+        localStorage.removeItem('kpl_home_cache');
+      } catch (e) {}
+
+      showToast(isAlreadyOwner ? `${player.player_name} is no longer playing owner.` : `👑 ${player.player_name} is registered as Playing Owner of ${team.name}!`);
+      await loadTeams(true);
+      if (squadModal && squadModal.id === team.id) {
+        setSquadModal({ ...team, owner: isAlreadyOwner ? '' : player.player_name, owner_name: isAlreadyOwner ? '' : player.player_name, captain_name: isAlreadyOwner ? '' : player.player_name });
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update playing owner', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRemoveRetainOrOwner(team: Team) {
+    setSaving(true);
+    try {
+      const teamPlayers = players.filter(p => String(p.team_id) === String(team.id));
+      const targets = teamPlayers.filter(p => 
+        (p.role || '').toLowerCase().includes('retain') ||
+        (p.role || '').toLowerCase().includes('owner') ||
+        (p.role || '').toLowerCase().includes('captain') ||
+        Number(p.sold_price) === 1500
+      );
+
+      for (const p of targets) {
+        const cleanRole = (p.role || 'Player')
+          .replace(/retained?\s*(player)?\s*(&\s*)?/gi, '')
+          .replace(/owner\s*(&\s*)?/gi, '')
+          .replace(/captain\s*(&\s*)?/gi, '')
+          .trim() || 'Player';
+        await kplApi.updatePlayer(p.id, {
+          role: cleanRole,
+          sold_price: 0,
+        }).catch(() => {});
+      }
+
+      await kplApi.updateTeam(team.id, {
+        captain_name: '',
+        captain: '',
+      }).catch(() => {});
+
+      try {
+        localStorage.removeItem('kpl_public_players_cache');
+        localStorage.removeItem('kpl_home_cache');
+      } catch (e) {}
+
+      showToast(`Removed retained / playing owner from ${team.name}.`);
+      await loadTeams(true);
+      if (squadModal && squadModal.id === team.id) {
+        setSquadModal({ ...team, captain_name: '', captain: '' });
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to remove', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleMakeCaptain(team: Team, player: any) {
     setSaving(true);
     try {
       const cleanOldRole = (player.role || 'Player').replace(/captain\s*(&\s*)?/gi, '').trim();
-      const newRole = cleanOldRole ? `Captain & ${cleanOldRole}` : 'Captain';
+      const newRole = cleanOldRole ? `Retained Player & ${cleanOldRole}` : 'Retained Player';
 
-      // 1. Assign player to this team and set Captain role
+      // 1. Assign player to this team and set Retained role with ₹1,500 cost
       await kplApi.updatePlayer(player.id, {
         team_id: team.id,
         role: newRole,
+        sold_price: 1500,
+        auction_eligible: 0,
       });
 
-      // 2. Demote any other captain in this team to regular player role
+      // 2. Demote any other retain/captain in this team to regular player role
       const otherCaptains = players.filter(p => 
         String(p.team_id) === String(team.id) && 
         p.id !== player.id && 
-        (p.role || '').toLowerCase().includes('captain')
+        ((p.role || '').toLowerCase().includes('captain') || (p.role || '').toLowerCase().includes('retain'))
       );
       for (const other of otherCaptains) {
-        const demotedRole = (other.role || 'Player').replace(/captain\s*(&\s*)?/gi, '').trim() || 'Player';
+        const demotedRole = (other.role || 'Player').replace(/captain\s*(&\s*)?/gi, '').replace(/retained?\s*(player)?\s*(&\s*)?/gi, '').trim() || 'Player';
         await kplApi.updatePlayer(other.id, { role: demotedRole }).catch(() => {});
       }
 
@@ -116,13 +297,13 @@ export default function TeamsPage() {
         localStorage.removeItem('kpl_home_cache');
       } catch (e) {}
 
-      showToast(`⭐ ${player.player_name} is now appointed Captain of ${team.name}!`);
+      showToast(`💎 ${player.player_name} appointed as Retained Player (₹1,500) for ${team.name}!`);
       await loadTeams(true);
       if (squadModal && squadModal.id === team.id) {
         setSquadModal({ ...team, captain_name: player.player_name, captain: player.player_name });
       }
     } catch (err: any) {
-      showToast(err.message || 'Failed to appoint captain', 'error');
+      showToast(err.message || 'Failed to appoint retained player', 'error');
     } finally {
       setSaving(false);
     }
@@ -177,12 +358,35 @@ export default function TeamsPage() {
       owner: t.owner_name || t.owner || '',
       captain: existingCaptainName,
       home_location: t.home_location || '',
-      logo_url: t.logo_url || ''
+      logo_url: t.logo_url || '',
+      budget: String(t.budget ?? 100000)
     });
     setSelectedCaptainId(matchedId);
     setCaptainMode('select');
     setSelected(t);
     setModal('edit');
+  }
+
+  function openCoinModal(t: Team) {
+    setCoinModal(t);
+    setCoinAmount(String(t.budget ?? 100000));
+  }
+
+  async function handleSaveCoins(e: React.FormEvent) {
+    e.preventDefault();
+    if (!coinModal) return;
+    setSaving(true);
+    const newCoins = parseFloat(coinAmount) || 0;
+    try {
+      await kplApi.updateTeam(coinModal.id, { budget: newCoins });
+      showToast(`Updated coins for ${coinModal.name}: ₹${newCoins.toLocaleString('en-IN')}`);
+      setCoinModal(null);
+      loadTeams(true);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update coins', 'error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   function openDelete(t: Team) { setSelected(t); setModal('delete'); }
@@ -381,80 +585,112 @@ export default function TeamsPage() {
     },
     {
       key: 'captain',
-      label: 'Captain',
+      label: 'Retained & Owner',
       sortable: true,
       render: t => {
-        const capPlayer = getTeamCaptainPlayer(t);
-        const capName = capPlayer ? capPlayer.player_name : (t.captain_name || t.captain || '');
-        if (capPlayer) {
-          return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {capPlayer.photo ? (
-                <img src={getImageUrl(capPlayer.photo)} alt={capName} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
-              ) : (
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(234,179,8,0.15)', color: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700 }}>
-                  <Crown size={14} />
-                </div>
-              )}
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '4px', color: '#f8fafc' }}>
-                  <span>{capName}</span>
-                  <Crown size={12} color="#eab308" fill="#eab308" />
-                </div>
-                <div style={{ fontSize: '10.5px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>{capPlayer.role?.replace(/captain\s*(&\s*)?/gi, '').trim() || 'Captain'}</span>
-                  <button
-                    type="button"
-                    onClick={() => setSquadModal(t)}
-                    style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontSize: '10.5px' }}
-                  >
-                    Change
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        }
+        const retainPlayer = getTeamRetainPlayer(t) || getTeamCaptainPlayer(t);
+        const ownerPlayer = getTeamOwnerPlayer(t);
+        const retainName = retainPlayer ? retainPlayer.player_name : (t.captain_name || t.captain || '');
+        const ownerName = t.owner_name || t.owner || '';
 
-        if (capName) {
-          return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontWeight: 600, fontSize: '12.5px' }}>{capName}</span>
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            {/* Retain player */}
+            {retainPlayer ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '10px', background: 'rgba(245, 200, 66, 0.15)', color: '#f5c842', border: '1px solid rgba(245, 200, 66, 0.35)', padding: '1px 5px', borderRadius: 4, fontWeight: 800 }}>
+                  RETAIN ₹1.5k
+                </span>
+                <span style={{ fontWeight: 700, fontSize: '12.5px', color: '#f8fafc' }}>{retainName}</span>
+                <button
+                  type="button"
+                  onClick={() => setSquadModal(t)}
+                  style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontSize: '10.5px' }}
+                >
+                  Change
+                </button>
+              </div>
+            ) : retainName ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '10px', color: '#f5c842' }}>Retain:</span>
+                <span style={{ fontWeight: 600, fontSize: '12px' }}>{retainName}</span>
+                <button
+                  type="button"
+                  onClick={() => setSquadModal(t)}
+                  className="admin-btn admin-btn-ghost"
+                  style={{ padding: '1px 5px', fontSize: '10.5px' }}
+                >
+                  Edit
+                </button>
+              </div>
+            ) : (
               <button
                 type="button"
                 onClick={() => setSquadModal(t)}
-                className="admin-btn admin-btn-ghost"
-                style={{ padding: '2px 6px', fontSize: '10.5px' }}
-                title="Change or link player as captain"
+                className="admin-btn"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '3px 8px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: '#f5c842',
+                  background: 'rgba(245, 200, 66, 0.1)',
+                  border: '1px solid rgba(245, 200, 66, 0.35)',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  width: 'fit-content',
+                }}
               >
-                Change
+                <Award size={12} />
+                <span>+ Retain Player (₹1500)</span>
               </button>
-            </div>
-          );
-        }
+            )}
 
-        return (
-          <button
-            type="button"
-            onClick={() => setSquadModal(t)}
-            className="admin-btn"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '4px 10px',
-              fontSize: '11.5px',
-              fontWeight: 700,
-              color: '#eab308',
-              background: 'rgba(234, 179, 8, 0.1)',
-              border: '1px solid rgba(234, 179, 8, 0.35)',
-              borderRadius: '6px',
-              cursor: 'pointer',
-            }}
-          >
-            <Crown size={12} />
-            <span>+ Make Captain</span>
-          </button>
+            {/* Owner Player Badge */}
+            {ownerPlayer ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#38bdf8' }}>
+                <span style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.35)', padding: '0px 5px', borderRadius: 4, fontWeight: 700, fontSize: '9.5px' }}>
+                  OWNER (PLAYS)
+                </span>
+                <span>{ownerPlayer.player_name}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveRetainOrOwner(t)}
+                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontSize: '10px', marginLeft: 4 }}
+                  title="Remove playing owner designation"
+                >
+                  Clear
+                </button>
+              </div>
+            ) : (
+              <span style={{ fontSize: '10.5px', color: '#64748b' }}>
+                Owner: {ownerName || 'None'}
+              </span>
+            )}
+
+            {/* Quick Remove button if retain is set */}
+            {retainPlayer && (
+              <button
+                type="button"
+                onClick={() => handleRemoveRetainOrOwner(t)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#ef4444',
+                  cursor: 'pointer',
+                  padding: 0,
+                  textDecoration: 'underline',
+                  fontSize: '10px',
+                  alignSelf: 'flex-start',
+                }}
+                title="Remove retained player designation"
+              >
+                ✕ Clear Retain (₹1500)
+              </button>
+            )}
+          </div>
         );
       },
     },
@@ -486,6 +722,44 @@ export default function TeamsPage() {
           >
             <Users size={12} />
             <span>{count} / 18 Players</span>
+          </button>
+        );
+      },
+    },
+    {
+      key: 'budget' as any,
+      label: 'Coins / Purse',
+      render: t => {
+        const budget = Number(t.budget ?? 100000);
+        const teamPlayers = players.filter(p => String(p.team_id) === String(t.id));
+        const spent = teamPlayers.reduce((sum, p) => sum + (Number(p.sold_price) || 0), 0);
+        const remaining = Math.max(0, budget - spent);
+
+        return (
+          <button
+            type="button"
+            onClick={() => openCoinModal(t)}
+            className="admin-btn"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 9px',
+              fontSize: '11.5px',
+              fontWeight: 700,
+              background: 'rgba(234, 179, 8, 0.1)',
+              border: '1px solid rgba(234, 179, 8, 0.35)',
+              color: '#facc15',
+              borderRadius: '6px',
+              cursor: 'pointer',
+            }}
+            title="Click to update team coins / purse budget"
+          >
+            <Coins size={13} color="#facc15" />
+            <span>₹{remaining.toLocaleString('en-IN')}</span>
+            <span style={{ fontSize: '10px', color: 'rgba(250, 204, 21, 0.7)', fontWeight: 500 }}>
+              / {budget.toLocaleString('en-IN')}
+            </span>
           </button>
         );
       },
@@ -581,6 +855,12 @@ export default function TeamsPage() {
       key: 'actions', label: 'Actions',
       render: t => (
         <div className="dt-actions">
+          <button className="dt-btn dt-btn-icon" title="Update Coins / Budget" onClick={() => openCoinModal(t)}>
+            <Coins size={14} color="#facc15" />
+          </button>
+          <button className="dt-btn dt-btn-icon" title="Print Team Details (Name, Owner, Retain Player)" onClick={() => printTeamDetails([t], players)}>
+            <Printer size={14} color="#3b82f6" />
+          </button>
           <button className="dt-btn dt-btn-icon" title="View / Verify Payment" onClick={() => openTeamPaymentProof(t)}>
             <CreditCard size={14} color="#10b981" />
           </button>
@@ -622,9 +902,98 @@ export default function TeamsPage() {
             </div>
             <p style={{ marginTop: '4px' }}>Manage franchise teams, squad limits, owner details, and verify franchise registration payments.</p>
           </div>
-          <button className="admin-btn admin-btn-primary" onClick={openCreate}>
-            <Plus size={16} /> New Team
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Team Selector & Print Controls */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(15, 23, 42, 0.75)',
+              border: '1px solid var(--adm-border)',
+              borderRadius: '8px',
+              padding: '4px 6px'
+            }}>
+              <select
+                value={selectedPrintTeamId}
+                onChange={e => setSelectedPrintTeamId(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#f8fafc',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  padding: '4px 8px',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  maxWidth: '190px'
+                }}
+                title="Select team to print: Team Name, Owner, Retain Player"
+              >
+                <option value="all" style={{ background: '#0f172a', color: '#fff' }}>
+                  ★ All Franchises ({teams.length})
+                </option>
+                {teams.map(t => (
+                  <option key={t.id} value={t.id} style={{ background: '#0f172a', color: '#fff' }}>
+                    {t.name} ({t.short_code})
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                className="admin-btn"
+                onClick={() => {
+                  if (selectedPrintTeamId === 'all') {
+                    printTeamDetails(teams, players);
+                  } else {
+                    const chosen = teams.filter(t => String(t.id) === String(selectedPrintTeamId));
+                    printTeamDetails(chosen, players);
+                  }
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'rgba(59, 130, 246, 0.2)',
+                  border: '1px solid rgba(59, 130, 246, 0.45)',
+                  color: '#60a5fa',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
+                title="Print selected team details: Team Name, Owner Name, Retain Player"
+              >
+                <Printer size={14} />
+                <span>Print Details</span>
+              </button>
+
+              <button
+                type="button"
+                className="admin-btn admin-btn-ghost"
+                onClick={() => setPrintModalOpen(true)}
+                style={{
+                  padding: '5px 7px',
+                  fontSize: '11px',
+                  color: 'var(--adm-text-muted)',
+                  borderLeft: '1px solid var(--adm-border)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px'
+                }}
+                title="Open Team Print Selection & Live Preview Modal"
+              >
+                <span>Select</span>
+                <Eye size={12} />
+              </button>
+            </div>
+
+            <button className="admin-btn admin-btn-primary" onClick={openCreate}>
+              <Plus size={16} /> New Team
+            </button>
+          </div>
         </div>
 
         {/* Top Metric Cards */}
@@ -727,7 +1096,7 @@ export default function TeamsPage() {
                   <div className="admin-form-field admin-form-full">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <label style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-                        <Crown size={14} color="#eab308" /> CAPTAIN
+                        <Award size={14} color="#f5c842" /> RETAIN PLAYER (₹1,500)
                       </label>
                       <button
                         type="button"
@@ -792,7 +1161,7 @@ export default function TeamsPage() {
                               }}
                             >
                               <option value="" style={{ background: '#0f172a', color: '#94a3b8' }}>
-                                -- Select Captain from Registered Player List ({players.length} Players) --
+                                -- Select Retain Player (Cost: ₹1,500) from Registered List ({players.length} Players) --
                               </option>
                               {form.captain && !currentCaptainPlayer && (
                                 <option value="__custom_val__" style={{ background: '#0f172a', color: '#facc15' }}>
@@ -866,9 +1235,22 @@ export default function TeamsPage() {
                       );
                     })()}
                   </div>
-                  <div className="admin-form-field admin-form-full">
+                  <div className="admin-form-field">
                     <label>Home Location</label>
                     <input type="text" value={form.home_location} onChange={e => setForm({ ...form, home_location: e.target.value })} placeholder="City / Town" />
+                  </div>
+                  <div className="admin-form-field">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Coins size={13} color="#facc15" /> Coins / Purse Budget (₹)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={500}
+                      value={(form as any).budget ?? '100000'}
+                      onChange={e => setForm({ ...form, budget: e.target.value })}
+                      placeholder="100000"
+                    />
                   </div>
                 </div>
                 <div className="admin-modal-footer">
@@ -1065,61 +1447,154 @@ export default function TeamsPage() {
                     </p>
                   </div>
                 </div>
-                <button onClick={() => { setSquadModal(null); setSquadSearch(''); }} style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer' }}>
-                  <X size={20} />
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn-ghost"
+                    onClick={() => printTeamDetails([squadModal], players)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      color: '#60a5fa',
+                      border: '1px solid rgba(59, 130, 246, 0.4)',
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      fontSize: '11.5px',
+                      padding: '5px 10px',
+                      cursor: 'pointer'
+                    }}
+                    title="Print this team's details (Name, Owner, Retain Player & Squad)"
+                  >
+                    <Printer size={13} />
+                    <span>Print Team</span>
+                  </button>
+                  <button onClick={() => { setSquadModal(null); setSquadSearch(''); }} style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer' }}>
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
 
               {/* Modal Body */}
               <div className="admin-modal-body" style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-                {/* Captain Banner */}
+                {/* Retain & Owner Squad Banner */}
                 {(() => {
-                  const currentCapPlayer = getTeamCaptainPlayer(squadModal);
-                  const currentCapName = currentCapPlayer ? currentCapPlayer.player_name : (squadModal.captain_name || squadModal.captain || '');
+                  const retainPlayer = getTeamRetainPlayer(squadModal) || getTeamCaptainPlayer(squadModal);
+                  const ownerPlayer = getTeamOwnerPlayer(squadModal);
+                  const retainName = retainPlayer ? retainPlayer.player_name : (squadModal.captain_name || squadModal.captain || '');
+                  const ownerName = squadModal.owner_name || squadModal.owner || '';
 
                   return (
                     <div style={{
-                      background: currentCapName ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(15, 23, 42, 0.8))' : 'rgba(255, 255, 255, 0.03)',
-                      border: currentCapName ? '1.5px solid rgba(234, 179, 8, 0.4)' : '1px dashed var(--adm-border)',
-                      borderRadius: '12px',
-                      padding: '16px 20px',
-                      marginBottom: '20px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '12px'
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                      gap: '12px',
+                      marginBottom: '20px'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        {currentCapPlayer?.photo ? (
-                          <img src={getImageUrl(currentCapPlayer.photo)} alt={currentCapName} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: '2px solid #eab308' }} />
-                        ) : (
-                          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(234, 179, 8, 0.2)', border: '2px solid #eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#eab308' }}>
-                            <Crown size={24} />
-                          </div>
-                        )}
-                        <div>
-                          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', color: '#eab308', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Crown size={12} fill="#eab308" /> Team Captain
-                          </div>
-                          <div style={{ fontSize: '17px', fontWeight: 800, color: '#fff', marginTop: '2px' }}>
-                            {currentCapName || 'No Captain Appointed'}
-                          </div>
-                          {currentCapPlayer && (
-                            <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
-                              {currentCapPlayer.role?.replace(/captain\s*(&\s*)?/gi, '').trim() || 'Player'} • ID: {currentCapPlayer.registration_number || 'N/A'} • {currentCapPlayer.contact_number || ''}
+                      {/* Retain Player Card */}
+                      <div style={{
+                        background: retainName ? 'linear-gradient(135deg, rgba(245, 200, 66, 0.12), rgba(15, 23, 42, 0.8))' : 'rgba(255, 255, 255, 0.03)',
+                        border: retainName ? '1.5px solid rgba(245, 200, 66, 0.45)' : '1px dashed var(--adm-border)',
+                        borderRadius: '12px',
+                        padding: '14px 18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          {retainPlayer?.photo ? (
+                            <img src={getImageUrl(retainPlayer.photo)} alt={retainName} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid #f5c842' }} />
+                          ) : (
+                            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(245, 200, 66, 0.2)', border: '2px solid #f5c842', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f5c842' }}>
+                              <Award size={22} />
                             </div>
                           )}
+                          <div>
+                            <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', color: '#f5c842', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <Award size={12} fill="#f5c842" /> Retain Player (₹1,500)
+                            </div>
+                            <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff', marginTop: '2px' }}>
+                              {retainName || 'No Retain Set'}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                              {retainPlayer ? `Cost: ₹1,500 • Reg: #${retainPlayer.registration_number || retainPlayer.id}` : 'Cost deducted from purse'}
+                            </div>
+                          </div>
                         </div>
+
+                        {retainPlayer && (
+                          <button
+                            type="button"
+                            disabled={saving}
+                            onClick={() => handleRemoveRetainOrOwner(squadModal)}
+                            className="admin-btn admin-btn-ghost"
+                            style={{
+                              fontSize: '11.5px',
+                              padding: '5px 10px',
+                              color: '#ef4444',
+                              border: '1px solid rgba(239, 68, 68, 0.35)',
+                              borderRadius: '6px',
+                              background: 'rgba(239, 68, 68, 0.08)',
+                            }}
+                            title="Remove Retain Player"
+                          >
+                            ✕ Remove Retain
+                          </button>
+                        )}
                       </div>
 
-                      {currentCapName && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '11.5px', background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', padding: '4px 10px', borderRadius: '6px', fontWeight: 700 }}>
-                            👑 Leading {squadModal.short_code}
-                          </span>
+                      {/* Owner Player Card */}
+                      <div style={{
+                        background: ownerPlayer ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.8))' : 'rgba(255, 255, 255, 0.03)',
+                        border: ownerPlayer ? '1.5px solid rgba(56, 189, 248, 0.45)' : '1px dashed var(--adm-border)',
+                        borderRadius: '12px',
+                        padding: '14px 18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          {ownerPlayer?.photo ? (
+                            <img src={getImageUrl(ownerPlayer.photo)} alt={ownerPlayer.player_name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid #38bdf8' }} />
+                          ) : (
+                            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(56, 189, 248, 0.2)', border: '2px solid #38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
+                              <Crown size={22} />
+                            </div>
+                          )}
+                          <div>
+                            <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', color: '#38bdf8', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <Crown size={12} fill="#38bdf8" /> Franchise Owner
+                            </div>
+                            <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff', marginTop: '2px' }}>
+                              {ownerPlayer ? ownerPlayer.player_name : (ownerName || 'Franchise Owner')}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                              {ownerPlayer ? 'Plays in squad • Squad member' : 'Non-playing owner'}
+                            </div>
+                          </div>
                         </div>
-                      )}
+
+                        {ownerPlayer && (
+                          <button
+                            type="button"
+                            disabled={saving}
+                            onClick={() => handleRemoveRetainOrOwner(squadModal)}
+                            className="admin-btn admin-btn-ghost"
+                            style={{
+                              fontSize: '11.5px',
+                              padding: '5px 10px',
+                              color: '#ef4444',
+                              border: '1px solid rgba(239, 68, 68, 0.35)',
+                              borderRadius: '6px',
+                              background: 'rgba(239, 68, 68, 0.08)',
+                            }}
+                            title="Remove Playing Owner"
+                          >
+                            ✕ Remove Owner
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })()}
@@ -1127,7 +1602,8 @@ export default function TeamsPage() {
                 {/* Section 1: Assigned Team Squad Players */}
                 {(() => {
                   const squadPlayers = players.filter(p => String(p.team_id) === String(squadModal.id));
-                  const currentCapPlayer = getTeamCaptainPlayer(squadModal);
+                  const retainPlayer = getTeamRetainPlayer(squadModal) || getTeamCaptainPlayer(squadModal);
+                  const ownerPlayer = getTeamOwnerPlayer(squadModal);
 
                   return (
                     <div style={{ marginBottom: '24px' }}>
@@ -1136,18 +1612,19 @@ export default function TeamsPage() {
                           <Users size={15} color="#10b981" /> Current Squad Players ({squadPlayers.length} / 18)
                         </h3>
                         <span style={{ fontSize: '11.5px', color: 'var(--adm-text-muted)' }}>
-                          Click &quot;Make Captain&quot; to designate captain from squad
+                          Rule: 1 Player per team — Retain (₹1,500) OR Playing Owner
                         </span>
                       </div>
 
                       {squadPlayers.length === 0 ? (
                         <div style={{ padding: '24px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px dashed var(--adm-border)', color: 'var(--adm-text-muted)', fontSize: '13px' }}>
-                          No players currently assigned to this team. You can assign and appoint a captain from the registered players list below!
+                          No players currently assigned to this team. You can assign and appoint a retain/owner player below!
                         </div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           {squadPlayers.map((p, idx) => {
-                            const isCaptain = (currentCapPlayer && currentCapPlayer.id === p.id) || (p.role || '').toLowerCase().includes('captain');
+                            const isRetain = (retainPlayer && retainPlayer.id === p.id) || (p.role || '').toLowerCase().includes('retain');
+                            const isOwner = (ownerPlayer && ownerPlayer.id === p.id) || (p.role || '').toLowerCase().includes('owner');
 
                             return (
                               <div
@@ -1158,8 +1635,8 @@ export default function TeamsPage() {
                                   justifyContent: 'space-between',
                                   padding: '10px 14px',
                                   borderRadius: '8px',
-                                  background: isCaptain ? 'rgba(234, 179, 8, 0.08)' : 'var(--adm-input-bg)',
-                                  border: isCaptain ? '1.5px solid rgba(234, 179, 8, 0.4)' : '1px solid var(--adm-border)',
+                                  background: isRetain ? 'rgba(245, 200, 66, 0.08)' : (isOwner ? 'rgba(56, 189, 248, 0.08)' : 'var(--adm-input-bg)'),
+                                  border: isRetain ? '1.5px solid rgba(245, 200, 66, 0.45)' : (isOwner ? '1.5px solid rgba(56, 189, 248, 0.45)' : '1px solid var(--adm-border)'),
                                 }}
                               >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1176,47 +1653,71 @@ export default function TeamsPage() {
                                   <div>
                                     <div style={{ fontWeight: 700, fontSize: '13px', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                       <span>{p.player_name}</span>
-                                      {isCaptain && (
-                                        <span title="Team Captain" style={{ display: 'inline-flex' }}>
-                                          <Crown size={13} color="#eab308" fill="#eab308" />
+                                      {isRetain && (
+                                        <span style={{ fontSize: '10px', background: 'rgba(245, 200, 66, 0.2)', color: '#f5c842', border: '1px solid #f5c842', padding: '1px 5px', borderRadius: 4, fontWeight: 800 }}>
+                                          💎 RETAINED (₹1,500)
+                                        </span>
+                                      )}
+                                      {isOwner && (
+                                        <span style={{ fontSize: '10px', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '1px 5px', borderRadius: 4, fontWeight: 800 }}>
+                                          👑 OWNER (PLAYS)
                                         </span>
                                       )}
                                     </div>
                                     <div style={{ fontSize: '11.5px', color: '#94a3b8' }}>
-                                      {p.role?.replace(/captain\s*(&\s*)?/gi, '').trim() || 'Player'} • ID: {p.registration_number || 'N/A'} • {p.contact_number || 'No phone'}
+                                      {p.role?.replace(/retained?\s*(player)?\s*(&\s*)?/gi, '').replace(/owner\s*(&\s*)?/gi, '').trim() || 'Player'} • ID: {p.registration_number || 'N/A'} • {p.contact_number || 'No phone'}
                                     </div>
                                   </div>
                                 </div>
 
-                                <div>
-                                  {isCaptain ? (
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '6px', background: 'rgba(234, 179, 8, 0.2)', border: '1px solid #eab308', color: '#eab308', fontWeight: 800, fontSize: '12px' }}>
-                                      <Crown size={13} fill="#eab308" /> Current Captain
-                                    </span>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      disabled={saving}
-                                      onClick={() => handleMakeCaptain(squadModal, p)}
-                                      className="admin-btn"
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '5px 12px',
-                                        borderRadius: '6px',
-                                        background: 'rgba(234, 179, 8, 0.12)',
-                                        border: '1px solid rgba(234, 179, 8, 0.45)',
-                                        color: '#eab308',
-                                        fontWeight: 700,
-                                        fontSize: '12px',
-                                        cursor: 'pointer',
-                                      }}
-                                    >
-                                      <Crown size={12} />
-                                      <span>Make Captain</span>
-                                    </button>
-                                  )}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  {/* Retain toggle button */}
+                                  <button
+                                    type="button"
+                                    disabled={saving}
+                                    onClick={() => handleSetRetainedPlayer(squadModal, p)}
+                                    className="admin-btn"
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '5px',
+                                      padding: '4px 9px',
+                                      borderRadius: '6px',
+                                      background: isRetain ? 'rgba(245, 200, 66, 0.25)' : 'rgba(245, 200, 66, 0.1)',
+                                      border: '1px solid rgba(245, 200, 66, 0.45)',
+                                      color: '#f5c842',
+                                      fontWeight: 700,
+                                      fontSize: '11.5px',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    <Award size={12} />
+                                    <span>{isRetain ? 'Retained (₹1.5k)' : 'Make Retain'}</span>
+                                  </button>
+
+                                  {/* Owner toggle button */}
+                                  <button
+                                    type="button"
+                                    disabled={saving}
+                                    onClick={() => handleSetOwnerPlayer(squadModal, p)}
+                                    className="admin-btn"
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '5px',
+                                      padding: '4px 9px',
+                                      borderRadius: '6px',
+                                      background: isOwner ? 'rgba(56, 189, 248, 0.25)' : 'rgba(56, 189, 248, 0.1)',
+                                      border: '1px solid rgba(56, 189, 248, 0.45)',
+                                      color: '#38bdf8',
+                                      fontWeight: 700,
+                                      fontSize: '11.5px',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    <Crown size={12} />
+                                    <span>{isOwner ? 'Playing Owner' : 'Make Owner'}</span>
+                                  </button>
                                 </div>
                               </div>
                             );
@@ -1306,24 +1807,50 @@ export default function TeamsPage() {
                                 </div>
                               </div>
 
-                              <button
-                                type="button"
-                                disabled={saving}
-                                onClick={() => handleMakeCaptain(squadModal, p)}
-                                className="admin-btn admin-btn-primary"
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '5px',
-                                  fontSize: '11.5px',
-                                  padding: '4px 10px',
-                                  borderRadius: '6px',
-                                  fontWeight: 700,
-                                }}
-                              >
-                                <Crown size={12} />
-                                <span>Assign & Make Captain</span>
-                              </button>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <button
+                                  type="button"
+                                  disabled={saving}
+                                  onClick={() => handleSetRetainedPlayer(squadModal, p)}
+                                  className="admin-btn"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    fontSize: '11px',
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    fontWeight: 700,
+                                    background: 'rgba(245, 200, 66, 0.15)',
+                                    border: '1px solid rgba(245, 200, 66, 0.45)',
+                                    color: '#f5c842',
+                                  }}
+                                >
+                                  <Award size={12} />
+                                  <span>Retain (₹1.5k)</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={saving}
+                                  onClick={() => handleSetOwnerPlayer(squadModal, p)}
+                                  className="admin-btn"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    fontSize: '11px',
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    fontWeight: 700,
+                                    background: 'rgba(56, 189, 248, 0.15)',
+                                    border: '1px solid rgba(56, 189, 248, 0.45)',
+                                    color: '#38bdf8',
+                                  }}
+                                >
+                                  <Crown size={12} />
+                                  <span>Owner</span>
+                                </button>
+                              </div>
                             </div>
                           ))
                         )}
@@ -1341,6 +1868,313 @@ export default function TeamsPage() {
                   onClick={() => { setSquadModal(null); setSquadSearch(''); }}
                 >
                   Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Coin / Budget Updation Modal */}
+        {coinModal && (
+          <div className="admin-modal-overlay" style={{ zIndex: 9999 }} onClick={() => setCoinModal(null)}>
+            <div
+              className="admin-modal admin-modal-sm"
+              style={{ maxWidth: '440px' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="admin-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Coins size={20} color="#facc15" />
+                  <h2 style={{ margin: 0, fontSize: '17px' }}>Update Team Coins</h2>
+                </div>
+                <button onClick={() => setCoinModal(null)} style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer' }}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveCoins}>
+                <div className="admin-modal-body" style={{ padding: '20px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '16px',
+                    padding: '12px',
+                    background: 'rgba(250, 204, 21, 0.08)',
+                    border: '1px solid rgba(250, 204, 21, 0.25)',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      background: `${coinModal.accent_color || coinModal.color || '#3b82f6'}25`,
+                      border: `1.5px solid ${coinModal.accent_color || coinModal.color || '#3b82f6'}`,
+                      color: coinModal.accent_color || coinModal.color || '#3b82f6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 800,
+                      fontSize: '14px'
+                    }}>
+                      {coinModal.short_code}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, color: '#f8fafc', fontSize: '15px' }}>{coinModal.name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--adm-text-muted)' }}>
+                        Current Budget: <strong style={{ color: '#facc15' }}>₹{Number(coinModal.budget ?? 100000).toLocaleString('en-IN')}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="admin-form-field">
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                      Set Total Coins / Purse Budget (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      step={500}
+                      value={coinAmount}
+                      onChange={e => setCoinAmount(e.target.value)}
+                      placeholder="e.g. 100000"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        fontSize: '15px',
+                        fontWeight: 700,
+                        background: 'var(--adm-input-bg)',
+                        border: '1px solid var(--adm-border)',
+                        color: '#facc15',
+                        borderRadius: '6px',
+                        outline: 'none',
+                      }}
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Quick Preset Buttons */}
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
+                    {[50000, 75000, 100000, 150000, 200000].map(val => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setCoinAmount(String(val))}
+                        style={{
+                          background: coinAmount === String(val) ? 'rgba(250, 204, 21, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                          border: coinAmount === String(val) ? '1px solid #facc15' : '1px solid var(--adm-border)',
+                          color: coinAmount === String(val) ? '#facc15' : 'var(--adm-text-secondary)',
+                          fontSize: '11px',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                        }}
+                      >
+                        ₹{(val / 1000)}k
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="admin-modal-footer" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  <button type="button" className="admin-btn admin-btn-ghost" onClick={() => setCoinModal(null)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="admin-btn admin-btn-primary" disabled={saving} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    {saving ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />}
+                    <span>Save Coins</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Print Team Details Modal with Selection & Live Preview */}
+        {printModalOpen && (
+          <div className="admin-modal-overlay" style={{ zIndex: 9999 }} onClick={() => setPrintModalOpen(false)}>
+            <div
+              className="admin-modal"
+              style={{ maxWidth: '840px', width: '94%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="admin-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--adm-border)' }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '17px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Printer size={18} color="#3b82f6" /> Select Team & Print Details
+                  </h2>
+                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: 'var(--adm-text-muted)' }}>
+                    Outputs official printout containing: <strong>TEAM NAME</strong>, <strong>OWNER NAME</strong>, and <strong>RETAIN PLAYER</strong>.
+                  </p>
+                </div>
+                <button onClick={() => setPrintModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer' }}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="admin-modal-body" style={{ flex: 1, padding: '18px 20px', overflowY: 'auto' }}>
+                {/* Team Selection Dropdown & Quick Badges */}
+                <div style={{ marginBottom: '18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#f8fafc' }}>
+                      Choose Franchise to Print:
+                    </label>
+                    <span style={{ fontSize: '11px', color: 'var(--adm-text-muted)' }}>
+                      {teams.length} Franchises registered
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <select
+                      value={selectedPrintTeamId}
+                      onChange={e => setSelectedPrintTeamId(e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        background: 'var(--adm-input-bg)',
+                        border: '1px solid var(--adm-border)',
+                        color: '#fff',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        outline: 'none'
+                      }}
+                    >
+                      <option value="all">★ All Franchises ({teams.length} Teams)</option>
+                      {teams.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} ({t.short_code})
+                        </option>
+                      ))}
+                    </select>
+
+                    {selectedPrintTeamId !== 'all' && (
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn-ghost"
+                        onClick={() => setSelectedPrintTeamId('all')}
+                        style={{ fontSize: '12px', whiteSpace: 'nowrap', padding: '9px 14px' }}
+                      >
+                        Reset to All Teams
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Live Preview Card / Table */}
+                {(() => {
+                  const previewList = selectedPrintTeamId === 'all'
+                    ? teams
+                    : teams.filter(t => String(t.id) === String(selectedPrintTeamId));
+
+                  return (
+                    <div style={{ border: '1px solid var(--adm-border)', borderRadius: '10px', overflow: 'hidden', background: 'rgba(15, 23, 42, 0.45)' }}>
+                      <div style={{ padding: '10px 14px', background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid var(--adm-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#94a3b8' }}>
+                          Print Preview ({previewList.length} {previewList.length === 1 ? 'Team' : 'Teams'})
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 700 }}>
+                          ✓ Ready for A4 Print / PDF
+                        </span>
+                      </div>
+
+                      <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                          <thead>
+                            <tr style={{ background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid var(--adm-border)' }}>
+                              <th style={{ padding: '8px 12px', width: '35px', color: '#94a3b8', fontSize: '11px' }}>#</th>
+                              <th style={{ padding: '8px 12px', width: '33%', color: '#94a3b8', fontSize: '11px' }}>TEAM NAME</th>
+                              <th style={{ padding: '8px 12px', width: '33%', color: '#94a3b8', fontSize: '11px' }}>OWNER NAME</th>
+                              <th style={{ padding: '8px 12px', width: '34%', color: '#94a3b8', fontSize: '11px' }}>RETAIN PLAYER</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {previewList.length === 0 ? (
+                              <tr>
+                                <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                                  No teams found to display.
+                                </td>
+                              </tr>
+                            ) : (
+                              previewList.map((t, idx) => {
+                                const retainP = getTeamRetainPlayer(t) || getTeamCaptainPlayer(t);
+                                const ownerP = getTeamOwnerPlayer(t);
+                                const retainName = retainP ? retainP.player_name : (t.captain_name || t.captain || '');
+                                const ownerName = ownerP ? ownerP.player_name : (t.owner_name || t.owner || '—');
+                                const tColor = t.accent_color || t.color || '#3b82f6';
+
+                                return (
+                                  <tr key={t.id} style={{ borderBottom: '1px solid var(--adm-border)' }}>
+                                    <td style={{ padding: '10px 12px', color: '#64748b', fontWeight: 700 }}>{idx + 1}</td>
+                                    <td style={{ padding: '10px 12px' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ width: 10, height: 10, borderRadius: 2, background: tColor, flexShrink: 0 }}></span>
+                                        <div>
+                                          <div style={{ fontWeight: 800, color: '#f8fafc', fontSize: '13px' }}>{t.name}</div>
+                                          <div style={{ fontSize: '11px', color: '#64748b' }}>Code: {t.short_code}</div>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td style={{ padding: '10px 12px' }}>
+                                      <div style={{ fontWeight: 700, color: '#38bdf8', fontSize: '13px' }}>{ownerName}</div>
+                                      {t.owner_contact && <div style={{ fontSize: '11px', color: '#64748b' }}>📞 {t.owner_contact}</div>}
+                                      {ownerP && (
+                                        <span style={{ fontSize: '9.5px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '1px 5px', borderRadius: 4, fontWeight: 800, marginTop: '2px', display: 'inline-block' }}>
+                                          PLAYING OWNER
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td style={{ padding: '10px 12px' }}>
+                                      {retainName ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                          <div style={{ fontWeight: 800, color: '#10b981', fontSize: '13px' }}>★ {retainName}</div>
+                                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                                            <span style={{ fontSize: '9.5px', background: 'rgba(245, 200, 66, 0.18)', color: '#f5c842', padding: '1px 5px', borderRadius: '4px', fontWeight: 800 }}>
+                                              RETAINED ₹1,500
+                                            </span>
+                                            {retainP?.registration_number && (
+                                              <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>#{retainP.registration_number}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <span style={{ color: '#64748b', fontSize: '11.5px', fontStyle: 'italic' }}>— None / Open Retain Slot —</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="admin-modal-footer" style={{ padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--adm-border)' }}>
+                <button type="button" className="admin-btn admin-btn-ghost" onClick={() => setPrintModalOpen(false)}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-primary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 20px', fontWeight: 700 }}
+                  onClick={() => {
+                    const toPrint = selectedPrintTeamId === 'all'
+                      ? teams
+                      : teams.filter(t => String(t.id) === String(selectedPrintTeamId));
+                    printTeamDetails(toPrint, players);
+                    setPrintModalOpen(false);
+                  }}
+                >
+                  <Printer size={15} />
+                  <span>
+                    Print {selectedPrintTeamId === 'all' ? `All ${teams.length} Franchises` : (teams.find(t => String(t.id) === String(selectedPrintTeamId))?.name || 'Selected Team')}
+                  </span>
                 </button>
               </div>
             </div>

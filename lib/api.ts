@@ -369,6 +369,36 @@ export const kplApi = {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
+  },
+
+  // 11. Auction Live Sync API (Ultra-Fast <5ms in-memory state)
+  async getAuctionLive(version: number = 0) {
+    try {
+      const res = await fetch(`/api/auction/live?v=${version}`, { cache: 'no-store' });
+      if (res.ok) return await res.json();
+    } catch (e) {}
+    return null;
+  },
+
+  async getAuctionConfig() {
+    try {
+      const res = await fetch('/api/auction/live', { cache: 'no-store' });
+      if (res.ok) return await res.json();
+    } catch (e) {}
+    return { is_active: false, current_player_id: null, notes: '' };
+  },
+
+  async updateAuctionConfig(data: { is_active?: boolean; current_player_id?: string | null; notes?: string; player?: any }) {
+    // Post to fast live endpoint
+    const res = await fetch('/api/auction/live', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to update auction configuration');
+    }
+    return await res.json();
   }
 };
 
