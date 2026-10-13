@@ -6,6 +6,7 @@ import type { NextRequest } from 'next/server';
  */
 const PUBLIC_ROUTES = [
   '/auction',
+  '/auction/ended',
   '/players',
   '/teams',
   '/gallery',

@@ -8,6 +8,8 @@ const API_MODE = process.env.NEXT_PUBLIC_API_MODE || 'php';
 
 export const isPhpBackend = () => true;
 
+export { compareRegistrationNumbers, getNextPlayerRegId, searchMatchesPlayer, getPlayerAuctionPart } from './printRoster';
+
 export function getImageUrl(path?: string | null): string {
   if (!path || typeof path !== 'string') return '';
   const trimmed = path.trim();
@@ -388,7 +390,7 @@ export const kplApi = {
     return { is_active: false, current_player_id: null, notes: '' };
   },
 
-  async updateAuctionConfig(data: { is_active?: boolean; current_player_id?: string | null; notes?: string; player?: any }) {
+  async updateAuctionConfig(data: { is_active?: boolean; current_player_id?: string | null; notes?: string; player?: any; sold_timestamp?: number | null }) {
     // Post to fast live endpoint
     const res = await fetch('/api/auction/live', {
       method: 'POST',

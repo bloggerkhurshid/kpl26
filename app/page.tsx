@@ -32,7 +32,7 @@ import {
   Activity,
   Swords,
 } from 'lucide-react';
-import { kplApi, getImageUrl } from '@/lib/api';
+import { kplApi, getImageUrl, getNextPlayerRegId } from '@/lib/api';
 import { ManagementSection } from '@/components/ManagementSection';
 import { GallerySection } from '@/components/GallerySection';
 import { SponsorshipSection } from '@/components/SponsorshipSection';
@@ -64,6 +64,7 @@ type Player = {
   role: string;
   photo: string;
   player_category?: string;
+  registration_number?: string | null;
   team_id?: string | null;
   team_name?: string | null;
   team_short_code?: string | null;
@@ -551,7 +552,16 @@ export default function Home() {
 
     setStatus('submitting');
     
-    const newRegNum = `KPL-PLR-${Date.now().toString().slice(-6)}`;
+    // Auto-generate serial registration number starting from KPL-PLY-200 with 3 digits
+    let newRegNum = 'KPL-PLY-200';
+    try {
+      const allPlayers = await kplApi.getPlayers();
+      const pList = Array.isArray(allPlayers) ? allPlayers : (allPlayers as any)?.data || [];
+      newRegNum = getNextPlayerRegId(pList.length > 0 ? pList : players);
+    } catch {
+      newRegNum = getNextPlayerRegId(players);
+    }
+
     const paymentAmount = playerForm.player_category === 'Foreign' ? Number(fees.fee_foreign_player) : Number(fees.fee_player);
 
     // Defer API call until payment proof is submitted

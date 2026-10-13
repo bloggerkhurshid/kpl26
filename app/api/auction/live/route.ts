@@ -7,6 +7,7 @@ interface LiveState {
   current_player_id: string | null;
   notes: string;
   player: any | null;
+  sold_timestamp: number | null;
   stats: {
     pool_count: number;
     sold_count: number;
@@ -23,6 +24,7 @@ let liveState: LiveState = {
   current_player_id: null,
   notes: 'KPL Season 3 Live Auction',
   player: null,
+  sold_timestamp: null,
   stats: {
     pool_count: 0,
     sold_count: 0,
@@ -36,6 +38,7 @@ let liveState: LiveState = {
 
 let lastFullSync = 0;
 let isSyncing = false;
+let hasBootstrapped = false;
 
 // Background sync from remote PHP DB
 async function syncFromDatabase(force: boolean = false) {
@@ -54,14 +57,17 @@ async function syncFromDatabase(force: boolean = false) {
     ]);
 
     const data = contentRes?.data || contentRes || {};
-    if (data.auction_is_active !== undefined) {
-      liveState.is_active = data.auction_is_active === 'true' || data.auction_is_active === true || data.auction_is_active === '1' || data.auction_is_active === 1;
-    }
-    if (data.auction_current_player_id !== undefined) {
-      liveState.current_player_id = data.auction_current_player_id || null;
-    }
-    if (data.auction_notes !== undefined) {
-      liveState.notes = data.auction_notes || '';
+    if (!hasBootstrapped) {
+      if (data.auction_is_active !== undefined) {
+        liveState.is_active = data.auction_is_active === 'true' || data.auction_is_active === true || data.auction_is_active === '1' || data.auction_is_active === 1;
+      }
+      if (data.auction_current_player_id !== undefined) {
+        liveState.current_player_id = data.auction_current_player_id || null;
+      }
+      if (data.auction_notes !== undefined) {
+        liveState.notes = data.auction_notes || '';
+      }
+      hasBootstrapped = true;
     }
 
     const rawPlayers: any[] = Array.isArray(playersRes?.data) ? playersRes.data : (Array.isArray(playersRes) ? playersRes : []);
@@ -186,6 +192,7 @@ export async function GET(req: Request) {
     player: liveState.player,
     teams: liveState.teams,
     recent_sold: (liveState as any).recent_sold || [],
+    sold_timestamp: liveState.sold_timestamp,
   }, {
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -199,12 +206,20 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     if (body.is_active !== undefined) liveState.is_active = Boolean(body.is_active);
-    if (body.current_player_id !== undefined) liveState.current_player_id = body.current_player_id;
     if (body.notes !== undefined) liveState.notes = String(body.notes);
+    if (body.sold_timestamp !== undefined) liveState.sold_timestamp = body.sold_timestamp;
+
+    if (body.current_player_id !== undefined) {
+      if (body.current_player_id !== liveState.current_player_id && body.sold_timestamp === undefined) {
+        liveState.sold_timestamp = null;
+      }
+      liveState.current_player_id = body.current_player_id;
+    }
 
     // If player object passed directly or current_player_id set, update player instantly in memory
     if (body.current_player_id === null) {
       liveState.player = null;
+      liveState.sold_timestamp = null;
     } else if (body.player) {
       liveState.player = body.player;
     }
@@ -212,7 +227,7 @@ export async function POST(req: Request) {
     liveState.version += 1;
     liveState.lastUpdated = Date.now();
 
-    // Asynchronously persist to database and sync stats in background without blocking response
+    // Asynchronously persist to database in background without blocking response
     (async () => {
       try {
         await kplApi.saveContentSettings({
@@ -220,7 +235,6 @@ export async function POST(req: Request) {
           auction_current_player_id: liveState.current_player_id || '',
           auction_notes: liveState.notes,
         });
-        await syncFromDatabase(true);
       } catch (e) {
         console.warn('Failed to persist auction state to database:', e);
       }
@@ -233,6 +247,7 @@ export async function POST(req: Request) {
       current_player_id: liveState.current_player_id,
       notes: liveState.notes,
       player: liveState.player,
+      sold_timestamp: liveState.sold_timestamp,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 400 });

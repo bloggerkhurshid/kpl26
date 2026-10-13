@@ -47,8 +47,23 @@ export async function POST(req: Request) {
       });
     } catch {}
 
+    // Synchronize with in-memory live auction store
+    try {
+      await kplApi.updateAuctionConfig({
+        is_active: memoryConfig.is_active,
+        current_player_id: memoryConfig.current_player_id,
+        notes: memoryConfig.notes,
+        sold_timestamp: null,
+      });
+    } catch {}
+
     return NextResponse.json({ success: true, ...memoryConfig });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
 }
+
+export async function PATCH(req: Request) {
+  return POST(req);
+}
+

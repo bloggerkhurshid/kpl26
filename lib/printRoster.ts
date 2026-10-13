@@ -26,6 +26,214 @@ export interface PrintableTeam {
   accent_color?: string;
 }
 
+/**
+ * Compare registration numbers serially by their numeric portion (e.g. KPL-PLY-200, KPL-PLY-201)
+ */
+export function compareRegistrationNumbers(aReg?: string | null, bReg?: string | null): number {
+  const rA = (aReg || '').trim();
+  const rB = (bReg || '').trim();
+
+  if (!rA && !rB) return 0;
+  if (!rA) return 1;
+  if (!rB) return -1;
+
+  // Extract the numeric portion from registration IDs like KPL-PLY-200, KPL-PLR-207, KPL-PLY-100, etc.
+  const numA = rA.match(/\d+/);
+  const numB = rB.match(/\d+/);
+
+  if (numA && numB) {
+    const valA = parseInt(numA[0], 10);
+    const valB = parseInt(numB[0], 10);
+    if (valA !== valB) {
+      return valA - valB;
+    }
+  }
+
+  return rA.localeCompare(rB, undefined, { numeric: true, sensitivity: 'base' });
+}
+
+/**
+ * Generate next registration number starting from KPL-PLY-200 with 3 digits at the end
+ */
+export function getNextPlayerRegId(players?: { registration_number?: string | null }[]): string {
+  let maxNum = 199; // Defaults to 199 so the next starts at 200
+
+  if (Array.isArray(players)) {
+    for (const p of players) {
+      const reg = (p?.registration_number || '').trim();
+      if (!reg) continue;
+      // Match KPL-PLY-XXX, KPL-PLR-XXX, or standalone numbers
+      const match = reg.match(/KPL-PL[YR]-?(\d+)/i) || reg.match(/PLY-?(\d+)/i) || reg.match(/\b(\d{3})\b/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        // Track 200-series numbers (200-999)
+        if (num >= 200 && num < 1000) {
+          if (num > maxNum) {
+            maxNum = num;
+          }
+        }
+      }
+    }
+  }
+
+  const nextNum = maxNum + 1;
+  return `KPL-PLY-${String(nextNum).padStart(3, '0')}`;
+}
+
+/**
+ * Universal search matcher for players:
+ * Allows searching by player name, full registration ID (e.g. KPL-PLY-200),
+ * prefix search (e.g. PLY-200, #200), or last 3 digits of numbers (e.g. 200, 201),
+ * as well as phone numbers, roles, categories, and teams.
+ */
+export function searchMatchesPlayer(
+  player: {
+    player_name?: string | null;
+    registration_number?: string | null;
+    contact_number?: string | null;
+    id?: string | number | null;
+    email?: string | null;
+    role?: string | null;
+    player_category?: string | null;
+    team_name?: string | null;
+    team_short_code?: string | null;
+    teams?: { name?: string | null; short_code?: string | null } | null;
+  },
+  searchQuery: string
+): boolean {
+  if (!searchQuery) return true;
+  const rawQ = searchQuery.trim().toLowerCase();
+  if (!rawQ) return true;
+
+  // Strip leading '#' if entered (e.g. '#200' -> '200')
+  const q = rawQ.replace(/^#+/, '').trim();
+  if (!q) return true;
+
+  // 1. Direct text matches
+  const name = (player.player_name || '').toLowerCase();
+  if (name.includes(q)) return true;
+
+  const reg = (player.registration_number || '').toLowerCase();
+  if (reg.includes(q)) return true;
+
+  const phone = (player.contact_number || '').toLowerCase();
+  if (phone.includes(q)) return true;
+
+  const role = (player.role || '').toLowerCase();
+  if (role.includes(q)) return true;
+
+  const category = (player.player_category || '').toLowerCase();
+  if (category.includes(q)) return true;
+
+  const teamName = (player.team_name || player.teams?.name || '').toLowerCase();
+  if (teamName.includes(q)) return true;
+
+  const teamCode = (player.team_short_code || player.teams?.short_code || '').toLowerCase();
+  if (teamCode.includes(q)) return true;
+
+  const email = (player.email || '').toLowerCase();
+  if (email.includes(q)) return true;
+
+  const idStr = String(player.id ?? '').toLowerCase();
+  if (idStr === q || idStr.includes(q)) return true;
+
+  // 2. Numeric / digits matching (e.g. '200', '201', '05', last 3 digits of Reg ID or Phone)
+  const qDigits = q.replace(/\D/g, '');
+  if (qDigits.length > 0) {
+    // Check registration number digits
+    const regDigits = reg.replace(/\D/g, '');
+    if (regDigits.length > 0) {
+      if (regDigits.includes(qDigits)) return true;
+      if (regDigits.endsWith(qDigits)) return true;
+      if (parseInt(regDigits, 10) === parseInt(qDigits, 10)) return true;
+      // Last 3 digits comparison
+      if (qDigits.length >= 3 && regDigits.slice(-3) === qDigits.slice(-3)) return true;
+      if (regDigits.length >= 3 && regDigits.slice(-3) === qDigits.padStart(3, '0')) return true;
+    }
+
+    // Check contact phone number digits (last 3 or more digits)
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phoneDigits.length > 0) {
+      if (phoneDigits.includes(qDigits)) return true;
+      if (qDigits.length >= 3 && phoneDigits.endsWith(qDigits)) return true;
+    }
+
+    // Check ID digits
+    const idDigits = idStr.replace(/\D/g, '');
+    if (idDigits.length > 0) {
+      if (idDigits === qDigits || idDigits.endsWith(qDigits)) return true;
+    }
+  }
+
+  return false;
+}
+
+export type AuctionPartKey = 'all' | 'foreigner' | 'local-a' | 'local-b';
+
+export interface AuctionPartMeta {
+  key: 'foreigner' | 'local-a' | 'local-b';
+  partNumber: 1 | 2 | 3;
+  label: string; // e.g. "Part 1: Foreigner"
+  badgeLabel: string; // e.g. "Part 1 · Foreigner"
+  shortLabel: string; // e.g. "Foreigner"
+  icon: string;
+  color: string;
+  badgeBg: string;
+  badgeBorder: string;
+}
+
+/**
+ * Returns the auction part definition for a player category:
+ * Part 1: Foreigner
+ * Part 2: Local A
+ * Part 3: Local B
+ */
+export function getPlayerAuctionPart(categoryStr?: string | null): AuctionPartMeta {
+  const cat = (categoryStr || '').toLowerCase().trim();
+  const isForeign = cat.includes('foreign');
+  const isB = !isForeign && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
+
+  if (isForeign) {
+    return {
+      key: 'foreigner',
+      partNumber: 1,
+      label: 'Part 1: Foreigner',
+      badgeLabel: 'Part 1 · Foreigner',
+      shortLabel: 'Foreigner',
+      icon: '✈️',
+      color: '#38bdf8',
+      badgeBg: 'rgba(56, 189, 248, 0.16)',
+      badgeBorder: 'rgba(56, 189, 248, 0.45)',
+    };
+  }
+
+  if (isB) {
+    return {
+      key: 'local-b',
+      partNumber: 3,
+      label: 'Part 3: Local B',
+      badgeLabel: 'Part 3 · Local B',
+      shortLabel: 'Local B',
+      icon: '⚡',
+      color: '#34d399',
+      badgeBg: 'rgba(52, 211, 153, 0.16)',
+      badgeBorder: 'rgba(52, 211, 153, 0.45)',
+    };
+  }
+
+  return {
+    key: 'local-a',
+    partNumber: 2,
+    label: 'Part 2: Local A',
+    badgeLabel: 'Part 2 · Local A',
+    shortLabel: 'Local A',
+    icon: '🌟',
+    color: '#facc15',
+    badgeBg: 'rgba(250, 204, 21, 0.16)',
+    badgeBorder: 'rgba(250, 204, 21, 0.45)',
+  };
+}
+
 export function printPlayerRoster(
   players: PrintablePlayer[],
   categoryTitle: string = 'All Categories',
@@ -35,6 +243,13 @@ export function printPlayerRoster(
     alert('No players to print.');
     return;
   }
+
+  // Sort players serially according to REG ID (registration_number)
+  const sortedPlayers = [...players].sort((a, b) => {
+    const cmp = compareRegistrationNumbers(a.registration_number, b.registration_number);
+    if (cmp !== 0) return cmp;
+    return (a.player_name || '').localeCompare(b.player_name || '');
+  });
 
   const currentDate = new Date().toLocaleDateString('en-IN', {
     day: '2-digit',
@@ -315,7 +530,7 @@ export function printPlayerRoster(
       </tr>
     </thead>
     <tbody>
-      ${players.map((p, i) => {
+      ${sortedPlayers.map((p, i) => {
         const cat = (p.player_category || '').toLowerCase();
         const isForeign = cat.includes('foreign');
         const isLocalB = !isForeign && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
@@ -775,7 +990,7 @@ export function printTeamDetails(
 
   ${teams.length === 1 && players ? (() => {
     const singleTeam = teams[0];
-    const squad = players.filter(p => String(p.team_id) === String(singleTeam.id));
+    const squad = (players ? players.filter(p => String(p.team_id) === String(singleTeam.id)) : []).sort((a, b) => compareRegistrationNumbers(a.registration_number, b.registration_number));
     if (squad.length === 0) return '';
     return `
       <div style="margin-top: 24px;">

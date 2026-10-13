@@ -45,9 +45,24 @@ export default function DataTable<T extends { id?: string }>({
   const filtered = useMemo(() => {
     let rows = [...data];
     if (query && searchKeys) {
-      const q = query.toLowerCase();
+      const q = query.trim().toLowerCase();
+      const qClean = q.replace(/^#+/, '').trim();
+      const digitsOnlyQ = qClean.replace(/\D/g, '');
       rows = rows.filter(row =>
-        searchKeys.some(k => String(row[k] ?? '').toLowerCase().includes(q))
+        searchKeys.some(k => {
+          const val = String(row[k] ?? '').toLowerCase();
+          if (val.includes(qClean)) return true;
+          if (digitsOnlyQ.length > 0) {
+            const digits = val.replace(/\D/g, '');
+            if (digits) {
+              if (digits.includes(digitsOnlyQ)) return true;
+              if (digits.endsWith(digitsOnlyQ)) return true;
+              if (parseInt(digits, 10) === parseInt(digitsOnlyQ, 10)) return true;
+              if (digitsOnlyQ.length >= 3 && digits.slice(-3) === digitsOnlyQ.slice(-3)) return true;
+            }
+          }
+          return false;
+        })
       );
     }
     if (sortKey) {

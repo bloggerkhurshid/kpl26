@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import './auction.css';
-import { getImageUrl } from '@/lib/api';
+import { getImageUrl, getPlayerAuctionPart } from '@/lib/api';
 import {
   Gavel,
   Shield,
@@ -363,6 +364,134 @@ function ChangingScreen() {
 }
 
 /* ──────────────────────────────────────────────────────────
+   STATE 4 — SOLD CELEBRATION SCREEN (UP TO 1 MINUTE AUTO DISPLAY)
+   ────────────────────────────────────────────────────────── */
+function SoldCelebrationScreen({
+  player,
+  team,
+  soldPrice,
+  secondsRemaining,
+}: {
+  player: Player | null;
+  team: Team | { id: string; name: string; short_code: string; accent_color: string } | null | undefined;
+  soldPrice: number;
+  secondsRemaining: number;
+}) {
+  if (!player) return null;
+
+  const teamColor = team?.accent_color || '#10b981';
+  const teamName = team?.name || 'Franchise Team';
+  const photoUrl = player.photo ? getImageUrl(player.photo) : '/images/kpl-logo.jpg';
+  const displayRegNo = player.registration_number
+    ? player.registration_number
+    : player?.id
+    ? `KPL-PLY-${player.id.replace(/[^0-9]/g, '').slice(-3).padStart(3, '0') || '200'}`
+    : 'KPL-PLY-200';
+  const partMeta = getPlayerAuctionPart(player.player_category);
+
+  return (
+    <div className="auction-sold-celebration-screen">
+      <div
+        className="sold-celebration-bg-glow"
+        style={{
+          background: `radial-gradient(circle, ${teamColor} 0%, rgba(16, 185, 129, 0.25) 40%, transparent 70%)`,
+        }}
+      />
+
+      <div className="sold-celebration-content">
+        {/* Grand SOLD Header Stamp */}
+        <div className="sold-stamp-banner">
+          <Trophy size={36} color="#022c22" strokeWidth={2.5} />
+          <span>SOLD!</span>
+        </div>
+
+        {/* Centerpiece Showcase Card */}
+        <div className="sold-showcase-card">
+          {/* Left: Player Avatar & Meta */}
+          <div className="sold-player-left">
+            <div className="sold-player-avatar-frame" style={{ borderColor: teamColor }}>
+              <img
+                src={photoUrl}
+                alt={player.player_name}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/kpl-logo.jpg';
+                }}
+              />
+            </div>
+            <div className="sold-player-details">
+              <div className="sold-player-name">{player.player_name}</div>
+              <div className="sold-player-meta">
+                <span style={{ color: '#ffffff', fontWeight: 700 }}>{player.role || 'Player'}</span>
+                <span>·</span>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    color: partMeta.color,
+                    fontWeight: 700,
+                  }}
+                >
+                  {partMeta.icon} {partMeta.label}
+                </span>
+                <span>·</span>
+                <span
+                  style={{
+                    fontFamily: 'monospace',
+                    color: '#38bdf8',
+                    fontWeight: 800,
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    padding: '2px 8px',
+                    borderRadius: 4,
+                  }}
+                >
+                  #{displayRegNo}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Section: Team & Price */}
+          <div className="sold-buyer-right">
+            <div className="sold-buyer-team-box">
+              <span className="sold-buyer-tag">Acquired By</span>
+              <div className="sold-buyer-name" style={{ color: teamColor }}>
+                {teamName}
+              </div>
+            </div>
+
+            <div className="sold-price-box" style={{ borderColor: teamColor }}>
+              <span className="sold-price-label">Final Hammer Price</span>
+              <div className="sold-price-val">
+                ₹{soldPrice.toLocaleString('en-IN')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 60s Countdown Timer Bar */}
+        <div className="sold-timer-strip">
+          <div className="sold-timer-badge">
+            <Sparkles size={16} color="#f5c842" />
+            <span>Next Player In</span>
+            <span className="sold-timer-seconds">{secondsRemaining}s</span>
+          </div>
+          <div className="sold-timer-bar-track">
+            <div
+              className="sold-timer-bar-fill"
+              style={{
+                width: `${Math.min(100, Math.max(0, (secondsRemaining / 60) * 100))}%`,
+                background: `linear-gradient(90deg, #10b981 0%, ${teamColor} 100%)`,
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────
    MAIN AUCTION VIEWER PAGE COMPONENT
    ────────────────────────────────────────────────────────── */
 export default function AuctionViewerPage() {
@@ -381,12 +510,15 @@ export default function AuctionViewerPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [recentSold, setRecentSold] = useState<RecentSoldPlayer[]>([]);
   const [viewState, setViewState] = useState<'loading' | 'waiting' | 'changing' | 'player'>('loading');
+  const [soldSecondsLeft, setSoldSecondsLeft] = useState<number>(0);
 
   const [connectionError, setConnectionError] = useState(false);
   const [zoomState, setZoomState] = useState<number>(0); // 0: cover, 1: contain, 2: scale(1.55)
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  const router = useRouter();
   const prevPlayerIdRef = useRef<string | null>(null);
+  const prevWasActive = useRef<boolean | null>(null);
   const hasInitializedRef = useRef<boolean>(false);
   const versionRef = useRef<number>(0);
   const configIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -424,6 +556,13 @@ export default function AuctionViewerPage() {
       // Update config
       const isLive = Boolean(data.is_active);
       const newPlayerId = data.current_player_id || null;
+
+      // Redirect viewer to results page when auction transitions from active to inactive
+      if (prevWasActive.current !== null && !isLive && prevWasActive.current === true) {
+        router.push('/auction/ended');
+      }
+      prevWasActive.current = isLive;
+
       setConfig({
         is_active: isLive,
         current_player_id: newPlayerId,
@@ -443,6 +582,15 @@ export default function AuctionViewerPage() {
       // Update recently sold
       if (Array.isArray(data.recent_sold)) {
         setRecentSold(data.recent_sold);
+      }
+
+      // Update sold countdown timestamp if active
+      if (data.sold_timestamp) {
+        const elapsed = Math.floor((Date.now() - Number(data.sold_timestamp)) / 1000);
+        const rem = Math.max(0, 60 - elapsed);
+        setSoldSecondsLeft(rem);
+      } else {
+        setSoldSecondsLeft(0);
       }
 
       // ────────────────────────────────────────────────────────
@@ -493,6 +641,21 @@ export default function AuctionViewerPage() {
     };
   }, [syncLiveAuction]);
 
+  // 1-second countdown interval for sold celebration
+  useEffect(() => {
+    if (soldSecondsLeft <= 0) return;
+    const t = setInterval(() => {
+      setSoldSecondsLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(t);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [soldSecondsLeft > 0]);
+
   /* ──────────────────────────────────────────────────────────
      PHOTO ZOOM HANDLER
      ────────────────────────────────────────────────────────── */
@@ -526,8 +689,8 @@ export default function AuctionViewerPage() {
   const displayRegNo = player?.registration_number
     ? player.registration_number
     : player?.id
-    ? `KPL-PLAY-${player.id.replace(/[^0-9]/g, '').slice(-4).padStart(4, '0') || '0026'}`
-    : 'KPL-PLAY-0000';
+    ? `KPL-PLY-${player.id.replace(/[^0-9]/g, '').slice(-3).padStart(3, '0') || '200'}`
+    : 'KPL-PLY-200';
 
   return (
     <div className="auction-viewer">
@@ -621,7 +784,20 @@ export default function AuctionViewerPage() {
 
       {viewState === 'changing' && <ChangingScreen />}
 
-      {viewState === 'player' && (
+      {viewState === 'player' && isSold && soldSecondsLeft === 0 && (
+        <WaitingScreen stats={stats} notes={config.notes} recentSold={recentSold} />
+      )}
+
+      {viewState === 'player' && isSold && soldSecondsLeft > 0 && (
+        <SoldCelebrationScreen
+          player={player}
+          team={assignedTeam}
+          soldPrice={Number(player?.sold_price || 0)}
+          secondsRemaining={soldSecondsLeft}
+        />
+      )}
+
+      {viewState === 'player' && !isSold && (
         <main className="auction-stage">
           {/* ── LEFT HALF — PHOTO & REGISTRATION STRIP ── */}
           <section className="photo-side">
@@ -630,6 +806,30 @@ export default function AuctionViewerPage() {
                 <span className="auction-reg-tag">REG NO.</span>
                 <span className="auction-reg-code">{displayRegNo}</span>
               </div>
+              {(() => {
+                const partMeta = getPlayerAuctionPart(player?.player_category);
+                return (
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '4px 12px',
+                      borderRadius: 20,
+                      background: partMeta.badgeBg,
+                      border: `1.5px solid ${partMeta.badgeBorder}`,
+                      color: partMeta.color,
+                      fontSize: 12.5,
+                      fontWeight: 900,
+                      letterSpacing: '0.8px',
+                      textTransform: 'uppercase',
+                      boxShadow: `0 0 14px ${partMeta.badgeBg}`,
+                    }}
+                  >
+                    <span>{partMeta.icon}</span> {partMeta.badgeLabel}
+                  </div>
+                );
+              })()}
               <div className={`auction-status-pill ${player?.status === 'active' ? 'active' : 'pending'}`}>
                 {player?.status === 'active' ? 'ACTIVE' : 'PENDING'}
               </div>
@@ -702,10 +902,27 @@ export default function AuctionViewerPage() {
                     <div className="auction-card-title">Batting Role</div>
                     <div className="auction-card-val-red">{player?.role || 'Top Order'}</div>
                   </div>
-                  <div className="auction-stat-card auction-card-gold">
-                    <div className="auction-card-title">Category</div>
-                    <div className="auction-card-val-gold">
-                      {player?.player_category ? player.player_category.toUpperCase() : 'LOCAL-A'}
+                  <div
+                    className="auction-stat-card auction-card-gold"
+                    style={{
+                      border: `1.5px solid ${getPlayerAuctionPart(player?.player_category).badgeBorder}`,
+                      background: 'rgba(0,0,0,0.4)',
+                    }}
+                  >
+                    <div className="auction-card-title">Auction Stage</div>
+                    <div
+                      style={{
+                        color: getPlayerAuctionPart(player?.player_category).color,
+                        fontSize: 16,
+                        fontWeight: 900,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        marginTop: 4,
+                      }}
+                    >
+                      <span>{getPlayerAuctionPart(player?.player_category).icon}</span>
+                      <span>{getPlayerAuctionPart(player?.player_category).badgeLabel.toUpperCase()}</span>
                     </div>
                   </div>
                 </div>

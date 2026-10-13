@@ -113,6 +113,26 @@ class Player {
         return $stmt->fetchAll() ?: [];
     }
 
+    public static function generateNextRegistrationNumber(): string {
+        $db = self::getDb();
+        $stmt = $db->query("SELECT registration_number FROM players WHERE registration_number LIKE 'KPL-PLY-%' OR registration_number LIKE 'KPL-PLR-%'");
+        $rows = $stmt->fetchAll(\PDO::FETCH_COLUMN) ?: [];
+
+        $maxNum = 199;
+        foreach ($rows as $reg) {
+            if (preg_match('/KPL-PL[YR]-?(\d+)/i', $reg, $matches)) {
+                $num = (int)$matches[1];
+                if ($num >= 200 && $num < 1000) {
+                    if ($num > $maxNum) {
+                        $maxNum = $num;
+                    }
+                }
+            }
+        }
+        $nextNum = $maxNum + 1;
+        return 'KPL-PLY-' . str_pad((string)$nextNum, 3, '0', STR_PAD_LEFT);
+    }
+
     public static function create(array $data): string {
         $db = self::getDb();
         $id = $data['id'] ?? sprintf(
@@ -123,6 +143,7 @@ class Player {
         );
 
         $isSelf = !empty($data['registered_by']) && (stripos($data['registered_by'], 'self') !== false);
+        $regNumber = !empty($data['registration_number']) ? trim($data['registration_number']) : self::generateNextRegistrationNumber();
 
         $stmt = $db->prepare("
             INSERT INTO players (
@@ -163,7 +184,7 @@ class Player {
             ':player_signature' => $data['player_signature'] ?? null,
             ':declaration_accepted' => !empty($data['declaration_accepted']) ? 1 : 0,
             ':approval' => $data['approval'] ?? ($isSelf ? 'pending' : 'approved'),
-            ':registration_number' => $data['registration_number'] ?? ('KPL-P' . rand(1000, 9999)),
+            ':registration_number' => $regNumber,
             ':registered_by' => $data['registered_by'] ?? ($isSelf ? 'Self Registration' : 'admin'),
             ':team_id' => !empty($data['team_id']) ? $data['team_id'] : null,
             ':auction_eligible' => isset($data['auction_eligible']) ? (!empty($data['auction_eligible']) ? 1 : 0) : ($isSelf ? 0 : 1),

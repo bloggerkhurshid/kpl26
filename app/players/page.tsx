@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Users, Globe, MapPin, Search, X, Printer, CheckSquare, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { kplApi, getImageUrl } from '@/lib/api';
-import { printPlayerRoster } from '@/lib/printRoster';
+import { printPlayerRoster, compareRegistrationNumbers, searchMatchesPlayer } from '@/lib/printRoster';
 
 type Player = {
   id: string;
@@ -275,17 +275,9 @@ export default function PlayersPage() {
       if (!match) return false;
     }
 
-    // Text Search Filter
+    // Text Search Filter (Universal matcher: Reg ID, last 3 digits, name, phone, category, role, team)
     if (search.trim()) {
-      const s = search.toLowerCase();
-      const match =
-        p.player_name.toLowerCase().includes(s) ||
-        (p.player_category && p.player_category.toLowerCase().includes(s)) ||
-        (p.role && p.role.toLowerCase().includes(s)) ||
-        (p.team_name && p.team_name.toLowerCase().includes(s)) ||
-        (p.team_short_code && p.team_short_code.toLowerCase().includes(s)) ||
-        (p.registration_number && p.registration_number.toLowerCase().includes(s));
-      if (!match) return false;
+      if (!searchMatchesPlayer(p, search)) return false;
     }
 
     return true;
@@ -539,7 +531,7 @@ export default function PlayersPage() {
                 <Search size={16} color="#94a3b8" style={{ flexShrink: 0, marginRight: '8px' }} />
                 <input
                   type="text"
-                  placeholder="Search player, role, team..."
+                  placeholder="Search player, Reg ID (e.g. 200), role..."
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setVisibleCount(24); }}
                   style={{
@@ -868,7 +860,14 @@ export default function PlayersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(selectedIds.size > 0 ? filteredPlayers.filter((p) => selectedIds.has(p.id)) : filteredPlayers).map((player, index) => {
+                  {(() => {
+                    const rawPrintList = selectedIds.size > 0 ? filteredPlayers.filter((p) => selectedIds.has(p.id)) : filteredPlayers;
+                    const sortedPrintList = [...rawPrintList].sort((a, b) => {
+                      const cmp = compareRegistrationNumbers(a.registration_number, b.registration_number);
+                      if (cmp !== 0) return cmp;
+                      return (a.player_name || '').localeCompare(b.player_name || '');
+                    });
+                    return sortedPrintList.map((player, index) => {
                     const cat = (player.player_category || '').toLowerCase();
                     const isForeign = cat.includes('foreign');
                     const isLocalB = !isForeign && (cat.includes('b') || cat.includes('-b') || cat.includes('(b)') || cat.includes('grade b') || cat.endsWith(' b'));
@@ -906,7 +905,8 @@ export default function PlayersPage() {
                         </td>
                       </tr>
                     );
-                  })}
+                  });
+                })()}
                 </tbody>
               </table>
             </div>

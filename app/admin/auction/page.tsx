@@ -7,9 +7,18 @@ import { kplApi, getImageUrl } from '@/lib/api';
 import {
   Gavel, Play, Square, UserCheck, UserX, ExternalLink,
   CheckCircle2, AlertCircle, Loader2, Trophy, Users, DollarSign, Search, X,
-  Radio, RefreshCw, Flame, ArrowRight, Shield, Edit3, Edit2, Printer
+  Radio, RefreshCw, Flame, ArrowRight, Shield, Edit3, Edit2, Printer,
+  Clock, Zap, Power
 } from 'lucide-react';
-import { printTeamDetails } from '@/lib/printRoster';
+import { printTeamDetails, searchMatchesPlayer, getPlayerAuctionPart, compareRegistrationNumbers, AuctionPartKey } from '@/lib/printRoster';
+
+interface SoldTimerState {
+  playerId: string;
+  playerName: string;
+  teamName: string;
+  soldPrice: number;
+  secondsRemaining: number;
+}
 
 interface Team {
   id: string;
@@ -33,6 +42,8 @@ interface Player {
   team_id: string | null;
   photo?: string | null;
   player_category?: string;
+  registration_number?: string | null;
+  contact_number?: string | null;
   teams?: Team | null;
 }
 
@@ -57,11 +68,16 @@ export default function AuctionPage() {
   const [editPriceModal, setEditPriceModal] = useState<Player | null>(null);
   const [editPriceForm, setEditPriceForm] = useState({ team_id: '', sold_price: '' });
   const [playerSearch, setPlayerSearch] = useState('');
+  const [selectedPart, setSelectedPart] = useState<AuctionPartKey>('all');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [selectedPrintTeamId, setSelectedPrintTeamId] = useState<string>('all');
+  const [soldTimer, setSoldTimer] = useState<SoldTimerState | null>(null);
+  const [autoAdvance, setAutoAdvance] = useState<boolean>(false);
+  const [showEndDialog, setShowEndDialog] = useState(false);
+  const [endingAuction, setEndingAuction] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -70,6 +86,36 @@ export default function AuctionPage() {
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
+  }
+
+  async function handleEndAuction() {
+    setEndingAuction(true);
+    try {
+      const res = await fetch('/api/auction/config', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          is_active: false,
+          current_player_id: null,
+          notes: 'Auction ended',
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to end auction');
+
+      setAuctionConfig(prev => ({
+        ...prev,
+        is_active: false,
+        current_player_id: null,
+        notes: 'Auction ended',
+      }));
+      setShowEndDialog(false);
+      showToast('Auction ended. Live viewers redirected to results page.');
+      window.open('/auction/ended', '_blank');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to end auction', 'error');
+    } finally {
+      setEndingAuction(false);
+    }
   }
 
   // Load both roster and current live auction configuration
@@ -119,17 +165,9 @@ export default function AuctionPage() {
     }
   }, []);
 
-  // Initial load
+  // Initial load once on component mount
   useEffect(() => {
     loadData();
-  }, [loadData]);
-
-  // Background polling every 4 seconds to keep admin console in sync with live changes
-  useEffect(() => {
-    const timer = setInterval(() => {
-      loadData(true);
-    }, 4000);
-    return () => clearInterval(timer);
   }, [loadData]);
 
   // Toggle auction session state (Start / Stop)
@@ -144,7 +182,6 @@ export default function AuctionPage() {
       });
       setAuctionConfig(c => ({ ...c, is_active: newActive }));
       showToast(`Auction session ${newActive ? 'is now LIVE!' : 'is now STOPPED / STANDBY.'}`);
-      loadData(true);
     } catch (err: any) {
       showToast(err.message || 'Failed to update auction state', 'error');
     } finally {
@@ -154,6 +191,7 @@ export default function AuctionPage() {
 
   // Set current player on the auction block
   async function setCurrentPlayer(playerId: string | null) {
+    setSoldTimer(null);
     const p = players.find(x => String(x.id) === String(playerId)) || null;
 
     // Optimistic instant UI update
@@ -165,6 +203,7 @@ export default function AuctionPage() {
         current_player_id: playerId,
         notes: auctionConfig.notes,
         player: p,
+        sold_timestamp: null,
       });
       if (playerId && p) {
         showToast(`${p.player_name} is now ON THE AUCTION BLOCK!`);
@@ -183,6 +222,14 @@ export default function AuctionPage() {
       p.auction_eligible === 1 ||
       p.auction_eligible === '1';
 
+    // Optimistically update player in local state
+    setPlayers(prev => prev.map(item => {
+      if (String(item.id) === String(p.id)) {
+        return { ...item, auction_eligible: !isCurrentlyEligible ? 1 : 0 };
+      }
+      return item;
+    }));
+
     try {
       await kplApi.updatePlayer(p.id, { auction_eligible: !isCurrentlyEligible ? 1 : 0 });
       showToast(`Player ${!isCurrentlyEligible ? 'enabled' : 'disabled'} for auction.`);
@@ -190,9 +237,9 @@ export default function AuctionPage() {
       if (isCurrentlyEligible && auctionConfig.current_player_id === p.id) {
         await setCurrentPlayer(null);
       }
-      loadData(true);
     } catch (err: any) {
       showToast(err.message || 'Failed to toggle eligibility', 'error');
+      loadData(true);
     }
   }
 
@@ -205,23 +252,31 @@ export default function AuctionPage() {
     const soldPrice = parseFloat(sellForm.sold_price) || Number(modalPlayer.base_price) || 0;
     const assignedTeam = teams.find(t => String(t.id) === String(sellForm.team_id));
 
+    const updatedPlayer: Player = {
+      ...modalPlayer,
+      team_id: sellForm.team_id || null,
+      sold_price: soldPrice,
+      auction_eligible: 0,
+      teams: assignedTeam || modalPlayer.teams,
+    };
+
     // Optimistically update player in local state
     setPlayers(prev => prev.map(p => {
       if (String(p.id) === String(modalPlayer.id)) {
-        return {
-          ...p,
-          team_id: sellForm.team_id || null,
-          sold_price: soldPrice,
-          auction_eligible: 0,
-          teams: assignedTeam || p.teams,
-        };
+        return updatedPlayer;
       }
       return p;
     }));
 
-    if (auctionConfig.current_player_id === modalPlayer.id) {
-      setAuctionConfig(c => ({ ...c, current_player_id: null }));
-    }
+    // Keep on the block with 60s sold countdown
+    const soldTime = Date.now();
+    setSoldTimer({
+      playerId: modalPlayer.id,
+      playerName: modalPlayer.player_name,
+      teamName: assignedTeam?.name || 'Franchise Team',
+      soldPrice: soldPrice,
+      secondsRemaining: 60,
+    });
 
     setSellModal(null);
     setSellForm({ team_id: '', sold_price: '' });
@@ -235,12 +290,14 @@ export default function AuctionPage() {
         }),
         kplApi.updateAuctionConfig({
           is_active: auctionConfig.is_active,
-          current_player_id: auctionConfig.current_player_id === modalPlayer.id ? null : auctionConfig.current_player_id,
+          current_player_id: modalPlayer.id,
           notes: auctionConfig.notes,
+          sold_timestamp: soldTime,
+          player: updatedPlayer,
         }),
       ]);
 
-      showToast(`🎉 ${modalPlayer.player_name} sold for ₹${soldPrice.toLocaleString('en-IN')}!`);
+      showToast(`🎉 ${modalPlayer.player_name} sold for ₹${soldPrice.toLocaleString('en-IN')}! Showing sold screen for 1 minute.`);
     } catch (err: any) {
       showToast(err.message || 'Failed to sell player', 'error');
       loadData(true);
@@ -252,6 +309,19 @@ export default function AuctionPage() {
   // Mark player as Unsold / Pass (remove from block, mark not eligible so live screen reflects UNSOLD)
   async function markAsUnsold(p: Player) {
     setSaving(true);
+    // Optimistically update player in local state
+    setPlayers(prev => prev.map(item => {
+      if (String(item.id) === String(p.id)) {
+        return {
+          ...item,
+          team_id: null,
+          sold_price: null,
+          auction_eligible: 0,
+        };
+      }
+      return item;
+    }));
+
     try {
       await kplApi.updatePlayer(p.id, {
         team_id: null,
@@ -262,9 +332,9 @@ export default function AuctionPage() {
         await setCurrentPlayer(null);
       }
       showToast(`${p.player_name} marked as UNSOLD (moved to pass pool).`);
-      loadData(true);
     } catch (err: any) {
       showToast(err.message || 'Failed to mark as unsold', 'error');
+      loadData(true);
     } finally {
       setSaving(false);
     }
@@ -377,9 +447,84 @@ export default function AuctionPage() {
   const disabled = players.filter(p => !isEligible(p) && !p.team_id && !isRetainedOrOwner(p));
   const currentPlayer = players.find(p => String(p.id) === String(auctionConfig.current_player_id));
 
+  // Count by parts for the eligible auction pool (Part 1: Foreigner, Part 2: Local A, Part 3: Local B)
+  const poolForeignerCount = eligible.filter(p => getPlayerAuctionPart(p.player_category).key === 'foreigner').length;
+  const poolLocalACount = eligible.filter(p => getPlayerAuctionPart(p.player_category).key === 'local-a').length;
+  const poolLocalBCount = eligible.filter(p => getPlayerAuctionPart(p.player_category).key === 'local-b').length;
+
+  // Filter pool by selected auction part
+  const partFilteredEligible = eligible.filter(p => {
+    if (selectedPart === 'all') return true;
+    return getPlayerAuctionPart(p.player_category).key === selectedPart;
+  });
+
+  // Sort pool: Part 1: Foreigner -> Part 2: Local A -> Part 3: Local B, and serially by Reg ID within each part
+  const sortedPartEligible = [...partFilteredEligible].sort((a, b) => {
+    const partA = getPlayerAuctionPart(a.player_category).partNumber;
+    const partB = getPlayerAuctionPart(b.player_category).partNumber;
+    if (partA !== partB) return partA - partB;
+    return compareRegistrationNumbers(a.registration_number, b.registration_number);
+  });
+
+  // Find next eligible candidate in the current sorted pool
+  const nextCandidatePlayer = sortedPartEligible.find(
+    p => String(p.id) !== String(auctionConfig.current_player_id) && !p.team_id
+  );
+
+  // Advance to next eligible player in the auction sequence
+  const advanceToNextPlayer = useCallback(async () => {
+    setSoldTimer(null);
+    const candidates = sortedPartEligible.filter(
+      p => String(p.id) !== String(auctionConfig.current_player_id) && !p.team_id
+    );
+    const nextPlayer = candidates[0] || null;
+
+    if (nextPlayer) {
+      await setCurrentPlayer(nextPlayer.id);
+      showToast(`⚡ Called next player: ${nextPlayer.player_name}`);
+    } else {
+      await setCurrentPlayer(null);
+      showToast('All eligible players in current round completed!');
+    }
+  }, [sortedPartEligible, auctionConfig.current_player_id, players, auctionConfig.is_active]);
+
+  // 1-minute countdown interval for sold display in admin
+  useEffect(() => {
+    if (!soldTimer) return;
+    const interval = setInterval(() => {
+      setSoldTimer(prev => {
+        if (!prev) return null;
+        if (prev.secondsRemaining <= 1) {
+          // If autoAdvance is enabled by admin, advance to next player; otherwise just end the timer
+          if (autoAdvance) {
+            advanceToNextPlayer();
+          }
+          return null;
+        }
+        return {
+          ...prev,
+          secondsRemaining: prev.secondsRemaining - 1,
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [soldTimer?.playerId, autoAdvance, advanceToNextPlayer]);
+
+  // Search filtered subsets across all columns (Reg ID, last 3 digits, name, phone)
+  const filteredEligible = sortedPartEligible.filter(p => searchMatchesPlayer(p, playerSearch));
+  const filteredSold = sold.filter(p => {
+    if (selectedPart !== 'all' && getPlayerAuctionPart(p.player_category).key !== selectedPart) return false;
+    return searchMatchesPlayer(p, playerSearch);
+  });
+  const filteredDisabled = disabled.filter(p => {
+    if (selectedPart !== 'all' && getPlayerAuctionPart(p.player_category).key !== selectedPart) return false;
+    return searchMatchesPlayer(p, playerSearch);
+  });
+
   return (
     <AdminLayout>
-      <div className="admin-page">
+      <div className="admin-page admin-auction-page">
         {toast && (
           <div className={`admin-toast admin-toast-${toast.type}`}>
             {toast.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
@@ -390,22 +535,24 @@ export default function AuctionPage() {
         {/* Page Header */}
         <div className="admin-page-header">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <h1 style={{ margin: 0 }}><Gavel size={22} /> Auction Control Center</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <h1 style={{ margin: 0, fontSize: 24, display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                <Gavel size={26} color="#e8192c" /> Auction Control Center
+              </h1>
               <span
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 5,
-                  padding: '3px 9px',
-                  borderRadius: 12,
-                  fontSize: 11,
-                  fontWeight: 700,
+                  gap: 6,
+                  padding: '5px 12px',
+                  borderRadius: 14,
+                  fontSize: 12,
+                  fontWeight: 800,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.6px',
-                  background: auctionConfig.is_active ? 'rgba(34, 197, 94, 0.15)' : 'rgba(148, 163, 184, 0.15)',
-                  border: auctionConfig.is_active ? '1px solid #22c55e' : '1px solid #64748b',
-                  color: auctionConfig.is_active ? '#4ade80' : '#94a3b8',
+                  letterSpacing: '0.8px',
+                  background: auctionConfig.is_active ? 'rgba(34, 197, 94, 0.18)' : 'rgba(148, 163, 184, 0.15)',
+                  border: auctionConfig.is_active ? '1.5px solid #22c55e' : '1px solid #64748b',
+                  color: auctionConfig.is_active ? '#4ade80' : '#cbd5e1',
                 }}
               >
                 <span
@@ -527,6 +674,42 @@ export default function AuctionPage() {
               )}
               {auctionConfig.is_active ? 'Stop Auction' : 'Go Live Now'}
             </button>
+
+            {/* divider */}
+            <div style={{ width: 1, height: 28, background: '#e5e7eb', margin: '0 8px' }} />
+
+            {/* End Auction Button */}
+            <button
+              onClick={() => setShowEndDialog(true)}
+              disabled={!auctionConfig?.is_active || endingAuction}
+              className="btn-end-auction"
+              title={auctionConfig?.is_active ? 'End auction and redirect viewers' : 'Auction is already stopped'}
+            >
+              <Power size={14} />
+              End Auction
+            </button>
+
+            {/* View Results Link (shown when auction is stopped) */}
+            <a
+              href="/auction/ended"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: auctionConfig?.is_active ? 'none' : 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '6px 12px',
+                fontSize: 13,
+                fontWeight: 600,
+                borderRadius: 6,
+                color: '#dca600',
+                background: 'rgba(220,166,0,0.1)',
+                border: '1px solid rgba(220,166,0,0.3)',
+                textDecoration: 'none',
+              }}
+            >
+              View Results ↗
+            </a>
           </div>
         </div>
 
@@ -583,36 +766,36 @@ export default function AuctionPage() {
         <div
           style={{
             background: auctionConfig.is_active && currentPlayer
-              ? 'linear-gradient(135deg, rgba(232,25,44,0.12) 0%, rgba(245,200,66,0.08) 100%)'
+              ? 'linear-gradient(135deg, rgba(232,25,44,0.16) 0%, rgba(245,200,66,0.10) 100%)'
               : 'var(--adm-surface)',
             border: auctionConfig.is_active && currentPlayer
-              ? '2px solid rgba(232,25,44,0.45)'
+              ? '2px solid rgba(232,25,44,0.6)'
               : '1px solid var(--adm-border)',
-            borderRadius: 'var(--adm-radius-md)',
-            padding: '16px 20px',
-            marginBottom: '20px',
-            boxShadow: auctionConfig.is_active && currentPlayer ? '0 0 25px rgba(232,25,44,0.15)' : 'none',
+            borderRadius: 14,
+            padding: '24px 28px',
+            marginBottom: '24px',
+            boxShadow: auctionConfig.is_active && currentPlayer ? '0 8px 32px rgba(232,25,44,0.22)' : '0 4px 16px rgba(0,0,0,0.15)',
             transition: 'all 0.25s ease',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Radio size={16} color={auctionConfig.is_active ? '#e8192c' : 'var(--adm-text-muted)'} className={auctionConfig.is_active ? 'spin' : ''} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Radio size={20} color={auctionConfig.is_active ? '#e8192c' : 'var(--adm-text-muted)'} className={auctionConfig.is_active ? 'spin' : ''} />
               <h3
                 style={{
                   margin: 0,
-                  fontSize: '12px',
-                  fontWeight: 800,
+                  fontSize: '14px',
+                  fontWeight: 900,
                   textTransform: 'uppercase',
-                  letterSpacing: '1px',
+                  letterSpacing: '1.2px',
                   color: auctionConfig.is_active ? '#ff4d5e' : 'var(--adm-text-muted)',
                 }}
               >
-                {auctionConfig.is_active ? 'Live Auction Block · Broadcasting Now' : 'Auction Block (Standby)'}
+                {auctionConfig.is_active ? '● Live Auction Block · Broadcasting Now' : '○ Auction Block (Standby Mode)'}
               </h3>
             </div>
 
-            <div style={{ fontSize: '11px', color: 'var(--adm-text-muted)' }} suppressHydrationWarning>
+            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--adm-text-muted)' }} suppressHydrationWarning>
               {mounted && lastSyncTime ? `Auto-synced: ${lastSyncTime.toLocaleTimeString()}` : 'Connecting...'}
             </div>
           </div>
@@ -623,20 +806,21 @@ export default function AuctionPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: '16px',
+                gap: '24px',
                 flexWrap: 'wrap',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                {/* Photo thumbnail */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                {/* Large Photo Avatar */}
                 <div
                   style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 8,
+                    width: 96,
+                    height: 96,
+                    borderRadius: 12,
                     overflow: 'hidden',
                     background: '#111',
-                    border: '1px solid rgba(255,255,255,0.15)',
+                    border: '2px solid rgba(255,255,255,0.25)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
                     flexShrink: 0,
                   }}
                 >
@@ -651,90 +835,443 @@ export default function AuctionPage() {
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <strong style={{ fontSize: 17, color: 'var(--adm-text-primary)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <strong style={{ fontSize: 24, fontWeight: 900, color: '#ffffff', letterSpacing: '-0.3px' }}>
                       {currentPlayer.player_name}
                     </strong>
-                    <span
+                    {Boolean(currentPlayer.team_id || (soldTimer && soldTimer.playerId === currentPlayer.id)) ? (
+                      <span
+                        style={{
+                          background: 'rgba(34, 197, 94, 0.2)',
+                          border: '1.5px solid rgba(34, 197, 94, 0.6)',
+                          color: '#4ade80',
+                          fontSize: 12,
+                          fontWeight: 900,
+                          padding: '3px 10px',
+                          borderRadius: 6,
+                          letterSpacing: '0.8px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                        }}
+                      >
+                        <Trophy size={13} /> SOLD
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          background: 'rgba(232,25,44,0.2)',
+                          border: '1.5px solid rgba(232,25,44,0.6)',
+                          color: '#ff4d5e',
+                          fontSize: 11,
+                          fontWeight: 900,
+                          padding: '3px 8px',
+                          borderRadius: 6,
+                          letterSpacing: '0.8px',
+                        }}
+                      >
+                        LIVE ON HAMMER
+                      </span>
+                    )}
+                    {/* Part Badge */}
+                    {(() => {
+                      const cPart = getPlayerAuctionPart(currentPlayer.player_category);
+                      return (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            background: cPart.badgeBg,
+                            border: `1.5px solid ${cPart.badgeBorder}`,
+                            color: cPart.color,
+                            fontSize: 12,
+                            fontWeight: 900,
+                            padding: '3px 9px',
+                            borderRadius: 6,
+                            letterSpacing: '0.6px',
+                          }}
+                        >
+                          <span>{cPart.icon}</span> {cPart.badgeLabel.toUpperCase()}
+                        </span>
+                      );
+                    })()}
+                    {currentPlayer.registration_number && (
+                      <span
+                        style={{
+                          fontFamily: 'monospace',
+                          fontWeight: 800,
+                          fontSize: 12,
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          border: '1px solid rgba(56, 189, 248, 0.4)',
+                          color: '#38bdf8',
+                          padding: '2px 8px',
+                          borderRadius: 6,
+                        }}
+                      >
+                        REG: #{currentPlayer.registration_number}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 14, color: '#cbd5e1', marginTop: 4 }}>
+                    <strong style={{ color: '#fff' }}>{currentPlayer.role || 'Player'}</strong>
+                    {currentPlayer.age ? ` · Age ${currentPlayer.age}` : ''}
+                    {currentPlayer.player_category ? ` · Category: ${currentPlayer.player_category.toUpperCase()}` : ''}
+                  </div>
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      background: 'rgba(245, 200, 66, 0.12)',
+                      border: '1.5px solid rgba(245, 200, 66, 0.35)',
+                      padding: '5px 12px',
+                      borderRadius: 8,
+                      marginTop: 8,
+                    }}
+                  >
+                    <span style={{ fontSize: 13, color: '#f5c842', fontWeight: 600 }}>Base Price:</span>
+                    <strong style={{ fontSize: 18, color: '#f5c842', fontWeight: 900 }}>
+                      ₹{Number(currentPlayer.base_price || 500).toLocaleString('en-IN')}
+                    </strong>
+                  </div>
+
+                  {/* Active SOLD Celebration Banner on Block */}
+                  {Boolean(currentPlayer.team_id || (soldTimer && soldTimer.playerId === currentPlayer.id)) && (
+                    <div
                       style={{
-                        background: 'rgba(232,25,44,0.15)',
-                        border: '1px solid rgba(232,25,44,0.4)',
-                        color: '#ff4d5e',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        padding: '2px 6px',
-                        borderRadius: 4,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.14) 100%)',
+                        border: '1.5px solid #10b981',
+                        borderRadius: 10,
+                        padding: '10px 16px',
+                        marginTop: 12,
+                        boxShadow: '0 0 20px rgba(16, 185, 129, 0.25)',
                       }}
                     >
-                      LIVE ON HAMMER
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--adm-text-muted)', marginTop: 2 }}>
-                    {currentPlayer.role || 'Player'} {currentPlayer.age ? `· Age ${currentPlayer.age}` : ''}
-                    {currentPlayer.player_category ? ` · ${currentPlayer.player_category.toUpperCase()}` : ''}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#f5c842', fontWeight: 700, marginTop: 4 }}>
-                    Base Price: ₹{Number(currentPlayer.base_price || 500).toLocaleString('en-IN')}
-                  </div>
+                      <Trophy size={24} color="#34d399" />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: '#a7f3d0', textTransform: 'uppercase', letterSpacing: 1 }}>
+                            ACQUIRED BY:
+                          </span>
+                          <strong style={{ fontSize: 16, color: '#ffffff', fontWeight: 900 }}>
+                            {soldTimer?.teamName || currentPlayer.teams?.name || teams.find(t => String(t.id) === String(currentPlayer.team_id))?.name || 'Franchise Team'}
+                          </strong>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: '#a7f3d0' }}>FOR</span>
+                          <span style={{ fontSize: 18, color: '#f5c842', fontWeight: 900 }}>
+                            ₹{Number(soldTimer?.soldPrice || currentPlayer.sold_price || 0).toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 12, color: '#cbd5e1', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Clock size={13} color="#f5c842" />
+                          <span>
+                            Broadcasting celebratory sold screen on live display ·{' '}
+                            {soldTimer?.secondsRemaining ? (
+                              <>Auto-timer: <strong style={{ color: '#f5c842', fontSize: 13 }}>{soldTimer.secondsRemaining}s</strong></>
+                            ) : (
+                              <strong style={{ color: '#4ade80' }}>60s celebration complete</strong>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button
-                  className="admin-btn admin-btn-primary admin-btn-sm"
-                  onClick={() => {
-                    setSellModal(currentPlayer);
-                    setSellForm({ team_id: '', sold_price: String(currentPlayer.base_price || 500) });
-                  }}
-                  disabled={saving}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                >
-                  <Trophy size={14} /> Mark Sold (Hammer Down)
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                {Boolean(currentPlayer.team_id || (soldTimer && soldTimer.playerId === currentPlayer.id)) ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      {nextCandidatePlayer ? (
+                        <button
+                          className="admin-btn admin-btn-primary"
+                          onClick={advanceToNextPlayer}
+                          disabled={saving}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '12px 22px',
+                            fontSize: 14.5,
+                            fontWeight: 800,
+                            borderRadius: 8,
+                            background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                            border: 'none',
+                            boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)',
+                            cursor: 'pointer',
+                          }}
+                          title={`Call next player: ${nextCandidatePlayer.player_name}`}
+                        >
+                          <Zap size={17} /> Call Next: {nextCandidatePlayer.player_name}
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 13, color: '#f5c842', fontWeight: 800 }}>
+                          Round Complete
+                        </span>
+                      )}
 
-                <button
-                  className="admin-btn admin-btn-danger admin-btn-sm"
-                  onClick={() => markAsUnsold(currentPlayer)}
-                  disabled={saving}
-                  title="Mark as unsold and remove from block"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                >
-                  <UserX size={14} /> Pass / Unsold
-                </button>
+                      <button
+                        className="admin-btn admin-btn-ghost"
+                        onClick={() => {
+                          setSoldTimer(null);
+                          setCurrentPlayer(null);
+                        }}
+                        disabled={saving}
+                        title="Clear block and dismiss sold celebration"
+                        style={{ padding: '12px 16px', fontSize: 13, borderRadius: 8 }}
+                      >
+                        Clear Block
+                      </button>
+                    </div>
 
-                <button
-                  className="admin-btn admin-btn-ghost admin-btn-sm"
-                  onClick={() => setCurrentPlayer(null)}
-                  disabled={saving}
-                  title="Clear block without changing status"
-                >
-                  Clear Block
-                </button>
+                    {/* Optional Auto-Advance Toggle Checkbox */}
+                    <label
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 7,
+                        fontSize: 12,
+                        color: '#94a3b8',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        marginTop: 2,
+                      }}
+                      title="If checked, automatically calls next player when 1 minute expires"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={autoAdvance}
+                        onChange={(e) => setAutoAdvance(e.target.checked)}
+                        style={{ accentColor: '#10b981', cursor: 'pointer', width: 14, height: 14 }}
+                      />
+                      <span>Auto-call next player when 60s timer expires</span>
+                    </label>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      className="admin-btn admin-btn-primary"
+                      onClick={() => {
+                        setSellModal(currentPlayer);
+                        setSellForm({ team_id: '', sold_price: String(currentPlayer.base_price || 500) });
+                      }}
+                      disabled={saving}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 22px', fontSize: 14.5, fontWeight: 800, borderRadius: 8 }}
+                    >
+                      <Trophy size={16} /> Mark Sold (Hammer Down)
+                    </button>
+
+                    <button
+                      className="admin-btn admin-btn-danger"
+                      onClick={() => markAsUnsold(currentPlayer)}
+                      disabled={saving}
+                      title="Mark as unsold and remove from block"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, borderRadius: 8 }}
+                    >
+                      <UserX size={16} /> Pass / Unsold
+                    </button>
+
+                    <button
+                      className="admin-btn admin-btn-ghost"
+                      onClick={() => setCurrentPlayer(null)}
+                      disabled={saving}
+                      title="Clear block without changing status"
+                      style={{ padding: '12px 16px', fontSize: 13, borderRadius: 8 }}
+                    >
+                      Clear Block
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ) : (
             <div
               style={{
                 textAlign: 'center',
-                padding: '16px 0',
+                padding: '24px 0',
                 color: 'var(--adm-text-muted)',
-                fontSize: 13,
+                fontSize: 14,
               }}
             >
               {auctionConfig.is_active ? (
                 <>
-                  <span>No player is currently on the block.</span>{' '}
-                  <strong style={{ color: 'var(--adm-text-primary)' }}>
+                  <span style={{ fontSize: 15 }}>No player is currently on the block.</span>{' '}
+                  <strong style={{ color: 'var(--adm-text-primary)', fontSize: 15, display: 'block', marginTop: 4 }}>
                     Click &ldquo;Put on Block&rdquo; on any player in the pool below to begin bidding on live screen!
                   </strong>
                 </>
               ) : (
-                <span>
-                  The auction is in Standby mode. Click <strong>&ldquo;Go Live Now&rdquo;</strong> to activate real-time bidding screen.
+                <span style={{ fontSize: 14 }}>
+                  The auction is in Standby mode. Click <strong style={{ color: '#4ade80' }}>&ldquo;Go Live Now&rdquo;</strong> in the top header to activate real-time bidding screen.
                 </span>
               )}
             </div>
           )}
+        </div>
+
+        {/* AUCTION STAGE / 3-PART SELECTOR (Part 1: Foreigner, Part 2: Local A, Part 3: Local B) */}
+        <div
+          style={{
+            background: 'var(--adm-surface)',
+            border: '1px solid var(--adm-border)',
+            borderRadius: 'var(--adm-radius-md)',
+            padding: '14px 18px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+              Auction Stage:
+            </span>
+
+            {/* All Stages */}
+            <button
+              type="button"
+              onClick={() => setSelectedPart('all')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '9px 16px',
+                borderRadius: 8,
+                fontSize: 13.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                background: selectedPart === 'all' ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.03)',
+                border: selectedPart === 'all' ? '2px solid rgba(255,255,255,0.5)' : '1px solid var(--adm-border)',
+                color: selectedPart === 'all' ? '#ffffff' : '#cbd5e1',
+                boxShadow: selectedPart === 'all' ? '0 0 12px rgba(255,255,255,0.1)' : 'none',
+              }}
+            >
+              <span>🌐 All Stages</span>
+              <span style={{
+                background: selectedPart === 'all' ? '#ffffff' : 'rgba(255,255,255,0.1)',
+                color: selectedPart === 'all' ? '#0f172a' : '#94a3b8',
+                fontSize: 11.5,
+                fontWeight: 800,
+                padding: '2px 8px',
+                borderRadius: 10,
+              }}>
+                {eligible.length}
+              </span>
+            </button>
+
+            {/* Part 1: Foreigner */}
+            <button
+              type="button"
+              onClick={() => setSelectedPart('foreigner')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '9px 18px',
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 800,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                background: selectedPart === 'foreigner' ? 'rgba(56, 189, 248, 0.24)' : 'rgba(56, 189, 248, 0.05)',
+                border: selectedPart === 'foreigner' ? '2px solid #38bdf8' : '1px solid rgba(56, 189, 248, 0.3)',
+                color: selectedPart === 'foreigner' ? '#38bdf8' : '#7dd3fc',
+                boxShadow: selectedPart === 'foreigner' ? '0 0 18px rgba(56, 189, 248, 0.4)' : 'none',
+              }}
+            >
+              <span>✈️ Part 1: Foreigner</span>
+              <span style={{
+                background: selectedPart === 'foreigner' ? '#38bdf8' : 'rgba(56, 189, 248, 0.2)',
+                color: selectedPart === 'foreigner' ? '#0f172a' : '#38bdf8',
+                fontSize: 12,
+                fontWeight: 900,
+                padding: '2px 8px',
+                borderRadius: 10,
+              }}>
+                {poolForeignerCount}
+              </span>
+            </button>
+
+            {/* Part 2: Local A */}
+            <button
+              type="button"
+              onClick={() => setSelectedPart('local-a')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '9px 18px',
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 800,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                background: selectedPart === 'local-a' ? 'rgba(250, 204, 21, 0.24)' : 'rgba(250, 204, 21, 0.05)',
+                border: selectedPart === 'local-a' ? '2px solid #facc15' : '1px solid rgba(250, 204, 21, 0.3)',
+                color: selectedPart === 'local-a' ? '#facc15' : '#fde047',
+                boxShadow: selectedPart === 'local-a' ? '0 0 18px rgba(250, 204, 21, 0.4)' : 'none',
+              }}
+            >
+              <span>🌟 Part 2: Local A</span>
+              <span style={{
+                background: selectedPart === 'local-a' ? '#facc15' : 'rgba(250, 204, 21, 0.2)',
+                color: selectedPart === 'local-a' ? '#0f172a' : '#facc15',
+                fontSize: 12,
+                fontWeight: 900,
+                padding: '2px 8px',
+                borderRadius: 10,
+              }}>
+                {poolLocalACount}
+              </span>
+            </button>
+
+            {/* Part 3: Local B */}
+            <button
+              type="button"
+              onClick={() => setSelectedPart('local-b')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '9px 18px',
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 800,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                background: selectedPart === 'local-b' ? 'rgba(52, 211, 153, 0.24)' : 'rgba(52, 211, 153, 0.05)',
+                border: selectedPart === 'local-b' ? '2px solid #34d399' : '1px solid rgba(52, 211, 153, 0.3)',
+                color: selectedPart === 'local-b' ? '#34d399' : '#6ee7b7',
+                boxShadow: selectedPart === 'local-b' ? '0 0 18px rgba(52, 211, 153, 0.4)' : 'none',
+              }}
+            >
+              <span>⚡ Part 3: Local B</span>
+              <span style={{
+                background: selectedPart === 'local-b' ? '#34d399' : 'rgba(52, 211, 153, 0.2)',
+                color: selectedPart === 'local-b' ? '#0f172a' : '#34d399',
+                fontSize: 12,
+                fontWeight: 900,
+                padding: '2px 8px',
+                borderRadius: 10,
+              }}>
+                {poolLocalBCount}
+              </span>
+            </button>
+          </div>
+
+          <div style={{ fontSize: 13, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>Current Stage:</span>
+            <strong style={{ color: selectedPart === 'foreigner' ? '#38bdf8' : selectedPart === 'local-a' ? '#facc15' : selectedPart === 'local-b' ? '#34d399' : '#ffffff', fontSize: 13.5 }}>
+              {selectedPart === 'all' ? 'All Pools (Full Roster)' : selectedPart === 'foreigner' ? 'Part 1: Foreigner Auction' : selectedPart === 'local-a' ? 'Part 2: Local A Auction' : 'Part 3: Local B Auction'}
+            </strong>
+          </div>
         </div>
 
         {/* Sleek Search & Filter Toolbar */}
@@ -743,11 +1280,11 @@ export default function AuctionPage() {
             background: 'var(--adm-surface)',
             border: '1px solid var(--adm-border)',
             borderRadius: 'var(--adm-radius-md)',
-            padding: '8px 12px',
-            marginBottom: '18px',
+            padding: '12px 18px',
+            marginBottom: '22px',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '12px',
             flexWrap: 'nowrap',
             overflowX: 'auto',
           }}
@@ -755,23 +1292,23 @@ export default function AuctionPage() {
           {/* Search Box */}
           <div
             style={{
-              flex: '1 1 200px',
-              minWidth: '160px',
-              maxWidth: '320px',
+              flex: '1 1 240px',
+              minWidth: '220px',
+              maxWidth: '400px',
               background: 'var(--adm-input-bg)',
               border: '1px solid var(--adm-border)',
               borderRadius: 'var(--adm-radius-sm)',
-              padding: '6px 10px',
+              padding: '8px 14px',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '10px',
               flexShrink: 0,
             }}
           >
-            <Search size={13} color="var(--adm-text-muted)" />
+            <Search size={16} color="var(--adm-text-muted)" />
             <input
               type="text"
-              placeholder="Search auction pool players..."
+              placeholder="Search by name, Reg ID (e.g. 200, KPL-PLY-200), phone..."
               value={playerSearch}
               onChange={e => setPlayerSearch(e.target.value)}
               style={{
@@ -779,7 +1316,7 @@ export default function AuctionPage() {
                 border: 'none',
                 outline: 'none',
                 color: 'var(--adm-text-primary)',
-                fontSize: '12px',
+                fontSize: '13.5px',
                 width: '100%',
               }}
             />
@@ -789,41 +1326,44 @@ export default function AuctionPage() {
                 onClick={() => setPlayerSearch('')}
                 style={{ background: 'none', border: 'none', color: 'var(--adm-text-muted)', cursor: 'pointer', padding: 0 }}
               >
-                <X size={12} />
+                <X size={14} />
               </button>
             )}
           </div>
 
           {/* Quick Counter */}
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: 'var(--adm-text-muted)', flexShrink: 0 }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '16px', fontSize: '13.5px', color: 'var(--adm-text-muted)', flexShrink: 0 }}>
             <span>
-              Pool: <strong style={{ color: '#4ade80' }}>{eligible.length}</strong>
+              Pool: <strong style={{ color: '#4ade80', fontSize: '15px' }}>{playerSearch ? `${filteredEligible.length}/${eligible.length}` : eligible.length}</strong>
             </span>
             <span>
-              Sold: <strong style={{ color: '#38bdf8' }}>{sold.length}</strong>
+              Sold: <strong style={{ color: '#38bdf8', fontSize: '15px' }}>{playerSearch ? `${filteredSold.length}/${sold.length}` : sold.length}</strong>
             </span>
             <span>
-              Total: <strong style={{ color: 'var(--adm-text-primary)' }}>{players.length}</strong>
+              Disabled: <strong style={{ color: '#cbd5e1', fontSize: '15px' }}>{playerSearch ? `${filteredDisabled.length}/${disabled.length}` : disabled.length}</strong>
+            </span>
+            <span>
+              Total: <strong style={{ color: 'var(--adm-text-primary)', fontSize: '15px' }}>{players.length}</strong>
             </span>
             {playerSearch && (
               <button
                 type="button"
                 onClick={() => setPlayerSearch('')}
                 style={{
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
                   color: '#f87171',
                   borderRadius: '6px',
-                  fontSize: '11px',
+                  fontSize: '12px',
                   cursor: 'pointer',
-                  fontWeight: 600,
-                  padding: '4px 8px',
+                  fontWeight: 700,
+                  padding: '5px 10px',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '3px',
+                  gap: '4px',
                 }}
               >
-                <X size={11} /> Clear
+                <X size={12} /> Clear Filter
               </button>
             )}
           </div>
@@ -839,32 +1379,34 @@ export default function AuctionPage() {
             {/* 1. Eligible pool */}
             <div className="admin-auction-col">
               <div className="admin-auction-col-header admin-auction-col-eligible" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <UserCheck size={16} /> Pool ({eligible.filter(p => !playerSearch || p.player_name.toLowerCase().includes(playerSearch.toLowerCase())).length})
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <UserCheck size={18} /> Pool ({filteredEligible.length}{playerSearch ? ` of ${eligible.length}` : ''})
                 </div>
-                <span style={{ fontSize: 10, opacity: 0.8 }}>Ready for Block</span>
+                <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9, background: 'rgba(52, 211, 153, 0.15)', padding: '2px 8px', borderRadius: 4 }}>Ready for Block</span>
               </div>
-              {eligible.length === 0 ? (
-                <div className="admin-empty-col">No eligible players in pool.</div>
+              {filteredEligible.length === 0 ? (
+                <div className="admin-empty-col">
+                  {playerSearch ? `No pool players match "${playerSearch}".` : 'No eligible players in pool.'}
+                </div>
               ) : (
-                eligible
-                  .filter(p => !playerSearch || p.player_name.toLowerCase().includes(playerSearch.toLowerCase()))
-                  .map(p => {
+                filteredEligible.map(p => {
                     const isCurrent = String(p.id) === String(auctionConfig.current_player_id);
+                    const partMeta = getPlayerAuctionPart(p.player_category);
                     return (
                       <div
                         key={p.id}
                         className={`admin-auction-player-card ${isCurrent ? 'admin-auction-current' : ''}`}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-                          {/* Mini avatar */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+                          {/* Player Avatar */}
                           <div
                             style={{
-                              width: 34,
-                              height: 34,
-                              borderRadius: 6,
+                              width: 50,
+                              height: 50,
+                              borderRadius: 8,
                               overflow: 'hidden',
                               background: '#222',
+                              border: '1px solid rgba(255,255,255,0.18)',
                               flexShrink: 0,
                             }}
                           >
@@ -879,11 +1421,32 @@ export default function AuctionPage() {
                           </div>
 
                           <div className="admin-auction-player-info" style={{ minWidth: 0, flex: 1 }}>
-                            <strong style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {p.player_name}
-                            </strong>
-                            <span>{p.role || '—'} {p.age ? `· Age ${p.age}` : ''}</span>
-                            <span className="admin-base-price">Base: ₹{Number(p.base_price || 500).toLocaleString('en-IN')}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                              <strong style={{ fontSize: 15, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {p.player_name}
+                              </strong>
+                              <span
+                                style={{
+                                  background: partMeta.badgeBg,
+                                  color: partMeta.color,
+                                  border: `1px solid ${partMeta.badgeBorder}`,
+                                  fontSize: 11,
+                                  fontWeight: 800,
+                                  padding: '1px 6px',
+                                  borderRadius: 4,
+                                  letterSpacing: '0.3px',
+                                }}
+                              >
+                                {partMeta.icon} {partMeta.shortLabel}
+                              </span>
+                            </div>
+                            <span style={{ fontSize: 12.5, color: 'var(--adm-text-secondary)', marginTop: 2 }}>
+                              {p.registration_number ? <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#38bdf8', fontSize: 12 }}>#{p.registration_number} · </span> : null}
+                              {p.role || '—'} {p.age ? `· Age ${p.age}` : ''}
+                            </span>
+                            <span className="admin-base-price" style={{ fontSize: 13.5, fontWeight: 700, color: '#f5c842', marginTop: 3 }}>
+                              Base: ₹{Number(p.base_price || 500).toLocaleString('en-IN')}
+                            </span>
                           </div>
                         </div>
 
@@ -895,7 +1458,7 @@ export default function AuctionPage() {
                             onClick={() => setCurrentPlayer(isCurrent ? null : p.id)}
                             style={isCurrent ? { background: '#e8192c', color: '#fff', border: 'none' } : {}}
                           >
-                            <Gavel size={13} />
+                            <Gavel size={16} />
                           </button>
 
                           {/* Quick Sell Modal */}
@@ -907,7 +1470,7 @@ export default function AuctionPage() {
                               setSellForm({ team_id: '', sold_price: String(p.base_price || 500) });
                             }}
                           >
-                            <Trophy size={13} />
+                            <Trophy size={16} />
                           </button>
 
                           {/* Disable / Pass */}
@@ -916,7 +1479,7 @@ export default function AuctionPage() {
                             title="Disable or pass player"
                             onClick={() => toggleAuctionEligibility(p)}
                           >
-                            <UserX size={13} />
+                            <UserX size={16} />
                           </button>
                         </div>
                       </div>
@@ -928,24 +1491,29 @@ export default function AuctionPage() {
             {/* 2. Sold */}
             <div className="admin-auction-col">
               <div className="admin-auction-col-header admin-auction-col-sold" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Trophy size={16} /> Sold ({sold.length})
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Trophy size={18} /> Sold ({filteredSold.length}{playerSearch ? ` of ${sold.length}` : ''})
                 </div>
-                <span style={{ fontSize: 10, opacity: 0.8 }}>Allocated</span>
+                <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9, background: 'rgba(56, 189, 248, 0.15)', padding: '2px 8px', borderRadius: 4 }}>Allocated</span>
               </div>
-              {sold.length === 0 ? (
-                <div className="admin-empty-col">No sold players yet.</div>
+              {filteredSold.length === 0 ? (
+                <div className="admin-empty-col">
+                  {playerSearch ? `No sold players match "${playerSearch}".` : 'No sold players yet.'}
+                </div>
               ) : (
-                sold.map(p => (
+                filteredSold.map(p => {
+                  const partMeta = getPlayerAuctionPart(p.player_category);
+                  return (
                   <div key={p.id} className="admin-auction-player-card admin-auction-player-sold">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
                       <div
                         style={{
-                          width: 34,
-                          height: 34,
-                          borderRadius: 6,
+                          width: 50,
+                          height: 50,
+                          borderRadius: 8,
                           overflow: 'hidden',
                           background: '#222',
+                          border: '1px solid rgba(255,255,255,0.18)',
                           flexShrink: 0,
                         }}
                       >
@@ -959,14 +1527,31 @@ export default function AuctionPage() {
                         />
                       </div>
                       <div className="admin-auction-player-info" style={{ minWidth: 0, flex: 1 }}>
-                        <strong style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {p.player_name}
-                        </strong>
-                        <span style={{ color: p.teams?.accent_color || '#34d399', fontWeight: 600 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <strong style={{ fontSize: 15, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {p.player_name}
+                          </strong>
+                          <span
+                            style={{
+                              background: partMeta.badgeBg,
+                              color: partMeta.color,
+                              border: `1px solid ${partMeta.badgeBorder}`,
+                              fontSize: 11,
+                              fontWeight: 800,
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                              letterSpacing: '0.3px',
+                            }}
+                          >
+                            {partMeta.icon} {partMeta.shortLabel}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 13, color: p.teams?.accent_color || '#38bdf8', fontWeight: 700, marginTop: 2 }}>
+                          {p.registration_number ? <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#94a3b8', fontSize: 11.5 }}>#{p.registration_number} · </span> : null}
                           {p.teams?.name || 'Assigned Franchise'}
                         </span>
                         {p.sold_price && (
-                          <span className="admin-sold-price">
+                          <span className="admin-sold-price" style={{ fontSize: 14, fontWeight: 800, color: '#34d399', marginTop: 3 }}>
                             Sold: ₹{Number(p.sold_price).toLocaleString('en-IN')}
                           </span>
                         )}
@@ -985,42 +1570,48 @@ export default function AuctionPage() {
                           });
                         }}
                       >
-                        <Edit3 size={13} />
+                        <Edit3 size={16} />
                       </button>
                       <button
                         className="dt-btn dt-btn-icon dt-btn-danger"
                         title="Unassign & return to pool"
                         onClick={() => unassignPlayer(p)}
                       >
-                        <UserX size={13} />
+                        <UserX size={16} />
                       </button>
                     </div>
                   </div>
-                ))
+                );
+              })
               )}
             </div>
 
             {/* 3. Disabled / Unsold */}
             <div className="admin-auction-col">
               <div className="admin-auction-col-header admin-auction-col-disabled" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <UserX size={16} /> Disabled / Pass ({disabled.length})
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <UserX size={18} /> Disabled / Pass ({filteredDisabled.length}{playerSearch ? ` of ${disabled.length}` : ''})
                 </div>
-                <span style={{ fontSize: 10, opacity: 0.8 }}>Inactive</span>
+                <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}>Inactive</span>
               </div>
-              {disabled.length === 0 ? (
-                <div className="admin-empty-col">No disabled players.</div>
+              {filteredDisabled.length === 0 ? (
+                <div className="admin-empty-col">
+                  {playerSearch ? `No disabled players match "${playerSearch}".` : 'No disabled players.'}
+                </div>
               ) : (
-                disabled.map(p => (
+                filteredDisabled.map(p => {
+                  const partMeta = getPlayerAuctionPart(p.player_category);
+                  return (
                   <div key={p.id} className="admin-auction-player-card admin-auction-player-disabled">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
                       <div
                         style={{
-                          width: 34,
-                          height: 34,
-                          borderRadius: 6,
+                          width: 50,
+                          height: 50,
+                          borderRadius: 8,
                           overflow: 'hidden',
                           background: '#222',
+                          border: '1px solid rgba(255,255,255,0.18)',
                           flexShrink: 0,
                         }}
                       >
@@ -1034,10 +1625,29 @@ export default function AuctionPage() {
                         />
                       </div>
                       <div className="admin-auction-player-info" style={{ minWidth: 0, flex: 1 }}>
-                        <strong style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {p.player_name}
-                        </strong>
-                        <span>{p.role || '—'} {p.age ? `· Age ${p.age}` : ''}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <strong style={{ fontSize: 15, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {p.player_name}
+                          </strong>
+                          <span
+                            style={{
+                              background: partMeta.badgeBg,
+                              color: partMeta.color,
+                              border: `1px solid ${partMeta.badgeBorder}`,
+                              fontSize: 11,
+                              fontWeight: 800,
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                              letterSpacing: '0.3px',
+                            }}
+                          >
+                            {partMeta.icon} {partMeta.shortLabel}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 12.5, color: 'var(--adm-text-secondary)', marginTop: 2 }}>
+                          {p.registration_number ? <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#94a3b8', fontSize: 11.5 }}>#{p.registration_number} · </span> : null}
+                          {p.role || '—'} {p.age ? `· Age ${p.age}` : ''}
+                        </span>
                       </div>
                     </div>
                     <button
@@ -1045,10 +1655,11 @@ export default function AuctionPage() {
                       title="Re-enable to auction pool"
                       onClick={() => toggleAuctionEligibility(p)}
                     >
-                      <UserCheck size={13} />
+                      <UserCheck size={16} />
                     </button>
                   </div>
-                ))
+                );
+              })
               )}
             </div>
           </div>
@@ -1062,15 +1673,16 @@ export default function AuctionPage() {
                 <h2>Record Player Sale</h2>
               </div>
               <div className="admin-modal-body">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
                   <div
                     style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 8,
+                      width: 60,
+                      height: 60,
+                      borderRadius: 10,
                       overflow: 'hidden',
                       background: '#111',
-                      border: '1px solid rgba(255,255,255,0.15)',
+                      border: '2px solid rgba(255,255,255,0.2)',
+                      flexShrink: 0,
                     }}
                   >
                     <img
@@ -1083,9 +1695,10 @@ export default function AuctionPage() {
                     />
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 16 }}>{sellModal.player_name}</h3>
-                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--adm-text-muted)' }}>
-                      {sellModal.role || 'Player'} · Base Price: <strong>₹{Number(sellModal.base_price || 500).toLocaleString('en-IN')}</strong>
+                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{sellModal.player_name}</h3>
+                    <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--adm-text-secondary)' }}>
+                      {sellModal.registration_number ? <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#38bdf8' }}>#{sellModal.registration_number} · </span> : null}
+                      {sellModal.role || 'Player'} · Base Price: <strong style={{ color: '#f5c842' }}>₹{Number(sellModal.base_price || 500).toLocaleString('en-IN')}</strong>
                     </p>
                   </div>
                 </div>
@@ -1093,11 +1706,12 @@ export default function AuctionPage() {
               <form className="admin-modal-form" onSubmit={sellPlayer}>
                 <div className="admin-form-grid">
                   <div className="admin-form-field admin-form-full">
-                    <label>Winning Franchise Team *</label>
+                    <label style={{ fontSize: 13, fontWeight: 700 }}>Winning Franchise Team *</label>
                     <select
                       required
                       value={sellForm.team_id}
                       onChange={e => setSellForm({ ...sellForm, team_id: e.target.value })}
+                      style={{ fontSize: 14, padding: '10px 12px' }}
                     >
                       <option value="">Select franchise team</option>
                       {teams.map(t => (
@@ -1108,7 +1722,7 @@ export default function AuctionPage() {
                     </select>
                   </div>
                   <div className="admin-form-field admin-form-full">
-                    <label>Final Sold Price (₹) *</label>
+                    <label style={{ fontSize: 13, fontWeight: 700 }}>Final Sold Price (₹) *</label>
                     <input
                       type="number"
                       min={0}
@@ -1117,10 +1731,11 @@ export default function AuctionPage() {
                       value={sellForm.sold_price}
                       onChange={e => setSellForm({ ...sellForm, sold_price: e.target.value })}
                       placeholder={`Base: ₹${sellModal.base_price || 500}`}
+                      style={{ fontSize: 18, fontWeight: 800, padding: '10px 14px' }}
                     />
 
                     {/* Quick increment buttons for accurate bidding calculations */}
-                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                       {[50, 100, 200, 500, 1000].map(inc => (
                         <button
                           key={inc}
@@ -1130,13 +1745,13 @@ export default function AuctionPage() {
                             setSellForm({ ...sellForm, sold_price: String(cur + inc) });
                           }}
                           style={{
-                            background: 'rgba(255, 255, 255, 0.06)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
                             color: 'var(--adm-text-primary)',
                             borderRadius: 6,
-                            padding: '4px 8px',
-                            fontSize: 11,
-                            fontWeight: 600,
+                            padding: '6px 12px',
+                            fontSize: 13,
+                            fontWeight: 700,
                             cursor: 'pointer',
                           }}
                         >
@@ -1149,18 +1764,18 @@ export default function AuctionPage() {
                           setSellForm({ ...sellForm, sold_price: String(sellModal.base_price || 500) });
                         }}
                         style={{
-                          background: 'rgba(245, 200, 66, 0.12)',
-                          border: '1px solid rgba(245, 200, 66, 0.3)',
+                          background: 'rgba(245, 200, 66, 0.15)',
+                          border: '1px solid rgba(245, 200, 66, 0.4)',
                           color: '#f5c842',
                           borderRadius: 6,
-                          padding: '4px 8px',
-                          fontSize: 11,
-                          fontWeight: 600,
+                          padding: '6px 12px',
+                          fontSize: 13,
+                          fontWeight: 700,
                           cursor: 'pointer',
                           marginLeft: 'auto',
                         }}
                       >
-                        Base Price
+                        Reset to Base
                       </button>
                     </div>
                   </div>
@@ -1169,14 +1784,14 @@ export default function AuctionPage() {
                   <button type="button" className="admin-btn admin-btn-ghost" onClick={() => setSellModal(null)}>
                     Cancel
                   </button>
-                  <button type="submit" className="admin-btn admin-btn-primary" disabled={saving}>
+                  <button type="submit" className="admin-btn admin-btn-primary" disabled={saving} style={{ fontSize: 14, fontWeight: 800, padding: '10px 20px' }}>
                     {saving ? (
                       <>
                         <Loader2 size={15} className="spin" /> Updating...
                       </>
                     ) : (
                       <>
-                        <Trophy size={14} /> Confirm Sale & Broadcast
+                        <Trophy size={15} /> Confirm Sale & Broadcast
                       </>
                     )}
                   </button>
@@ -1193,15 +1808,16 @@ export default function AuctionPage() {
                 <h2><Edit3 size={18} style={{ marginRight: 6 }} /> Edit Sold Amount & Team</h2>
               </div>
               <div className="admin-modal-body">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
                   <div
                     style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 8,
+                      width: 60,
+                      height: 60,
+                      borderRadius: 10,
                       overflow: 'hidden',
                       background: '#111',
-                      border: '1px solid rgba(255,255,255,0.15)',
+                      border: '2px solid rgba(255,255,255,0.2)',
+                      flexShrink: 0,
                     }}
                   >
                     <img
@@ -1214,8 +1830,8 @@ export default function AuctionPage() {
                     />
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 16 }}>{editPriceModal.player_name}</h3>
-                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--adm-text-muted)' }}>
+                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{editPriceModal.player_name}</h3>
+                    <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--adm-text-secondary)' }}>
                       Current: <strong style={{ color: '#4ade80' }}>₹{Number(editPriceModal.sold_price || 0).toLocaleString('en-IN')}</strong> · Base: ₹{Number(editPriceModal.base_price || 500).toLocaleString('en-IN')}
                     </p>
                   </div>
@@ -1224,11 +1840,12 @@ export default function AuctionPage() {
               <form className="admin-modal-form" onSubmit={updateSoldPrice}>
                 <div className="admin-form-grid">
                   <div className="admin-form-field admin-form-full">
-                    <label>Assigned Franchise Team *</label>
+                    <label style={{ fontSize: 13, fontWeight: 700 }}>Assigned Franchise Team *</label>
                     <select
                       required
                       value={editPriceForm.team_id}
                       onChange={e => setEditPriceForm({ ...editPriceForm, team_id: e.target.value })}
+                      style={{ fontSize: 14, padding: '10px 12px' }}
                     >
                       <option value="">Select franchise team</option>
                       {teams.map(t => (
@@ -1239,7 +1856,7 @@ export default function AuctionPage() {
                     </select>
                   </div>
                   <div className="admin-form-field admin-form-full">
-                    <label>Updated Sold Amount (₹) *</label>
+                    <label style={{ fontSize: 13, fontWeight: 700 }}>Updated Sold Amount (₹) *</label>
                     <input
                       type="number"
                       min={0}
@@ -1248,10 +1865,11 @@ export default function AuctionPage() {
                       value={editPriceForm.sold_price}
                       onChange={e => setEditPriceForm({ ...editPriceForm, sold_price: e.target.value })}
                       placeholder="Enter new sold price"
+                      style={{ fontSize: 18, fontWeight: 800, padding: '10px 14px' }}
                     />
 
                     {/* Quick increment buttons for precision bidding adjustments */}
-                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                       {[50, 100, 200, 500, 1000].map(inc => (
                         <button
                           key={inc}
@@ -1261,13 +1879,13 @@ export default function AuctionPage() {
                             setEditPriceForm({ ...editPriceForm, sold_price: String(cur + inc) });
                           }}
                           style={{
-                            background: 'rgba(255, 255, 255, 0.06)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
                             color: 'var(--adm-text-primary)',
                             borderRadius: 6,
-                            padding: '4px 8px',
-                            fontSize: 11,
-                            fontWeight: 600,
+                            padding: '6px 12px',
+                            fontSize: 13,
+                            fontWeight: 700,
                             cursor: 'pointer',
                           }}
                         >
@@ -1280,13 +1898,13 @@ export default function AuctionPage() {
                           setEditPriceForm({ ...editPriceForm, sold_price: String(editPriceModal.base_price || 500) });
                         }}
                         style={{
-                          background: 'rgba(245, 200, 66, 0.12)',
-                          border: '1px solid rgba(245, 200, 66, 0.3)',
+                          background: 'rgba(245, 200, 66, 0.15)',
+                          border: '1px solid rgba(245, 200, 66, 0.4)',
                           color: '#f5c842',
                           borderRadius: 6,
-                          padding: '4px 8px',
-                          fontSize: 11,
-                          fontWeight: 600,
+                          padding: '6px 12px',
+                          fontSize: 13,
+                          fontWeight: 700,
                           cursor: 'pointer',
                           marginLeft: 'auto',
                         }}
@@ -1300,14 +1918,14 @@ export default function AuctionPage() {
                   <button type="button" className="admin-btn admin-btn-ghost" onClick={() => setEditPriceModal(null)}>
                     Cancel
                   </button>
-                  <button type="submit" className="admin-btn admin-btn-primary" disabled={saving}>
+                  <button type="submit" className="admin-btn admin-btn-primary" disabled={saving} style={{ fontSize: 14, fontWeight: 800, padding: '10px 20px' }}>
                     {saving ? (
                       <>
                         <Loader2 size={15} className="spin" /> Updating...
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 size={14} /> Save & Broadcast Change
+                        <CheckCircle2 size={15} /> Save & Broadcast Change
                       </>
                     )}
                   </button>
@@ -1316,7 +1934,124 @@ export default function AuctionPage() {
             </div>
           </div>
         )}
+
+        {showEndDialog && (
+          <EndAuctionDialog
+            onConfirm={handleEndAuction}
+            onCancel={() => setShowEndDialog(false)}
+            loading={endingAuction}
+          />
+        )}
       </div>
     </AdminLayout>
+  );
+}
+
+function EndAuctionDialog({
+  onConfirm,
+  onCancel,
+  loading,
+}: {
+  onConfirm: () => void;
+  onCancel: () => void;
+  loading: boolean;
+}) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(3px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+      }}
+      onClick={e => {
+        if (e.target === e.currentTarget && !loading) onCancel();
+      }}
+    >
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: 8,
+          padding: 24,
+          maxWidth: 440,
+          width: '100%',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            fontSize: 18,
+            fontWeight: 600,
+            color: '#dc2626',
+          }}
+        >
+          End Auction?
+        </h3>
+        <p
+          style={{
+            margin: '8px 0 0 0',
+            fontSize: 14,
+            color: '#6b7280',
+            lineHeight: 1.5,
+          }}
+        >
+          This will close the live auction session. All viewers will be redirected to the final results page. This cannot be undone.
+        </p>
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 8,
+            marginTop: 20,
+          }}
+        >
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            style={{
+              padding: '8px 16px',
+              fontSize: 13,
+              fontWeight: 500,
+              borderRadius: 6,
+              background: '#ffffff',
+              border: '1px solid #d1d5db',
+              color: '#374151',
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            style={{
+              padding: '8px 16px',
+              fontSize: 13,
+              fontWeight: 600,
+              borderRadius: 6,
+              background: '#dc2626',
+              border: '1px solid #dc2626',
+              color: '#ffffff',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            {loading && <Loader2 size={14} className="spin" />}
+            End Auction
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

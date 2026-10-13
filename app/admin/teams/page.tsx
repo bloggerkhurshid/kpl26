@@ -10,7 +10,7 @@ import {
   CreditCard, Upload, Check, UserCheck, RefreshCw, Eye,
   Crown, Users, Star, Search, Sparkles, UserPlus, Award, Printer, Coins
 } from 'lucide-react';
-import { printTeamDetails } from '@/lib/printRoster';
+import { printTeamDetails, searchMatchesPlayer } from '@/lib/printRoster';
 
 interface Team {
   id: string;
@@ -1731,14 +1731,9 @@ export default function TeamsPage() {
                 {/* Section 2: Appoint Captain from All Other Registered Players */}
                 {(() => {
                   const otherPlayers = players.filter(p => String(p.team_id) !== String(squadModal.id));
-                  const query = squadSearch.trim().toLowerCase();
+                  const query = squadSearch.trim();
                   const filteredOthers = query
-                    ? otherPlayers.filter(p =>
-                        (p.player_name || '').toLowerCase().includes(query) ||
-                        (p.registration_number || '').toLowerCase().includes(query) ||
-                        (p.contact_number || '').includes(query) ||
-                        (p.role || '').toLowerCase().includes(query)
-                      )
+                    ? otherPlayers.filter(p => searchMatchesPlayer(p, query))
                     : otherPlayers.slice(0, 8);
 
                   return (

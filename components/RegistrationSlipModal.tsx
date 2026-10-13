@@ -131,7 +131,7 @@ export function RegistrationSlipModal({ isOpen, onClose, player }: RegistrationS
                 REGISTRATION SLIP
               </div>
               <div className="bg-green-700 text-white px-3 py-1 rounded text-sm font-bold tracking-wider">
-                {player.registration_number || `KPL-${player.id || 'N/A'}`}
+                {player.registration_number || (player.id ? `KPL-PLY-${player.id.replace(/[^0-9]/g, '').slice(-3).padStart(3, '0') || '200'}` : 'KPL-PLY-200')}
               </div>
             </div>
 

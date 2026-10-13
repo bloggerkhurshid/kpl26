@@ -14,7 +14,7 @@ import {
   CheckSquare, Square, Crown, Tag, Award
 } from 'lucide-react';
 import { RegistrationSlipModal } from '@/components/RegistrationSlipModal';
-import { printPlayerRoster, printTeamDetails } from '@/lib/printRoster';
+import { printPlayerRoster, printTeamDetails, compareRegistrationNumbers, getNextPlayerRegId, searchMatchesPlayer } from '@/lib/printRoster';
 
 interface Team { id: string; name: string; short_code: string; accent_color: string; }
 
@@ -330,7 +330,12 @@ export default function PlayersPage() {
     loadData(false);
   }, []);
 
-  function openCreate() { setForm(EMPTY_FORM); setSelected(null); setModal('create'); }
+  function openCreate() {
+    const nextReg = getNextPlayerRegId(players);
+    setForm({ ...EMPTY_FORM, registration_number: nextReg });
+    setSelected(null);
+    setModal('create');
+  }
   function openEdit(p: Player) {
     setForm({
       player_name: p.player_name || '', father_name: p.father_name || '',
@@ -426,10 +431,9 @@ export default function PlayersPage() {
     setSaving(true);
     
     // Auto generate reg number for admin creations if empty
-    let regNum = form.registration_number;
+    let regNum = (form.registration_number || '').trim();
     if (modal === 'create' && !regNum) {
-      const nextSl = 1001 + (players.length || 0);
-      regNum = `KPL-PLR-${nextSl}`;
+      regNum = getNextPlayerRegId(players);
     }
 
     // Parse age input intelligently
@@ -761,15 +765,9 @@ export default function PlayersPage() {
     if (filterAuction === 'eligible' && !p.auction_eligible) return false;
     if (filterAuction === 'ineligible' && p.auction_eligible) return false;
 
-    // 5. Search query (multi-field)
+    // 5. Search query (universal matcher: Reg ID, last 3 digits, name, phone, etc.)
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchName = (p.player_name || '').toLowerCase().includes(q);
-      const matchReg = (p.registration_number || '').toLowerCase().includes(q);
-      const matchPhone = (p.contact_number || '').toLowerCase().includes(q);
-      const matchEmail = (p.email || '').toLowerCase().includes(q);
-      const matchRole = (p.role || '').toLowerCase().includes(q);
-      if (!matchName && !matchReg && !matchPhone && !matchEmail && !matchRole) return false;
+      if (!searchMatchesPlayer(p, searchQuery)) return false;
     }
 
     // 6. Letter filter (A-Z or '#' for non-alphabetic)
@@ -1450,7 +1448,7 @@ export default function PlayersPage() {
             <Search size={13} color="var(--adm-text-muted)" />
             <input
               type="text"
-              placeholder="Search player, phone, ID..."
+              placeholder="Search by name, Reg ID (e.g. 200), phone..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               style={{
@@ -2054,6 +2052,15 @@ export default function PlayersPage() {
                 <h4 style={{ margin: '20px 0 10px', color: 'var(--adm-emerald)', textTransform: 'uppercase', fontSize: '13px', fontWeight: 700, letterSpacing: '0.8px' }}>3. Admin Controls</h4>
                 <div className="admin-form-grid">
                   <div className="admin-form-field">
+                    <label>Registration ID (REG ID)</label>
+                    <input
+                      type="text"
+                      value={form.registration_number}
+                      onChange={e => setForm({ ...form, registration_number: e.target.value })}
+                      placeholder="e.g. KPL-PLY-200"
+                    />
+                  </div>
+                  <div className="admin-form-field">
                     <label>Registered By</label>
                     <input type="text" value={form.registered_by} onChange={e => setForm({ ...form, registered_by: e.target.value })} placeholder="admin" />
                   </div>
@@ -2649,7 +2656,14 @@ export default function PlayersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(printSource === 'selected' && selectedIds.size > 0 ? filtered.filter(p => selectedIds.has(p.id)) : filtered).map((player, index) => {
+                  {(() => {
+                    const rawPrintList = printSource === 'selected' && selectedIds.size > 0 ? filtered.filter(p => selectedIds.has(p.id)) : filtered;
+                    const sortedPrintList = [...rawPrintList].sort((a, b) => {
+                      const cmp = compareRegistrationNumbers(a.registration_number, b.registration_number);
+                      if (cmp !== 0) return cmp;
+                      return (a.player_name || '').localeCompare(b.player_name || '');
+                    });
+                    return sortedPrintList.map((player, index) => {
                     const isForeign = (player.player_category || '').toLowerCase().includes('foreign');
                     const team = player.teams || teams.find(t => t.id === player.team_id);
                     const teamColor = team?.accent_color || '#10b981';
@@ -2728,7 +2742,8 @@ export default function PlayersPage() {
                         </td>
                       </tr>
                     );
-                  })}
+                  });
+                })()}
                 </tbody>
               </table>
             </div>
