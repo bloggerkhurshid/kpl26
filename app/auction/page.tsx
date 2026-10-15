@@ -74,6 +74,7 @@ interface Player {
 
 interface AuctionConfig {
   is_active: boolean;
+  is_ended?: boolean;
   current_player_id: string | null;
   notes: string;
 }
@@ -122,6 +123,78 @@ function BackgroundCricketBalls() {
         <line x1="4" y1="50" x2="96" y2="50" stroke="#e8192c" strokeWidth="1.5" strokeDasharray="3 3" />
       </svg>
     </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────
+   STATE 0 — AUCTION IS NOT LIVE SCREEN (STANDBY / OFFLINE)
+   ────────────────────────────────────────────────────────── */
+function NotLiveScreen({
+  stats,
+  notes,
+}: {
+  stats: AuctionStats;
+  notes: string;
+}) {
+  return (
+    <div className="auction-holding-stage">
+      <BackgroundCricketBalls />
+      <div className="holding-notlive-center">
+        <div className="holding-notlive-pill">
+          <span className="holding-notlive-dot" />
+          <span>AUCTION STANDBY · NOT LIVE</span>
+        </div>
+
+        {/* Brand Spinning Ring */}
+        <div className="holding-initial-logo" style={{ width: 92, height: 92, margin: '0 auto 16px' }}>
+          <div className="holding-initial-logo-inner">
+            <span className="holding-initial-logo-text" style={{ fontSize: 28 }}>KPL</span>
+            <span className="holding-initial-logo-sub" style={{ fontSize: 9 }}>SEASON 3</span>
+          </div>
+        </div>
+
+        <h1 className="holding-notlive-title-main">AUCTION IS NOT LIVE</h1>
+        <p className="holding-notlive-desc">
+          The live bidding broadcast is currently offline or paused by the auctioneer.
+          Please standby — this screen will automatically go live as soon as the auction starts.
+        </p>
+
+        {notes && notes.trim() !== '' && notes !== 'KPL Season 3 Live Auction' && (
+          <div className="holding-auctioneer-note" style={{ margin: '0 auto 16px' }}>
+            <div className="holding-note-tag">AUCTIONEER&apos;S NOTE</div>
+            <div className="holding-note-text">&ldquo;{notes}&rdquo;</div>
+          </div>
+        )}
+
+        {/* Live Stats Summary Row */}
+        <div className="holding-notlive-stats-row">
+          <div className="holding-notlive-stat">
+            <span className="holding-notlive-stat-label">FRANCHISES</span>
+            <span className="holding-notlive-stat-val">6 TEAMS</span>
+          </div>
+          <div className="holding-notlive-stat-sep" />
+          <div className="holding-notlive-stat">
+            <span className="holding-notlive-stat-label">PLAYERS IN POOL</span>
+            <span className="holding-notlive-stat-val gold">{stats.pool_count}</span>
+          </div>
+          <div className="holding-notlive-stat-sep" />
+          <div className="holding-notlive-stat">
+            <span className="holding-notlive-stat-label">PLAYERS SOLD</span>
+            <span className="holding-notlive-stat-val crimson">{stats.sold_count}</span>
+          </div>
+          <div className="holding-notlive-stat-sep" />
+          <div className="holding-notlive-stat">
+            <span className="holding-notlive-stat-label">TOTAL SPENT</span>
+            <span className="holding-notlive-stat-val purse">₹{Number(stats.total_purse_spent || 0).toLocaleString('en-IN')}</span>
+          </div>
+        </div>
+
+        <div className="holding-notlive-radar">
+          <span className="holding-radar-ring" />
+          <span className="holding-radar-text">STANDBY · WAITING FOR AUCTIONEER SIGNAL...</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -469,22 +542,32 @@ function SoldCelebrationScreen({
           </div>
         </div>
 
-        {/* 60s Countdown Timer Bar */}
+        {/* Countdown Timer or Sold Confirmation Bar */}
         <div className="sold-timer-strip">
-          <div className="sold-timer-badge">
-            <Sparkles size={16} color="#f5c842" />
-            <span>Next Player In</span>
-            <span className="sold-timer-seconds">{secondsRemaining}s</span>
-          </div>
-          <div className="sold-timer-bar-track">
-            <div
-              className="sold-timer-bar-fill"
-              style={{
-                width: `${Math.min(100, Math.max(0, (secondsRemaining / 60) * 100))}%`,
-                background: `linear-gradient(90deg, #10b981 0%, ${teamColor} 100%)`,
-              }}
-            />
-          </div>
+          {secondsRemaining > 0 ? (
+            <>
+              <div className="sold-timer-badge">
+                <Sparkles size={16} color="#f5c842" />
+                <span>Next Player In</span>
+                <span className="sold-timer-seconds">{secondsRemaining}s</span>
+              </div>
+              <div className="sold-timer-bar-track">
+                <div
+                  className="sold-timer-bar-fill"
+                  style={{
+                    width: `${Math.min(100, Math.max(0, (secondsRemaining / 60) * 100))}%`,
+                    background: `linear-gradient(90deg, #10b981 0%, ${teamColor} 100%)`,
+                  }}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="sold-timer-badge" style={{ borderColor: 'rgba(245, 200, 66, 0.4)', padding: '6px 18px' }}>
+              <Sparkles size={16} color="#f5c842" />
+              <span style={{ color: '#f5c842', fontWeight: 800 }}>HAMMER DOWN · OFFICIALLY SOLD</span>
+              <span style={{ color: '#cbd5e1', fontSize: 13, fontWeight: 600 }}>· Awaiting next player call from auctioneer</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -496,7 +579,8 @@ function SoldCelebrationScreen({
    ────────────────────────────────────────────────────────── */
 export default function AuctionViewerPage() {
   const [config, setConfig] = useState<AuctionConfig>({
-    is_active: true,
+    is_active: false,
+    is_ended: false,
     current_player_id: null,
     notes: 'KPL Season 3 Live Auction',
   });
@@ -509,7 +593,7 @@ export default function AuctionViewerPage() {
   const [player, setPlayer] = useState<Player | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [recentSold, setRecentSold] = useState<RecentSoldPlayer[]>([]);
-  const [viewState, setViewState] = useState<'loading' | 'waiting' | 'changing' | 'player'>('loading');
+  const [viewState, setViewState] = useState<'loading' | 'not_live' | 'waiting' | 'changing' | 'player'>('loading');
   const [soldSecondsLeft, setSoldSecondsLeft] = useState<number>(0);
 
   const [connectionError, setConnectionError] = useState(false);
@@ -555,16 +639,20 @@ export default function AuctionViewerPage() {
 
       // Update config
       const isLive = Boolean(data.is_active);
+      const isEnded = Boolean(data.is_ended);
       const newPlayerId = data.current_player_id || null;
 
-      // Redirect viewer to results page when auction transitions from active to inactive
-      if (prevWasActive.current !== null && !isLive && prevWasActive.current === true) {
+      // Redirect viewer to results page when auction is officially ended
+      if (isEnded) {
         router.push('/auction/ended');
+        return;
       }
+
       prevWasActive.current = isLive;
 
       setConfig({
         is_active: isLive,
+        is_ended: isEnded,
         current_player_id: newPlayerId,
         notes: data.notes || '',
       });
@@ -599,8 +687,13 @@ export default function AuctionViewerPage() {
       const isInitialFetch = !hasInitializedRef.current;
       hasInitializedRef.current = true;
 
-      if (!newPlayerId) {
-        // No player on block
+      if (!isLive) {
+        // Auction is not live / stopped -> SHOW NOT LIVE SCREEN
+        prevPlayerIdRef.current = null;
+        setPlayer(null);
+        setViewState('not_live');
+      } else if (!newPlayerId) {
+        // Auction is live, but no player on the block -> SHOW WAITING SCREEN
         prevPlayerIdRef.current = null;
         setPlayer(null);
         setViewState('waiting');
@@ -629,7 +722,7 @@ export default function AuctionViewerPage() {
       console.warn('Live sync fallback:', err);
       setConnectionError(true);
     }
-  }, []);
+  }, [router]);
 
   // Polling setup (800ms pulse)
   useEffect(() => {
@@ -695,28 +788,6 @@ export default function AuctionViewerPage() {
   return (
     <div className="auction-viewer">
       {/* ──────────────────────────────────────────────────────
-          NOT ACTIVE OVERLAY (is_active = false)
-          ────────────────────────────────────────────────────── */}
-      {!config.is_active && (
-        <div className="auction-inactive-overlay">
-          <div className="auction-inactive-badge">
-            <div className="auction-inactive-badge-inner">
-              <span className="auction-badge-text" style={{ fontSize: 24 }}>KPL</span>
-              <span className="auction-badge-sub" style={{ fontSize: 11 }}>S-3</span>
-            </div>
-          </div>
-          <h1 className="auction-inactive-title">AUCTION NOT LIVE YET</h1>
-          <p className="auction-inactive-subtitle">
-            Stay tuned for KHORAGHAT PREMIER LEAGUE Season 3
-          </p>
-          <div className="auction-inactive-pulse-tag">
-            <span className="auction-live-dot" style={{ background: '#f5c842', boxShadow: '0 0 10px #f5c842' }} />
-            <span>Official Franchise Draft Starting Soon · Khoraghat Stadium</span>
-          </div>
-        </div>
-      )}
-
-      {/* ──────────────────────────────────────────────────────
           1. HEADER (PERSISTENT ACROSS ALL STATES)
           ────────────────────────────────────────────────────── */}
       <header className="auction-header">
@@ -746,9 +817,19 @@ export default function AuctionViewerPage() {
               <span>LIVE</span>
             </div>
           ) : (
-            <div className="auction-live-pill" style={{ borderColor: 'rgba(255,255,255,0.2)', color: '#94a3b8' }}>
-              <span className="auction-live-dot" style={{ background: '#64748b', boxShadow: 'none', animation: 'none' }} />
-              <span>STANDBY</span>
+            <div
+              className="auction-live-pill"
+              style={{
+                borderColor: 'rgba(239, 68, 68, 0.45)',
+                color: '#fca5a5',
+                background: 'rgba(239, 68, 68, 0.12)',
+              }}
+            >
+              <span
+                className="auction-live-dot"
+                style={{ background: '#ef4444', boxShadow: 'none', animation: 'none' }}
+              />
+              <span>NOT LIVE</span>
             </div>
           )}
 
@@ -774,9 +855,13 @@ export default function AuctionViewerPage() {
       </header>
 
       {/* ──────────────────────────────────────────────────────
-          2. CENTER STAGE (3 CONDITIONAL STATES + PLAYER CARD)
+          2. CENTER STAGE (5 CONDITIONAL STATES + PLAYER CARD)
           ────────────────────────────────────────────────────── */}
       {viewState === 'loading' && <InitialLoadScreen />}
+
+      {viewState === 'not_live' && (
+        <NotLiveScreen stats={stats} notes={config.notes} />
+      )}
 
       {viewState === 'waiting' && (
         <WaitingScreen stats={stats} notes={config.notes} recentSold={recentSold} />
@@ -784,11 +869,7 @@ export default function AuctionViewerPage() {
 
       {viewState === 'changing' && <ChangingScreen />}
 
-      {viewState === 'player' && isSold && soldSecondsLeft === 0 && (
-        <WaitingScreen stats={stats} notes={config.notes} recentSold={recentSold} />
-      )}
-
-      {viewState === 'player' && isSold && soldSecondsLeft > 0 && (
+      {viewState === 'player' && isSold && (
         <SoldCelebrationScreen
           player={player}
           team={assignedTeam}

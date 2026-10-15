@@ -49,6 +49,7 @@ interface Player {
 
 interface AuctionConfig {
   is_active: boolean;
+  is_ended?: boolean;
   current_player_id: string | null;
   notes: string;
 }
@@ -58,6 +59,7 @@ export default function AuctionPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [auctionConfig, setAuctionConfig] = useState<AuctionConfig>({
     is_active: false,
+    is_ended: false,
     current_player_id: null,
     notes: 'KPL Season 3 Live Auction',
   });
@@ -91,20 +93,25 @@ export default function AuctionPage() {
   async function handleEndAuction() {
     setEndingAuction(true);
     try {
-      const res = await fetch('/api/auction/config', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          is_active: false,
-          current_player_id: null,
-          notes: 'Auction ended',
+      const payload = {
+        is_active: false,
+        is_ended: true,
+        current_player_id: null,
+        notes: 'Auction ended',
+      };
+      await Promise.all([
+        fetch('/api/auction/config', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         }),
-      });
-      if (!res.ok) throw new Error('Failed to end auction');
+        kplApi.updateAuctionConfig(payload),
+      ]);
 
       setAuctionConfig(prev => ({
         ...prev,
         is_active: false,
+        is_ended: true,
         current_player_id: null,
         notes: 'Auction ended',
       }));
@@ -149,6 +156,7 @@ export default function AuctionPage() {
       if (cRes) {
         setAuctionConfig({
           is_active: Boolean(cRes.is_active),
+          is_ended: Boolean(cRes.is_ended),
           current_player_id: cRes.current_player_id || null,
           notes: cRes.notes || 'KPL Season 3 Live Auction',
         });
@@ -177,10 +185,11 @@ export default function AuctionPage() {
     try {
       await kplApi.updateAuctionConfig({
         is_active: newActive,
+        is_ended: false,
         current_player_id: auctionConfig.current_player_id,
         notes: auctionConfig.notes,
       });
-      setAuctionConfig(c => ({ ...c, is_active: newActive }));
+      setAuctionConfig(c => ({ ...c, is_active: newActive, is_ended: false }));
       showToast(`Auction session ${newActive ? 'is now LIVE!' : 'is now STOPPED / STANDBY.'}`);
     } catch (err: any) {
       showToast(err.message || 'Failed to update auction state', 'error');

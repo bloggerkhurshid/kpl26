@@ -189,7 +189,7 @@ export function SponsorshipSection() {
             </div>
           </div>
           <a
-            href="https://wa.me/919954910976?text=Hi%2C%20I%20would%20like%20to%20partner/sponsor%20KPL%20Season%203."
+            href="https://wa.me/916002506596?text=Hi%2C%20I%20would%20like%20to%20partner/sponsor%20KPL%20Season%203."
             target="_blank"
             rel="noreferrer"
             className="sponsor-cta-btn"

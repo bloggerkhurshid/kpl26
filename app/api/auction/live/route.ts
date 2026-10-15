@@ -4,6 +4,7 @@ import { kplApi } from '@/lib/api';
 // Cached state in Node.js process memory
 interface LiveState {
   is_active: boolean;
+  is_ended: boolean;
   current_player_id: string | null;
   notes: string;
   player: any | null;
@@ -20,7 +21,8 @@ interface LiveState {
 }
 
 let liveState: LiveState = {
-  is_active: true,
+  is_active: false,
+  is_ended: false,
   current_player_id: null,
   notes: 'KPL Season 3 Live Auction',
   player: null,
@@ -60,6 +62,9 @@ async function syncFromDatabase(force: boolean = false) {
     if (!hasBootstrapped) {
       if (data.auction_is_active !== undefined) {
         liveState.is_active = data.auction_is_active === 'true' || data.auction_is_active === true || data.auction_is_active === '1' || data.auction_is_active === 1;
+      }
+      if (data.auction_is_ended !== undefined) {
+        liveState.is_ended = data.auction_is_ended === 'true' || data.auction_is_ended === true || data.auction_is_ended === '1' || data.auction_is_ended === 1;
       }
       if (data.auction_current_player_id !== undefined) {
         liveState.current_player_id = data.auction_current_player_id || null;
@@ -186,6 +191,7 @@ export async function GET(req: Request) {
     changed: true,
     version: liveState.version,
     is_active: liveState.is_active,
+    is_ended: Boolean(liveState.is_ended),
     current_player_id: liveState.current_player_id,
     notes: liveState.notes,
     stats: liveState.stats,
@@ -205,7 +211,21 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    if (body.is_active !== undefined) liveState.is_active = Boolean(body.is_active);
+    if (body.is_active !== undefined) {
+      liveState.is_active = Boolean(body.is_active);
+      if (body.is_active) {
+        liveState.is_ended = false;
+      }
+    }
+    if (body.is_ended !== undefined) {
+      liveState.is_ended = Boolean(body.is_ended);
+      if (body.is_ended) {
+        liveState.is_active = false;
+        liveState.current_player_id = null;
+        liveState.player = null;
+        liveState.sold_timestamp = null;
+      }
+    }
     if (body.notes !== undefined) liveState.notes = String(body.notes);
     if (body.sold_timestamp !== undefined) liveState.sold_timestamp = body.sold_timestamp;
 
@@ -232,6 +252,7 @@ export async function POST(req: Request) {
       try {
         await kplApi.saveContentSettings({
           auction_is_active: String(liveState.is_active),
+          auction_is_ended: String(Boolean(liveState.is_ended)),
           auction_current_player_id: liveState.current_player_id || '',
           auction_notes: liveState.notes,
         });
@@ -244,6 +265,7 @@ export async function POST(req: Request) {
       success: true,
       version: liveState.version,
       is_active: liveState.is_active,
+      is_ended: liveState.is_ended,
       current_player_id: liveState.current_player_id,
       notes: liveState.notes,
       player: liveState.player,
