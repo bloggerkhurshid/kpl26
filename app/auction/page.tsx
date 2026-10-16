@@ -1070,13 +1070,17 @@ export default function AuctionViewerPage() {
 
       {viewState === 'changing' && <ChangingScreen />}
 
-      {viewState === 'player' && isSold && (
+      {viewState === 'player' && isSold && soldSecondsLeft > 0 && (
         <SoldCelebrationScreen
           player={player}
           team={assignedTeam}
           soldPrice={Number(player?.sold_price || 0)}
           secondsRemaining={soldSecondsLeft}
         />
+      )}
+
+      {viewState === 'player' && isSold && soldSecondsLeft <= 0 && (
+        <WaitingScreen stats={stats} notes={config.notes} recentSold={recentSold} />
       )}
 
       {viewState === 'player' && !isSold && (

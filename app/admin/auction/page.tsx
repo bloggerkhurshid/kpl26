@@ -527,7 +527,8 @@ export default function AuctionPage() {
       setSoldTimer(prev => {
         if (!prev) return null;
         if (prev.secondsRemaining <= 1) {
-          // Timer expires gracefully; player stays on block until admin calls next player
+          // Timer expires: clear block so screen shows "Waiting for next player" (no auto-call)
+          setCurrentPlayer(null);
           return null;
         }
         return {
