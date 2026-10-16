@@ -125,15 +125,9 @@ const renderCategoryBadge = (category?: string | null) => {
 };
 
 export default function PlayersPage() {
-  const [players, setPlayers] = useState<Player[]>(() => {
-    const cached = kplApi.getCachedPlayers({ status: 'active', limit: 1000 });
-    return (cached as Player[]) || [];
-  });
+  const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(() => {
-    const cached = kplApi.getCachedPlayers({ status: 'active', limit: 1000 });
-    return !cached || cached.length === 0;
-  });
+  const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'local-a' | 'local-b' | 'foreigner' | 'assigned'>('all');
   const [teamFilter, setTeamFilter] = useState<string>('all');
@@ -142,6 +136,16 @@ export default function PlayersPage() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
+    // Instant safe client hydration from cache
+    const cachedP = kplApi.getCachedPlayers({ status: 'active', limit: 1000 });
+    const cachedT = kplApi.getCachedTeams('active');
+    if (cachedP && cachedP.length > 0) {
+      setPlayers(cachedP as Player[]);
+      setLoading(false);
+    }
+    if (cachedT && cachedT.length > 0) {
+      setTeams(cachedT);
+    }
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);

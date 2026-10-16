@@ -55,15 +55,15 @@ interface AuctionConfig {
 }
 
 export default function AuctionPage() {
-  const [players, setPlayers] = useState<Player[]>(() => (kplApi.getCachedPlayers({ status: 'active', limit: 1000 }) as Player[]) || []);
-  const [teams, setTeams] = useState<Team[]>(() => (kplApi.getCachedTeams('active') as Team[]) || []);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [auctionConfig, setAuctionConfig] = useState<AuctionConfig>({
-    is_active: false,
+    is_active: true,
     is_ended: false,
     current_player_id: null,
     notes: 'KPL Season 3 Live Auction',
   });
-  const [loading, setLoading] = useState(() => !kplApi.getCachedPlayers({ status: 'active', limit: 1000 })?.length);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sellModal, setSellModal] = useState<Player | null>(null);
   const [sellForm, setSellForm] = useState({ team_id: '', sold_price: '' });
@@ -83,6 +83,16 @@ export default function AuctionPage() {
 
   useEffect(() => {
     setMounted(true);
+    // Instant safe client hydration from cache (0ms)
+    const cachedP = kplApi.getCachedPlayers({ status: 'active', limit: 1000 });
+    const cachedT = kplApi.getCachedTeams('active');
+    if (cachedP && cachedP.length > 0) {
+      setPlayers(cachedP as Player[]);
+      setLoading(false);
+    }
+    if (cachedT && cachedT.length > 0) {
+      setTeams(cachedT as Team[]);
+    }
   }, []);
 
   function showToast(msg: string, type: 'success' | 'error' = 'success') {

@@ -68,10 +68,10 @@ const EMPTY_FORM = {
 const ROLES = ['Batsman', 'Bowler', 'All-rounder', 'Wicket-keeper'];
 
 export default function PlayersPage() {
-  const [players, setPlayers] = useState<Player[]>(() => (kplApi.getCachedPlayers({ limit: 1000 }) as Player[]) || []);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(() => !kplApi.getCachedPlayers({ limit: 1000 })?.length);
+  const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<'create' | 'edit' | 'delete' | 'view' | null>(null);
   const [selected, setSelected] = useState<Player | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
