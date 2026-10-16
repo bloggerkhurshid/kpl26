@@ -142,7 +142,7 @@ export default function AuctionPage() {
     setIsSyncing(true);
     try {
       const [pRes, tRes, cRes] = await Promise.all([
-        kplApi.getPlayers({ status: 'active', limit: 1000 }),
+        kplApi.getPlayers({ status: 'active', limit: 1000 }, { forceRefresh: true }),
         kplApi.getTeams('active'),
         kplApi.getAuctionConfig(),
       ]);
@@ -356,9 +356,12 @@ export default function AuctionPage() {
     }
   }
 
-  // Mark player as Unsold / Pass (remove from block, mark not eligible so live screen reflects UNSOLD)
+  // Mark player as Unsold / Pass (remove from block, mark not eligible so live screen reflects UNSOLD and clears)
   async function markAsUnsold(p: Player) {
     setSaving(true);
+    setSoldTimer(null);
+    lastLocalActionRef.current = Date.now();
+
     // Optimistically update player in local state
     setPlayers(prev => prev.map(item => {
       if (String(item.id) === String(p.id)) {
@@ -372,38 +375,37 @@ export default function AuctionPage() {
       return item;
     }));
 
+    // Clear from auction block immediately so it does not keep showing on the auction page
+    setAuctionConfig(prev => ({
+      ...prev,
+      current_player_id: null,
+    }));
+
     try {
-      await kplApi.updatePlayer(p.id, {
-        team_id: null,
-        sold_price: null,
-        auction_eligible: 0,
-      });
-      // Broadcast UNSOLD status for the current player on block so viewers clearly see UNSOLD
-      if (auctionConfig.current_player_id === p.id) {
-        lastLocalActionRef.current = Date.now();
-        await Promise.all([
-          kplApi.updateAuctionConfig({
-            is_active: auctionConfig.is_active,
-            current_player_id: p.id,
-            notes: auctionConfig.notes,
-            sold_timestamp: null,
-            player: {
-              ...p,
-              team_id: null,
-              sold_price: null,
-              auction_eligible: 0,
-            },
-          }),
-          kplApi.saveContentSettings({
-            auction_is_active: String(auctionConfig.is_active),
-            auction_is_ended: 'false',
-            auction_current_player_id: p.id,
-            auction_notes: auctionConfig.notes,
-          }),
-        ]);
-        lastLocalActionRef.current = Date.now();
-      }
-      showToast(`${p.player_name} marked as UNSOLD (moved to pass pool).`);
+      await Promise.all([
+        kplApi.updatePlayer(p.id, {
+          team_id: null,
+          sold_price: null,
+          auction_eligible: 0,
+        }),
+        kplApi.updateAuctionConfig({
+          is_active: auctionConfig.is_active,
+          current_player_id: null,
+          notes: auctionConfig.notes,
+          sold_timestamp: null,
+          player: null,
+        }),
+        kplApi.saveContentSettings({
+          auction_is_active: String(auctionConfig.is_active),
+          auction_is_ended: 'false',
+          auction_current_player_id: '',
+          auction_notes: auctionConfig.notes,
+        }),
+      ]);
+      lastLocalActionRef.current = Date.now();
+      showToast(`${p.player_name} marked as UNSOLD & cleared from auction block.`);
+      kplApi.invalidatePlayersCache();
+      loadData(true);
     } catch (err: any) {
       showToast(err.message || 'Failed to mark as unsold', 'error');
       loadData(true);

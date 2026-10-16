@@ -109,8 +109,8 @@ async function syncFromDatabase(force: boolean = false) {
       if (data.auction_is_ended !== undefined) {
         liveState.is_ended = data.auction_is_ended === 'true' || data.auction_is_ended === true || data.auction_is_ended === '1' || data.auction_is_ended === 1;
       }
-      if (data.auction_current_player_id !== undefined && !liveState.current_player_id) {
-        liveState.current_player_id = data.auction_current_player_id || null;
+      if (data.auction_current_player_id !== undefined) {
+        liveState.current_player_id = data.auction_current_player_id ? String(data.auction_current_player_id) : null;
       }
       if (data.auction_notes !== undefined) {
         liveState.notes = data.auction_notes || '';
@@ -353,6 +353,11 @@ export async function POST(req: Request) {
       liveState.sold_timestamp = null;
     } else if (body.player) {
       liveState.player = body.player;
+    }
+
+    // Filter sold or unsold/disabled players from inMemoryPool immediately
+    if (body.player && (body.player.team_id || body.player.auction_eligible === 0 || body.player.auction_eligible === '0')) {
+      inMemoryPool = inMemoryPool.filter((p: any) => String(p.id) !== String(body.player.id));
     }
 
     // INSTANT LIVE SOLD UPDATE: If a player was sold, update teams' coins, stats, and recent_sold immediately!
