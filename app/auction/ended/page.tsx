@@ -581,7 +581,7 @@ export default function AuctionEndedPage() {
               <div className="ended-signoff-sub">
                 Khoraghat Premier League Season 3 squads are now complete. Best of luck to all franchises.
               </div>
-              <div className="ended-signoff-tag">KPL · SEASON 3 · 2024</div>
+              <div className="ended-signoff-tag">KPL · SEASON 3 · 2026</div>
             </div>
           </div>
         </section>
