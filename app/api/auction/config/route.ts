@@ -3,7 +3,7 @@ import { kplApi } from '@/lib/api';
 
 // In-memory fallback if content_settings does not have keys yet
 let memoryConfig = {
-  is_active: false,
+  is_active: true,
   is_ended: false,
   current_player_id: null as string | null,
   notes: 'KPL Season 3 Live Auction',

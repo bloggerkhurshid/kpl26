@@ -591,7 +591,7 @@ function SoldCelebrationScreen({
    ────────────────────────────────────────────────────────── */
 export default function AuctionViewerPage() {
   const [config, setConfig] = useState<AuctionConfig>({
-    is_active: false,
+    is_active: true,
     is_ended: false,
     current_player_id: null,
     notes: 'KPL Season 3 Live Auction',
@@ -656,9 +656,13 @@ export default function AuctionViewerPage() {
 
       versionRef.current = data.version || versionRef.current + 1;
 
-      // Update config (session is live if is_active is true or a player is currently on the block)
-      const isLive = Boolean(data.is_active) || Boolean(data.current_player_id);
+      // Update config (session is live if is_active is true or player on block or active session running)
       const isEnded = Boolean(data.is_ended);
+      const isLive = !isEnded && (
+        Boolean(data.is_active) ||
+        Boolean(data.current_player_id) ||
+        (data.is_active !== false && prevWasActive.current !== false)
+      );
       const newPlayerId = data.current_player_id || null;
 
       // Redirect viewer to results page only when auction is officially ended AND not live

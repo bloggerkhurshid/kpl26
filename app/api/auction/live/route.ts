@@ -55,7 +55,7 @@ const inMemorySoldOrder: Map<string, SoldPlayerItem> = new Map();
 let inMemoryPool: any[] = [];
 
 let liveState: LiveState = {
-  is_active: false,
+  is_active: true,
   is_ended: false,
   current_player_id: null,
   notes: 'KPL Season 3 Live Auction',
@@ -99,15 +99,16 @@ async function syncFromDatabase(force: boolean = false) {
     // Only adopt remote database config if we haven't made a local change in last 15s
     const timeSinceLocalMutation = Date.now() - lastLocalMutation;
     if (timeSinceLocalMutation > 15000) {
-      if (data.auction_is_active !== undefined) {
-        const dbIsActive = data.auction_is_active === 'true' || data.auction_is_active === true || data.auction_is_active === '1' || data.auction_is_active === 1;
-        // Never deactivate if we currently have an active player on the auction block
-        if (!liveState.current_player_id || dbIsActive) {
-          liveState.is_active = dbIsActive;
-        }
-      }
       if (data.auction_is_ended !== undefined) {
         liveState.is_ended = data.auction_is_ended === 'true' || data.auction_is_ended === true || data.auction_is_ended === '1' || data.auction_is_ended === 1;
+      }
+      if (data.auction_is_active !== undefined) {
+        const dbIsActive = data.auction_is_active === 'true' || data.auction_is_active === true || data.auction_is_active === '1' || data.auction_is_active === 1;
+        if (dbIsActive) {
+          liveState.is_active = true;
+        } else if (liveState.is_ended) {
+          liveState.is_active = false;
+        }
       }
       if (data.auction_current_player_id !== undefined) {
         liveState.current_player_id = data.auction_current_player_id ? String(data.auction_current_player_id) : null;

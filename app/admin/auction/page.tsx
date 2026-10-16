@@ -200,14 +200,23 @@ export default function AuctionPage() {
   // Toggle auction session state (Start / Stop)
   async function toggleAuctionSession() {
     setSaving(true);
+    lastLocalActionRef.current = Date.now();
     const newActive = !auctionConfig.is_active;
     try {
-      await kplApi.updateAuctionConfig({
-        is_active: newActive,
-        is_ended: false,
-        current_player_id: auctionConfig.current_player_id,
-        notes: auctionConfig.notes,
-      });
+      await Promise.all([
+        kplApi.updateAuctionConfig({
+          is_active: newActive,
+          is_ended: false,
+          current_player_id: auctionConfig.current_player_id,
+          notes: auctionConfig.notes,
+        }),
+        kplApi.saveContentSettings({
+          auction_is_active: String(newActive),
+          auction_is_ended: 'false',
+          auction_current_player_id: auctionConfig.current_player_id || '',
+          auction_notes: auctionConfig.notes,
+        }),
+      ]);
       setAuctionConfig(c => ({ ...c, is_active: newActive, is_ended: false }));
       showToast(`Auction session ${newActive ? 'is now LIVE!' : 'is now STOPPED / STANDBY.'}`);
     } catch (err: any) {
@@ -223,9 +232,8 @@ export default function AuctionPage() {
     lastLocalActionRef.current = Date.now();
     const p = players.find(x => String(x.id) === String(playerId)) || null;
 
-    // When selecting a player on the block, the auction MUST be LIVE!
-    // When clearing the block (null), maintain existing live session status.
-    const willBeActive = playerId ? true : auctionConfig.is_active;
+    // The auction session MUST remain LIVE whether putting a player on block or clearing the block!
+    const willBeActive = true;
 
     // Optimistic instant UI update
     setAuctionConfig(c => ({
@@ -246,7 +254,7 @@ export default function AuctionPage() {
           sold_timestamp: null,
         }),
         kplApi.saveContentSettings({
-          auction_is_active: String(willBeActive),
+          auction_is_active: 'true',
           auction_is_ended: 'false',
           auction_current_player_id: playerId || '',
           auction_notes: auctionConfig.notes,
@@ -389,14 +397,14 @@ export default function AuctionPage() {
           auction_eligible: 0,
         }),
         kplApi.updateAuctionConfig({
-          is_active: auctionConfig.is_active,
+          is_active: true,
           current_player_id: null,
           notes: auctionConfig.notes,
           sold_timestamp: null,
           player: null,
         }),
         kplApi.saveContentSettings({
-          auction_is_active: String(auctionConfig.is_active),
+          auction_is_active: 'true',
           auction_is_ended: 'false',
           auction_current_player_id: '',
           auction_notes: auctionConfig.notes,
