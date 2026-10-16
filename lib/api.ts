@@ -140,15 +140,61 @@ function savePlayersToStorage(key: string, data: any[]) {
   } catch {}
 }
 
+const teamsMemoryCache = new Map<string, { data: any[]; timestamp: number }>();
+
+function saveTeamsToStorage(status: string, data: any[]) {
+  if (typeof window === 'undefined' || !Array.isArray(data)) return;
+  try {
+    // Keep team storage lean by omitting raw base64 data URLs
+    const lean = data.map((t: any) => ({
+      ...t,
+      logo_url: t.logo_url && t.logo_url.length > 500 ? '' : t.logo_url,
+    }));
+    localStorage.setItem(`kpl_teams_cache_${status}`, JSON.stringify({
+      data: lean,
+      timestamp: Date.now(),
+    }));
+  } catch {}
+}
+
 export const kplApi = {
-  // Synchronous cache reader for 0ms initial component rendering
+  // Synchronous cache reader for 0ms initial component rendering (with fuzzy fallback)
   getCachedPlayers(params: { status?: string; limit?: number; team_id?: string; count_only?: boolean; approval?: string; registered_by?: string; include_documents?: boolean } = {}): any[] | null {
     const cacheKey = JSON.stringify(params);
     const inMem = playersMemoryCache.get(cacheKey);
     if (inMem && Array.isArray(inMem.data) && inMem.data.length > 0) {
       return inMem.data;
     }
-    return getPlayersFromStorage(cacheKey);
+    const fromStorage = getPlayersFromStorage(cacheKey);
+    if (fromStorage && fromStorage.length > 0) {
+      return fromStorage;
+    }
+    // Smart fallback: Check any available cached player list if exact query key not yet initialized
+    const cachedEntries = Array.from(playersMemoryCache.values());
+    for (const entry of cachedEntries) {
+      if (entry && Array.isArray(entry.data) && entry.data.length > 0) {
+        if (!params.status || params.status === 'all') return entry.data;
+        return entry.data.filter((p: any) => p.status === params.status);
+      }
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith(LOCAL_STORAGE_PREFIX)) {
+            const raw = localStorage.getItem(k);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed && Array.isArray(parsed.data) && parsed.data.length > 0) {
+                if (!params.status || params.status === 'all') return parsed.data;
+                return parsed.data.filter((p: any) => p.status === params.status);
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+    return null;
   },
 
   // Invalidate player cache across memory and localStorage
@@ -284,10 +330,55 @@ export const kplApi = {
     });
   },
 
-  // 2. Teams API
-  async getTeams(status: string = 'active') {
-    const res = await fetchFromPhpApi(`api/teams.php?status=${status}`);
-    return Array.isArray(res) ? res : (res?.data || []);
+  // 2. Teams API (with High-Speed Caching)
+  getCachedTeams(status: string = 'active'): any[] | null {
+    const key = `teams_${status}`;
+    const inMem = teamsMemoryCache.get(key);
+    if (inMem && Array.isArray(inMem.data) && inMem.data.length > 0) return inMem.data;
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(`kpl_teams_cache_${status}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed.data)) return parsed.data;
+        }
+      } catch {}
+    }
+    return null;
+  },
+
+  async getTeams(status: string = 'active', options: { forceRefresh?: boolean } = {}) {
+    const key = `teams_${status}`;
+    const now = Date.now();
+    const inMem = teamsMemoryCache.get(key);
+    if (!options.forceRefresh && inMem && (now - inMem.timestamp < 120000)) {
+      return inMem.data;
+    }
+
+    const cachedStorage = !options.forceRefresh ? kplApi.getCachedTeams(status) : null;
+    if (cachedStorage && cachedStorage.length > 0) {
+      teamsMemoryCache.set(key, { data: cachedStorage, timestamp: now });
+      // Background revalidation
+      (async () => {
+        try {
+          const res = await fetchFromPhpApi(`api/teams.php?status=${status}`, { forceFresh: options.forceRefresh });
+          const fresh = Array.isArray(res) ? res : (res?.data || []);
+          if (Array.isArray(fresh) && fresh.length > 0) {
+            teamsMemoryCache.set(key, { data: fresh, timestamp: Date.now() });
+            saveTeamsToStorage(status, fresh);
+          }
+        } catch {}
+      })();
+      return cachedStorage;
+    }
+
+    const res = await fetchFromPhpApi(`api/teams.php?status=${status}`, { forceFresh: options.forceRefresh });
+    const data = Array.isArray(res) ? res : (res?.data || []);
+    if (Array.isArray(data) && data.length > 0) {
+      teamsMemoryCache.set(key, { data, timestamp: Date.now() });
+      saveTeamsToStorage(status, data);
+    }
+    return data;
   },
 
   async createTeam(teamData: any) {

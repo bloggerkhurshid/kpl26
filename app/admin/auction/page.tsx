@@ -56,7 +56,7 @@ interface AuctionConfig {
 
 export default function AuctionPage() {
   const [players, setPlayers] = useState<Player[]>(() => (kplApi.getCachedPlayers({ status: 'active', limit: 1000 }) as Player[]) || []);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<Team[]>(() => (kplApi.getCachedTeams('active') as Team[]) || []);
   const [auctionConfig, setAuctionConfig] = useState<AuctionConfig>({
     is_active: false,
     is_ended: false,
@@ -1446,6 +1446,8 @@ export default function AuctionPage() {
                             <img
                               src={p.photo ? getImageUrl(p.photo) : '/images/kpl-logo.jpg'}
                               alt={p.player_name}
+                              loading="lazy"
+                              decoding="async"
                               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                               onError={e => {
                                 (e.target as HTMLImageElement).src = '/images/kpl-logo.jpg';
@@ -1553,6 +1555,8 @@ export default function AuctionPage() {
                         <img
                           src={p.photo ? getImageUrl(p.photo) : '/images/kpl-logo.jpg'}
                           alt={p.player_name}
+                          loading="lazy"
+                          decoding="async"
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           onError={e => {
                             (e.target as HTMLImageElement).src = '/images/kpl-logo.jpg';
@@ -1651,6 +1655,8 @@ export default function AuctionPage() {
                         <img
                           src={p.photo ? getImageUrl(p.photo) : '/images/kpl-logo.jpg'}
                           alt={p.player_name}
+                          loading="lazy"
+                          decoding="async"
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           onError={e => {
                             (e.target as HTMLImageElement).src = '/images/kpl-logo.jpg';
