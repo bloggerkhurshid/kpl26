@@ -13,7 +13,7 @@ export interface Sponsor {
   website?: string;
 }
 
-const defaultSponsors: Sponsor[] = [
+export const defaultSponsors: Sponsor[] = [
   {
     id: '1',
     name: 'Projukti Soft',

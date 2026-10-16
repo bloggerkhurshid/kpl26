@@ -3,7 +3,8 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import './auction.css';
-import { getImageUrl, getPlayerAuctionPart } from '@/lib/api';
+import { kplApi, getImageUrl, getPlayerAuctionPart } from '@/lib/api';
+import { Sponsor, defaultSponsors } from '@/components/SponsorshipSection';
 import {
   Gavel,
   Shield,
@@ -24,15 +25,27 @@ import {
 } from 'lucide-react';
 
 /* ──────────────────────────────────────────────────────────
-   SPONSOR DATA
+   SPONSOR HELPERS
    ────────────────────────────────────────────────────────── */
-const SPONSORS = [
-  { name: 'TITLE SPONSOR', colorClass: 'l1', icon: Trophy },
-  { name: 'PRESENTING PARTNER', colorClass: 'l2', icon: Star },
-  { name: 'ASSOCIATE SPONSOR', colorClass: 'l3', icon: Shield },
-  { name: 'OFFICIAL PARTNER', colorClass: 'l4', icon: Award },
-  { name: 'MEDIA SPONSOR', colorClass: 'l5', icon: Sparkles },
-];
+function getSponsorTierIcon(tier?: string) {
+  const t = (tier || '').toLowerCase();
+  if (t.includes('title')) return Trophy;
+  if (t.includes('power') || t.includes('co-powered')) return Star;
+  if (t.includes('associate')) return Shield;
+  if (t.includes('media') || t.includes('digital')) return Sparkles;
+  return Award;
+}
+
+function getSponsorTierColor(tier?: string, fallbackColor?: string) {
+  if (fallbackColor && fallbackColor.startsWith('#')) return fallbackColor;
+  const t = (tier || '').toLowerCase();
+  if (t.includes('title')) return '#fbbf24';
+  if (t.includes('power') || t.includes('co-powered')) return '#38bdf8';
+  if (t.includes('associate')) return '#a78bfa';
+  if (t.includes('media') || t.includes('digital')) return '#c084fc';
+  if (t.includes('beverage')) return '#4ade80';
+  return '#22c55e';
+}
 
 /* ──────────────────────────────────────────────────────────
    TYPES & INTERFACES
@@ -759,6 +772,19 @@ export default function AuctionViewerPage() {
   const lastSoldIdRef = useRef<string | null>(null);
   const soldTimestampRef = useRef<number | null>(null);
   const unsoldTimestampRef = useRef<number | null>(null);
+
+  const [sponsorsList, setSponsorsList] = useState<Sponsor[]>(defaultSponsors);
+
+  useEffect(() => {
+    let isCancelled = false;
+    kplApi.getSponsors().then(data => {
+      if (isCancelled) return;
+      if (Array.isArray(data) && data.length > 0) {
+        setSponsorsList(data);
+      }
+    }).catch(() => {});
+    return () => { isCancelled = true; };
+  }, []);
 
   const [mounted, setMounted] = useState(false);
 
@@ -1950,35 +1976,61 @@ export default function AuctionViewerPage() {
         <div className="auction-ticker-track">
           {/* Group 1 */}
           <div className="auction-ticker-group">
-            <span className="auction-ticker-tag">POWERED BY</span>
-            {SPONSORS.map((s, idx) => {
-              const Icon = s.icon;
+            <span className="auction-ticker-tag">OFFICIAL SPONSORS</span>
+            {sponsorsList.map((s, idx) => {
+              const Icon = getSponsorTierIcon(s.tier);
+              const tierColor = getSponsorTierColor(s.tier, s.tierBadgeColor);
               return (
-                <div key={`g1-${idx}`} className={`auction-sponsor-pill ${s.colorClass}`}>
-                  <Icon size={13} />
-                  <span>{s.name}</span>
+                <div
+                  key={`g1-${s.id || idx}`}
+                  className="auction-sponsor-pill"
+                  style={{
+                    borderColor: `${tierColor}66`,
+                    background: `${tierColor}15`,
+                  }}
+                >
+                  <Icon size={13} style={{ color: tierColor, flexShrink: 0 }} />
+                  <span className="auction-sponsor-tier" style={{ color: tierColor, fontWeight: 900 }}>
+                    {s.tier ? `${s.tier.toUpperCase()}:` : 'SPONSOR:'}
+                  </span>
+                  <span className="auction-sponsor-name" style={{ color: '#ffffff', fontWeight: 800 }}>
+                    {s.name}
+                  </span>
                 </div>
               );
             })}
             <span className="auction-ticker-title">
-              KHORAGHAT PREMIER LEAGUE · SEASON 3
+              KHORAGHAT PREMIER LEAGUE · SEASON 3 · 2026
             </span>
           </div>
 
           {/* Group 2 (Duplicated for seamless infinite loop) */}
           <div className="auction-ticker-group">
-            <span className="auction-ticker-tag">POWERED BY</span>
-            {SPONSORS.map((s, idx) => {
-              const Icon = s.icon;
+            <span className="auction-ticker-tag">OFFICIAL SPONSORS</span>
+            {sponsorsList.map((s, idx) => {
+              const Icon = getSponsorTierIcon(s.tier);
+              const tierColor = getSponsorTierColor(s.tier, s.tierBadgeColor);
               return (
-                <div key={`g2-${idx}`} className={`auction-sponsor-pill ${s.colorClass}`}>
-                  <Icon size={13} />
-                  <span>{s.name}</span>
+                <div
+                  key={`g2-${s.id || idx}`}
+                  className="auction-sponsor-pill"
+                  style={{
+                    borderColor: `${tierColor}66`,
+                    background: `${tierColor}15`,
+                  }}
+                >
+                  <Icon size={13} style={{ color: tierColor, flexShrink: 0 }} />
+                  <span className="auction-sponsor-tier" style={{ color: tierColor, fontWeight: 900 }}>
+                    {s.tier ? `${s.tier.toUpperCase()}:` : 'SPONSOR:'}
+                  </span>
+                  <span className="auction-sponsor-name" style={{ color: '#ffffff', fontWeight: 800 }}>
+                    {s.name}
+                  </span>
                 </div>
               );
             })}
             <span className="auction-ticker-title">
-              KHORAGHAT PREMIER LEAGUE · SEASON 3
+              KHORAGHAT PREMIER LEAGUE · SEASON 3 · 2026
             </span>
           </div>
         </div>

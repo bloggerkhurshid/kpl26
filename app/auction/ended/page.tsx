@@ -4,18 +4,31 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import './ended.css';
 import { kplApi } from '@/lib/api';
+import { Sponsor, defaultSponsors } from '@/components/SponsorshipSection';
 import { Trophy, Star, Shield, Award, Sparkles } from 'lucide-react';
 
 /* ──────────────────────────────────────────────────────────
-   SPONSORS
+   SPONSORS HELPERS
    ────────────────────────────────────────────────────────── */
-const SPONSORS = [
-  { name: 'TITLE SPONSOR', icon: Trophy },
-  { name: 'PRESENTING PARTNER', icon: Star },
-  { name: 'ASSOCIATE SPONSOR', icon: Shield },
-  { name: 'OFFICIAL PARTNER', icon: Award },
-  { name: 'MEDIA SPONSOR', icon: Sparkles },
-];
+function getSponsorTierIcon(tier?: string) {
+  const t = (tier || '').toLowerCase();
+  if (t.includes('title')) return Trophy;
+  if (t.includes('power') || t.includes('co-powered')) return Star;
+  if (t.includes('associate')) return Shield;
+  if (t.includes('media') || t.includes('digital')) return Sparkles;
+  return Award;
+}
+
+function getSponsorTierColor(tier?: string, fallbackColor?: string) {
+  if (fallbackColor && fallbackColor.startsWith('#')) return fallbackColor;
+  const t = (tier || '').toLowerCase();
+  if (t.includes('title')) return '#fbbf24';
+  if (t.includes('power') || t.includes('co-powered')) return '#38bdf8';
+  if (t.includes('associate')) return '#a78bfa';
+  if (t.includes('media') || t.includes('digital')) return '#c084fc';
+  if (t.includes('beverage')) return '#4ade80';
+  return '#22c55e';
+}
 
 /* ──────────────────────────────────────────────────────────
    TYPES & INTERFACES
@@ -57,6 +70,18 @@ export default function AuctionEndedPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [fetchedUnsoldCount, setFetchedUnsoldCount] = useState<number | null>(null);
+  const [sponsorsList, setSponsorsList] = useState<Sponsor[]>(defaultSponsors);
+
+  useEffect(() => {
+    let isCancelled = false;
+    kplApi.getSponsors().then(data => {
+      if (isCancelled) return;
+      if (Array.isArray(data) && data.length > 0) {
+        setSponsorsList(data);
+      }
+    }).catch(() => {});
+    return () => { isCancelled = true; };
+  }, []);
 
   // Fixed stars and confetti generated once on mount
   const stars = useMemo(() => {
@@ -595,13 +620,25 @@ export default function AuctionEndedPage() {
         <div className="ended-ticker-mask-right" />
 
         <div className="ended-ticker-track">
-          {/* Duplicate 2x for seamless continuous scroll loop */}
-          {[...SPONSORS, ...SPONSORS, ...SPONSORS, ...SPONSORS].map((sponsor, idx) => {
-            const Icon = sponsor.icon;
+          {[...sponsorsList, ...sponsorsList, ...sponsorsList].map((sponsor, idx) => {
+            const Icon = getSponsorTierIcon(sponsor.tier);
+            const tierColor = getSponsorTierColor(sponsor.tier, sponsor.tierBadgeColor);
             return (
-              <div key={idx} className="ended-sponsor-badge">
-                <Icon size={12} className="ended-sponsor-icon" />
-                <span>{sponsor.name}</span>
+              <div
+                key={idx}
+                className="ended-sponsor-badge"
+                style={{
+                  borderColor: `${tierColor}66`,
+                  background: `${tierColor}15`,
+                }}
+              >
+                <Icon size={12} className="ended-sponsor-icon" style={{ color: tierColor }} />
+                <span style={{ color: tierColor, fontWeight: 900 }}>
+                  {sponsor.tier ? `${sponsor.tier.toUpperCase()}:` : 'SPONSOR:'}
+                </span>
+                <span style={{ color: '#ffffff', fontWeight: 800 }}>
+                  {sponsor.name}
+                </span>
               </div>
             );
           })}
