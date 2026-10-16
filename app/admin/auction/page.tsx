@@ -237,18 +237,22 @@ export default function AuctionPage() {
     setSaving(true);
     lastLocalActionRef.current = Date.now();
     const newActive = !auctionConfig.is_active;
+    const curP = players.find(x => String(x.id) === String(auctionConfig.current_player_id));
+    const curIsSold = Boolean(curP && curP.team_id);
+    const validCurPlayerId = curIsSold ? '' : (auctionConfig.current_player_id || '');
+
     try {
       await Promise.all([
         kplApi.updateAuctionConfig({
           is_active: newActive,
           is_ended: false,
-          current_player_id: auctionConfig.current_player_id,
+          current_player_id: validCurPlayerId || null,
           notes: auctionConfig.notes,
         }),
         kplApi.saveContentSettings({
           auction_is_active: String(newActive),
           auction_is_ended: 'false',
-          auction_current_player_id: auctionConfig.current_player_id || '',
+          auction_current_player_id: validCurPlayerId,
           auction_notes: auctionConfig.notes,
         }),
       ]);
@@ -387,6 +391,13 @@ export default function AuctionPage() {
           notes: auctionConfig.notes,
           sold_timestamp: soldTime,
           player: updatedPlayer,
+        }),
+        // Explicitly clear auction_current_player_id from MySQL database immediately so page reloads never load a sold player!
+        kplApi.saveContentSettings({
+          auction_is_active: 'true',
+          auction_is_ended: 'false',
+          auction_current_player_id: '',
+          auction_notes: auctionConfig.notes,
         }),
       ]);
 
