@@ -378,6 +378,10 @@ export default function AuctionPage() {
     const soldPrice = parseFloat(sellForm.sold_price) || Number(modalPlayer.base_price) || 0;
     const assignedTeam = teams.find(t => String(t.id) === String(sellForm.team_id));
 
+    // Close the sell modal and reset form immediately
+    setSellModal(null);
+    setSellForm({ team_id: '', sold_price: '' });
+
     const updatedPlayer: Player = {
       ...modalPlayer,
       team_id: sellForm.team_id || null,
