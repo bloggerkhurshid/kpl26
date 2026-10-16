@@ -751,17 +751,20 @@ export default function AuctionPage() {
     }
   }, [currentPlayer, sortedPartEligible, auctionConfig.notes]);
 
-  // 1-minute countdown interval for sold display in admin
+  const advanceToNextPlayerRef = useRef(advanceToNextPlayer);
+  advanceToNextPlayerRef.current = advanceToNextPlayer;
+
+  // 10-second countdown interval for sold display in admin -> Auto-advances to next pool player
   useEffect(() => {
     if (!soldTimer) return;
     const interval = setInterval(() => {
       setSoldTimer(prev => {
         if (!prev) return null;
         if (prev.secondsRemaining <= 1) {
-          return {
-            ...prev,
-            secondsRemaining: 0,
-          };
+          setTimeout(() => {
+            advanceToNextPlayerRef.current();
+          }, 0);
+          return null;
         }
         return {
           ...prev,
@@ -773,17 +776,17 @@ export default function AuctionPage() {
     return () => clearInterval(interval);
   }, [soldTimer?.playerId]);
 
-  // 30-second countdown interval for unsold celebration display in admin
+  // 10-second countdown interval for unsold celebration display in admin -> Auto-advances to next pool player
   useEffect(() => {
     if (!unsoldTimer) return;
     const interval = setInterval(() => {
       setUnsoldTimer(prev => {
         if (!prev) return null;
         if (prev.secondsRemaining <= 1) {
-          return {
-            ...prev,
-            secondsRemaining: 0,
-          };
+          setTimeout(() => {
+            advanceToNextPlayerRef.current();
+          }, 0);
+          return null;
         }
         return {
           ...prev,

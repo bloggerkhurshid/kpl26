@@ -156,8 +156,24 @@ async function syncFromDatabase(force: boolean = false) {
       return false;
     };
 
+    function getPlayerPartRank(category?: string | null): number {
+      const cat = (category || '').trim().toLowerCase();
+      if (cat.includes('foreign')) return 1;
+      if (cat.includes('local b') || cat.includes('local-b') || cat === 'b') return 3;
+      return 2;
+    }
+
     // Calculate pool, sold, disabled, purse (excluding Retained & Owner players from auction stats)
-    const pool = rawPlayers.filter((p: any) => (p.auction_eligible === 1 || p.auction_eligible === true || p.auction_eligible === '1') && !p.team_id && !isRetainedOrOwner(p));
+    const pool = rawPlayers
+      .filter((p: any) => (p.auction_eligible === 1 || p.auction_eligible === true || p.auction_eligible === '1') && !p.team_id && !isRetainedOrOwner(p))
+      .sort((a: any, b: any) => {
+        const partA = getPlayerPartRank(a.player_category);
+        const partB = getPlayerPartRank(b.player_category);
+        if (partA !== partB) return partA - partB;
+        const regA = parseInt(String(a.registration_number || '').replace(/\D/g, ''), 10) || 0;
+        const regB = parseInt(String(b.registration_number || '').replace(/\D/g, ''), 10) || 0;
+        return regA - regB;
+      });
     inMemoryPool = pool;
     const sold = rawPlayers.filter((p: any) => Boolean(p.team_id) && !isRetainedOrOwner(p));
     const disabled = rawPlayers.filter((p: any) => (!p.auction_eligible || p.auction_eligible === 0 || p.auction_eligible === '0') && !p.team_id && !isRetainedOrOwner(p));
@@ -320,26 +336,66 @@ export async function GET(req: Request) {
     syncFromDatabase();
   }
 
-  // Auto-clear celebrations when their time has elapsed (10 seconds)
+  // Auto-advance celebrations when 10 seconds have elapsed -> AUTOMATICALLY SHOW NEXT POOL PLAYER
   if (liveState.status === 'CELEBRATION_SOLD') {
     const isExpired = !liveState.sold_timestamp || (Date.now() - Number(liveState.sold_timestamp) >= 10000);
     if (isExpired) {
-      liveState.status = 'IDLE';
-      liveState.current_player_id = null;
-      liveState.player = null;
-      liveState.sold_timestamp = null;
-      liveState.version += 1;
-      kplApi.saveContentSettings({ auction_current_player_id: '', auction_stage_status: 'IDLE' }).catch(() => {});
+      const nextPlayer = inMemoryPool.find((p: any) =>
+        String(p.id) !== String(liveState.celebration_player?.id || '') &&
+        !p.team_id &&
+        (p.auction_eligible === 1 || p.auction_eligible === true || p.auction_eligible === '1')
+      );
+      if (nextPlayer && liveState.is_active && !liveState.is_ended) {
+        liveState.status = 'BIDDING';
+        liveState.current_player_id = String(nextPlayer.id);
+        liveState.player = nextPlayer;
+        liveState.celebration_player = null;
+        liveState.sold_timestamp = null;
+        liveState.unsold_timestamp = null;
+        liveState.version += 1;
+        kplApi.saveContentSettings({
+          auction_current_player_id: String(nextPlayer.id),
+          auction_stage_status: 'BIDDING',
+        }).catch(() => {});
+      } else {
+        liveState.status = 'IDLE';
+        liveState.current_player_id = null;
+        liveState.player = null;
+        liveState.celebration_player = null;
+        liveState.sold_timestamp = null;
+        liveState.version += 1;
+        kplApi.saveContentSettings({ auction_current_player_id: '', auction_stage_status: 'IDLE' }).catch(() => {});
+      }
     }
   } else if (liveState.status === 'CELEBRATION_UNSOLD') {
     const isExpired = !liveState.unsold_timestamp || (Date.now() - Number(liveState.unsold_timestamp) >= 10000);
     if (isExpired) {
-      liveState.status = 'IDLE';
-      liveState.current_player_id = null;
-      liveState.player = null;
-      liveState.unsold_timestamp = null;
-      liveState.version += 1;
-      kplApi.saveContentSettings({ auction_current_player_id: '', auction_stage_status: 'IDLE' }).catch(() => {});
+      const nextPlayer = inMemoryPool.find((p: any) =>
+        String(p.id) !== String(liveState.celebration_player?.id || '') &&
+        !p.team_id &&
+        (p.auction_eligible === 1 || p.auction_eligible === true || p.auction_eligible === '1')
+      );
+      if (nextPlayer && liveState.is_active && !liveState.is_ended) {
+        liveState.status = 'BIDDING';
+        liveState.current_player_id = String(nextPlayer.id);
+        liveState.player = nextPlayer;
+        liveState.celebration_player = null;
+        liveState.sold_timestamp = null;
+        liveState.unsold_timestamp = null;
+        liveState.version += 1;
+        kplApi.saveContentSettings({
+          auction_current_player_id: String(nextPlayer.id),
+          auction_stage_status: 'BIDDING',
+        }).catch(() => {});
+      } else {
+        liveState.status = 'IDLE';
+        liveState.current_player_id = null;
+        liveState.player = null;
+        liveState.celebration_player = null;
+        liveState.unsold_timestamp = null;
+        liveState.version += 1;
+        kplApi.saveContentSettings({ auction_current_player_id: '', auction_stage_status: 'IDLE' }).catch(() => {});
+      }
     }
   }
 
@@ -414,6 +470,9 @@ export async function POST(req: Request) {
       liveState.current_player_id = null;
       liveState.player = null;
       liveState.celebration_player = body.player || null;
+      if (body.player?.id) {
+        inMemoryPool = inMemoryPool.filter((p: any) => String(p.id) !== String(body.player.id));
+      }
     } else if (body.status === 'CELEBRATION_UNSOLD' || body.unsold_timestamp) {
       // Player was marked UNSOLD: clear block
       liveState.status = 'CELEBRATION_UNSOLD';
@@ -422,6 +481,9 @@ export async function POST(req: Request) {
       liveState.current_player_id = null;
       liveState.player = null;
       liveState.celebration_player = body.player || null;
+      if (body.player?.id) {
+        inMemoryPool = inMemoryPool.filter((p: any) => String(p.id) !== String(body.player.id));
+      }
     } else if (body.current_player_id === null || body.status === 'IDLE') {
       // Clear block completely
       liveState.status = 'IDLE';

@@ -954,7 +954,8 @@ export default function AuctionViewerPage() {
         const remaining = Math.max(0, 10 - elapsed);
         setSoldSecondsLeft(remaining);
         if (remaining <= 0) {
-          setViewState(curr => (curr === 'celebration_sold' ? 'waiting' : curr));
+          soldTimestampRef.current = null;
+          syncLiveAuction();
         }
       } else {
         setSoldSecondsLeft(0);
@@ -966,14 +967,15 @@ export default function AuctionViewerPage() {
         const remaining = Math.max(0, 10 - elapsed);
         setUnsoldSecondsLeft(remaining);
         if (remaining <= 0) {
-          setViewState(curr => (curr === 'celebration_unsold' ? 'waiting' : curr));
+          unsoldTimestampRef.current = null;
+          syncLiveAuction();
         }
       } else {
         setUnsoldSecondsLeft(0);
       }
     }, 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [syncLiveAuction]);
 
   /* ──────────────────────────────────────────────────────────
      PHOTO ZOOM HANDLER
