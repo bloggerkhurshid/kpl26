@@ -894,18 +894,8 @@ export default function AuctionViewerPage() {
         prevPlayerIdRef.current = null;
         setPlayer(null);
         setViewState('not_live');
-      } else if (isSoldCelebrationActive) {
-        // Active 60s broadcast celebration for sold player
-        prevPlayerIdRef.current = null;
-        setPlayer(null);
-        setViewState('celebration_sold');
-      } else if (isUnsoldCelebrationActive) {
-        // Active 30s broadcast celebration for unsold player
-        prevPlayerIdRef.current = null;
-        setPlayer(null);
-        setViewState('celebration_unsold');
       } else if (newPlayerId && (data.player || (player && String(player.id) === String(newPlayerId)))) {
-        // Active player on block for BIDDING
+        // Active player on block for BIDDING (Takes priority as soon as called!)
         const activeP = (data.player || player) as Player;
         if (newPlayerId !== prevPlayerIdRef.current) {
           prevPlayerIdRef.current = newPlayerId;
@@ -923,6 +913,16 @@ export default function AuctionViewerPage() {
           setPlayer(activeP);
           setViewState('player');
         }
+      } else if (isSoldCelebrationActive) {
+        // Active 60s broadcast celebration for sold player (when block is cleared)
+        prevPlayerIdRef.current = null;
+        setPlayer(null);
+        setViewState('celebration_sold');
+      } else if (isUnsoldCelebrationActive) {
+        // Active 30s broadcast celebration for unsold player (when block is cleared)
+        prevPlayerIdRef.current = null;
+        setPlayer(null);
+        setViewState('celebration_unsold');
       } else {
         // IDLE: No active player, no celebration -> CLEAN WAITING SCREEN
         prevPlayerIdRef.current = null;

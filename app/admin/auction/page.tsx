@@ -675,6 +675,82 @@ export default function AuctionPage() {
     }
   }, [sortedPartEligible, auctionConfig.current_player_id, players, auctionConfig.is_active]);
 
+  // Atomic Pass & Next Player: marks current player as unsold AND directly advances block to next pool player
+  const passAndNextPlayer = useCallback(async () => {
+    if (!currentPlayer) return;
+    setSaving(true);
+    setSoldTimer(null);
+    setUnsoldTimer(null);
+    lastLocalActionRef.current = Date.now();
+
+    const passingPlayerId = String(currentPlayer.id);
+    const passingPlayerName = currentPlayer.player_name;
+
+    // Find the next eligible candidate from pool (excluding the player being passed)
+    const nextPlayer = sortedPartEligible.find(
+      p => String(p.id) !== passingPlayerId && !p.team_id
+    ) || null;
+
+    // Optimistically update players list: mark passing player as unsold (auction_eligible: 0)
+    setPlayers(prev => prev.map(item => {
+      if (String(item.id) === passingPlayerId) {
+        return {
+          ...item,
+          team_id: null,
+          sold_price: null,
+          auction_eligible: 0,
+        };
+      }
+      return item;
+    }));
+
+    // Optimistically update auction config
+    setAuctionConfig(prev => ({
+      ...prev,
+      current_player_id: nextPlayer ? nextPlayer.id : null,
+      is_active: true,
+      is_ended: false,
+    }));
+
+    try {
+      await Promise.all([
+        kplApi.updatePlayer(passingPlayerId, {
+          team_id: null,
+          sold_price: null,
+          auction_eligible: 0,
+        }),
+        kplApi.updateAuctionConfig({
+          is_active: true,
+          is_ended: false,
+          status: nextPlayer ? 'BIDDING' : 'IDLE',
+          current_player_id: nextPlayer ? nextPlayer.id : null,
+          player: nextPlayer || null,
+          notes: auctionConfig.notes,
+          sold_timestamp: null,
+          unsold_timestamp: null,
+        }),
+        kplApi.saveContentSettings({
+          auction_is_active: 'true',
+          auction_is_ended: 'false',
+          auction_current_player_id: nextPlayer ? String(nextPlayer.id) : '',
+          auction_stage_status: nextPlayer ? 'BIDDING' : 'IDLE',
+          auction_notes: auctionConfig.notes,
+        }),
+      ]);
+
+      if (nextPlayer) {
+        showToast(`⚡ Passed ${passingPlayerName} · Now on Block: ${nextPlayer.player_name}`);
+      } else {
+        showToast(`📢 ${passingPlayerName} passed. Pool round complete.`);
+      }
+      kplApi.invalidatePlayersCache();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to pass player and call next', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }, [currentPlayer, sortedPartEligible, auctionConfig.notes]);
+
   // 1-minute countdown interval for sold display in admin
   useEffect(() => {
     if (!soldTimer) return;
@@ -1339,13 +1415,10 @@ export default function AuctionPage() {
                       <UserX size={16} /> Pass / Unsold
                     </button>
 
-                    {/* Instant Pass & Next Player in one single click */}
+                    {/* Instant Pass & Next Player in one single atomic click */}
                     <button
                       className="admin-btn"
-                      onClick={async () => {
-                        await markAsUnsold(currentPlayer);
-                        await advanceToNextPlayer();
-                      }}
+                      onClick={passAndNextPlayer}
                       disabled={saving}
                       title="Mark player unsold and immediately call next player"
                       style={{
