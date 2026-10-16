@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
+  XCircle,
   Award,
   Star,
   Users,
@@ -795,6 +796,23 @@ export default function AuctionViewerPage() {
     return '1.55x';
   };
 
+  const [advancingNext, setAdvancingNext] = useState(false);
+  const handleAdvanceNext = async () => {
+    try {
+      setAdvancingNext(true);
+      await fetch('/api/auction/live', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ advance_next: true }),
+      });
+      await syncLiveAuction();
+    } catch (e) {
+      console.warn('Failed to advance player:', e);
+    } finally {
+      setAdvancingNext(false);
+    }
+  };
+
   /* ──────────────────────────────────────────────────────────
      PLAYER COMPUTED STATES
      ────────────────────────────────────────────────────────── */
@@ -1085,6 +1103,29 @@ export default function AuctionViewerPage() {
 
       {viewState === 'player' && !isSold && (
         <main className="auction-stage">
+          {isUnsold && (
+            <div className="auction-unsold-banner-strip" style={{ gridColumn: '1 / -1' }}>
+              <div className="unsold-strip-inner">
+                <div className="unsold-strip-left">
+                  <div className="unsold-strip-badge">
+                    <span>⚠️</span>
+                    <span>UNSOLD · PASSED</span>
+                  </div>
+                  <div className="unsold-strip-title">
+                    <strong>{player?.player_name}</strong> was passed without any bids. Placed back in pool.
+                  </div>
+                </div>
+                <button
+                  className="unsold-next-btn"
+                  onClick={handleAdvanceNext}
+                  disabled={advancingNext}
+                >
+                  <Zap size={15} />
+                  <span>{advancingNext ? 'Calling Next Player...' : '⚡ NEXT PLAYER'}</span>
+                </button>
+              </div>
+            </div>
+          )}
           {/* ── LEFT HALF — PHOTO & REGISTRATION STRIP ── */}
           <section className="photo-side">
             <div className="auction-reg-strip">
@@ -1134,6 +1175,15 @@ export default function AuctionViewerPage() {
                   (e.target as HTMLImageElement).src = '/images/kpl-logo.jpg';
                 }}
               />
+
+              {isUnsold && (
+                <div className="auction-photo-unsold-stamp">
+                  <div className="unsold-stamp-inner">
+                    <span>UNSOLD</span>
+                  </div>
+                  <div className="unsold-stamp-caption">NO BIDS RECEIVED</div>
+                </div>
+              )}
 
               <div className="auction-photo-gradient" />
               <div className="auction-photo-scanlines" />
@@ -1362,16 +1412,29 @@ export default function AuctionViewerPage() {
                 )}
 
                 {isUnsold && (
-                  <>
-                    <div className="auction-val-col">
-                      <span className="auction-val-sub">Outcome</span>
-                      <div className="auction-val-main" style={{ color: '#f87171' }}>—</div>
+                  <div className="auction-unsold-result-card" style={{ gridColumn: '1 / -1' }}>
+                    <div className="unsold-result-header">
+                      <XCircle size={18} color="#ef4444" />
+                      <span>PLAYER UNSOLD IN THIS ROUND</span>
                     </div>
-                    <div className="auction-val-col">
-                      <span className="auction-val-sub">Final Price</span>
-                      <div className="auction-val-main" style={{ color: 'var(--mute)' }}>—</div>
+                    <div className="unsold-result-desc">
+                      Base price of ₹{Number(player?.base_price || 500).toLocaleString('en-IN')} was not met. The player is eligible to re-enter future rounds.
                     </div>
-                  </>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 8 }}>
+                      <div className="unsold-result-status-pill">
+                        ROUND STATUS: PASSED
+                      </div>
+                      <button
+                        className="unsold-next-btn"
+                        onClick={handleAdvanceNext}
+                        disabled={advancingNext}
+                        style={{ padding: '6px 14px', fontSize: 13 }}
+                      >
+                        <Zap size={14} />
+                        <span>{advancingNext ? 'Calling...' : '⚡ Call Next Player'}</span>
+                      </button>
+                    </div>
+                  </div>
                 )}
 
                 {!isOnBlock && !isSold && !isUnsold && (

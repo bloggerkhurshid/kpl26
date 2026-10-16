@@ -52,6 +52,7 @@ interface LiveState {
 
 // In-memory persistent sold history tracking
 const inMemorySoldOrder: Map<string, SoldPlayerItem> = new Map();
+let inMemoryPool: any[] = [];
 
 let liveState: LiveState = {
   is_active: false,
@@ -138,6 +139,7 @@ async function syncFromDatabase(force: boolean = false) {
 
     // Calculate pool, sold, disabled, purse (excluding Retained & Owner players from auction stats)
     const pool = rawPlayers.filter((p: any) => (p.auction_eligible === 1 || p.auction_eligible === true || p.auction_eligible === '1') && !p.team_id && !isRetainedOrOwner(p));
+    inMemoryPool = pool;
     const sold = rawPlayers.filter((p: any) => Boolean(p.team_id) && !isRetainedOrOwner(p));
     const disabled = rawPlayers.filter((p: any) => (!p.auction_eligible || p.auction_eligible === 0 || p.auction_eligible === '0') && !p.team_id && !isRetainedOrOwner(p));
     const total_purse_spent = sold.reduce((acc: number, p: any) => acc + (Number(p.sold_price) || 0), 0);
@@ -343,6 +345,22 @@ export async function POST(req: Request) {
         liveState.sold_timestamp = null;
       }
       liveState.current_player_id = body.current_player_id;
+    }
+
+    // Handle advance_next trigger
+    if (body.advance_next === true) {
+      const nextCandidate = inMemoryPool.find((p: any) => String(p.id) !== String(liveState.current_player_id) && !p.team_id);
+      if (nextCandidate) {
+        liveState.current_player_id = String(nextCandidate.id);
+        liveState.player = nextCandidate;
+        liveState.is_active = true;
+        liveState.is_ended = false;
+        liveState.sold_timestamp = null;
+      } else {
+        liveState.current_player_id = null;
+        liveState.player = null;
+        liveState.sold_timestamp = null;
+      }
     }
 
     // If player object passed directly or current_player_id set, update player instantly in memory

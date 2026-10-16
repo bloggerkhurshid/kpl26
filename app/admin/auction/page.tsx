@@ -1033,7 +1033,7 @@ export default function AuctionPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', width: '100%' }}>
                 {Boolean(currentPlayer.team_id || (soldTimer && soldTimer.playerId === currentPlayer.id)) ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -1094,6 +1094,65 @@ export default function AuctionPage() {
                       <span>Next player will be called only when you click &quot;Call Next Player&quot;.</span>
                     </div>
                   </div>
+                ) : (!currentPlayer.team_id && (!currentPlayer.auction_eligible || currentPlayer.auction_eligible === 0 || currentPlayer.auction_eligible === '0')) ? (
+                  /* ── ANIMATED UNSOLD BANNER & NEXT PLAYER ACTION ── */
+                  <div className="admin-unsold-animated-banner" style={{ width: '100%' }}>
+                    <div className="admin-unsold-badge">
+                      <UserX size={15} />
+                      <span>PLAYER UNSOLD · PASSED</span>
+                    </div>
+                    <div className="admin-unsold-title">
+                      <strong>{currentPlayer.player_name}</strong> was marked as UNSOLD and moved to the pass pool.
+                    </div>
+                    <div className="admin-unsold-actions">
+                      {nextCandidatePlayer ? (
+                        <button
+                          className="admin-btn"
+                          onClick={advanceToNextPlayer}
+                          disabled={saving}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '12px 24px',
+                            fontSize: 14.5,
+                            fontWeight: 800,
+                            borderRadius: 8,
+                            background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                            color: '#fff',
+                            border: 'none',
+                            boxShadow: '0 4px 18px rgba(16, 185, 129, 0.45)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Zap size={18} /> Call Next Player: {nextCandidatePlayer.player_name}
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 13, color: '#f5c842', fontWeight: 800 }}>
+                          No more eligible players in this round
+                        </span>
+                      )}
+
+                      <button
+                        className="admin-btn admin-btn-ghost"
+                        onClick={() => toggleAuctionEligibility(currentPlayer)}
+                        disabled={saving}
+                        title="Return player to active auction pool"
+                        style={{ padding: '12px 16px', fontSize: 13, borderRadius: 8 }}
+                      >
+                        Re-enable in Pool
+                      </button>
+
+                      <button
+                        className="admin-btn admin-btn-ghost"
+                        onClick={() => setCurrentPlayer(null)}
+                        disabled={saving}
+                        style={{ padding: '12px 16px', fontSize: 13, borderRadius: 8 }}
+                      >
+                        Clear Block
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <button
@@ -1112,11 +1171,63 @@ export default function AuctionPage() {
                       className="admin-btn admin-btn-danger"
                       onClick={() => markAsUnsold(currentPlayer)}
                       disabled={saving}
-                      title="Mark as unsold and remove from block"
+                      title="Mark as unsold and show unsold banner"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, borderRadius: 8 }}
                     >
                       <UserX size={16} /> Pass / Unsold
                     </button>
+
+                    {/* Instant Pass & Next Player in one single click */}
+                    <button
+                      className="admin-btn"
+                      onClick={async () => {
+                        await markAsUnsold(currentPlayer);
+                        await advanceToNextPlayer();
+                      }}
+                      disabled={saving}
+                      title="Mark player unsold and immediately call next player"
+                      style={{
+                        background: 'linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)',
+                        color: '#fff',
+                        border: 'none',
+                        fontWeight: 800,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '12px 18px',
+                        fontSize: 13.5,
+                        borderRadius: 8,
+                        boxShadow: '0 4px 14px rgba(220, 38, 38, 0.35)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Zap size={16} /> Pass & Next Player
+                    </button>
+
+                    {nextCandidatePlayer && (
+                      <button
+                        className="admin-btn"
+                        onClick={advanceToNextPlayer}
+                        disabled={saving}
+                        title={`Advance block to next player: ${nextCandidatePlayer.player_name}`}
+                        style={{
+                          background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                          color: '#fff',
+                          border: 'none',
+                          fontWeight: 800,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '12px 18px',
+                          fontSize: 13.5,
+                          borderRadius: 8,
+                          boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Zap size={16} /> Next Player
+                      </button>
+                    )}
 
                     <button
                       className="admin-btn admin-btn-ghost"

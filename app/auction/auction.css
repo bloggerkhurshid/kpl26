@@ -3135,3 +3135,228 @@ body.auction-body-lock {
   flex: 1;
 }
 
+/* ──────────────────────────────────────────────────────────
+   ANIMATED UNSOLD BANNER & STAMP OVERLAY
+   ────────────────────────────────────────────────────────── */
+.auction-unsold-banner-strip {
+  position: relative;
+  margin: 0 0 16px 0;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, rgba(153, 27, 27, 0.95) 0%, rgba(69, 10, 10, 0.98) 100%);
+  border: 1.5px solid #ef4444;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.4), inset 0 0 15px rgba(239, 68, 68, 0.2);
+  animation: unsoldStripSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1), unsoldBannerPulse 2.5s infinite ease-in-out;
+  z-index: 10;
+}
+
+@keyframes unsoldStripSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes unsoldBannerPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.35), inset 0 0 10px rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(239, 68, 68, 0.65), inset 0 0 20px rgba(239, 68, 68, 0.3);
+    border-color: #f87171;
+  }
+}
+
+.unsold-strip-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.unsold-strip-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.unsold-strip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #dc2626;
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13.5px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.5);
+  animation: unsoldBadgeThrob 1.5s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes unsoldBadgeThrob {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.unsold-strip-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 14.5px;
+  color: #fecaca;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.unsold-strip-title strong {
+  color: #fff;
+  font-weight: 800;
+}
+
+.unsold-next-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #fff;
+  border: none;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45);
+  transition: all 0.2s ease;
+  animation: unsoldBtnPulse 2s infinite;
+}
+
+.unsold-next-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 6px 22px rgba(16, 185, 129, 0.65);
+}
+
+@keyframes unsoldBtnPulse {
+  0%, 100% {
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45);
+  }
+  50% {
+    box-shadow: 0 4px 26px rgba(16, 185, 129, 0.85);
+  }
+}
+
+/* Diagonal Photo Stamp */
+.auction-photo-unsold-stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-14deg);
+  z-index: 15;
+  pointer-events: none;
+  animation: unsoldStampDrop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes unsoldStampDrop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-14deg) scale(2.2);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-14deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-14deg) scale(1);
+  }
+}
+
+.unsold-stamp-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(185, 28, 28, 0.94);
+  border: 4px dashed #fca5a5;
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.7), 0 0 30px rgba(220, 38, 38, 0.8);
+  backdrop-filter: blur(4px);
+}
+
+.unsold-stamp-caption {
+  text-align: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #fca5a5;
+  margin-top: 4px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Unsold result box card */
+.auction-unsold-result-card {
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(153, 27, 27, 0.25) 100%);
+  border: 1.5px solid rgba(239, 68, 68, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
+}
+
+.unsold-result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fca5a5;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.unsold-result-desc {
+  font-size: 13px;
+  color: #fecaca;
+  line-height: 1.4;
+}
+
+.unsold-result-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  color: #fee2e2;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  width: fit-content;
+}
+
+
