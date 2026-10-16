@@ -249,6 +249,8 @@ async function syncFromDatabase(force: boolean = false) {
           liveState.current_player_id = null;
           liveState.player = null;
           liveState.sold_timestamp = null;
+          // Clear from database so page reloads never reload this sold player
+          kplApi.saveContentSettings({ auction_current_player_id: '' }).catch(() => {});
         } else {
           const assignedTeam = liveState.teams.find((t: any) => String(t.id) === String(teamId));
           liveState.player = {
@@ -299,6 +301,7 @@ export async function GET(req: Request) {
       liveState.player = null;
       liveState.sold_timestamp = null;
       liveState.version += 1;
+      kplApi.saveContentSettings({ auction_current_player_id: '' }).catch(() => {});
     }
   }
 
@@ -443,12 +446,17 @@ export async function POST(req: Request) {
     liveState.version += 1;
     liveState.lastUpdated = Date.now();
 
-    // Persist to database so across all workers, lambdas, and refreshes, the new player is saved
+    // Persist to database so across all workers, lambdas, and refreshes, state is saved
+    // CRITICAL: If the player on block is already sold (has team_id), NEVER persist their ID as auction_current_player_id in MySQL!
+    // This guarantees that any page reload or server restart immediately shows "NEXT PLAYER COMING SOON", not an old sold player!
+    const isSoldPlayer = Boolean(liveState.player && liveState.player.team_id);
+    const dbPlayerIdToSave = isSoldPlayer ? '' : (liveState.current_player_id || '');
+
     try {
       await kplApi.saveContentSettings({
         auction_is_active: String(liveState.is_active),
         auction_is_ended: String(Boolean(liveState.is_ended)),
-        auction_current_player_id: liveState.current_player_id || '',
+        auction_current_player_id: dbPlayerIdToSave,
         auction_notes: liveState.notes,
       });
     } catch (e) {
