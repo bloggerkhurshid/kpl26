@@ -347,22 +347,6 @@ export async function POST(req: Request) {
       liveState.current_player_id = body.current_player_id;
     }
 
-    // Handle advance_next trigger
-    if (body.advance_next === true) {
-      const nextCandidate = inMemoryPool.find((p: any) => String(p.id) !== String(liveState.current_player_id) && !p.team_id);
-      if (nextCandidate) {
-        liveState.current_player_id = String(nextCandidate.id);
-        liveState.player = nextCandidate;
-        liveState.is_active = true;
-        liveState.is_ended = false;
-        liveState.sold_timestamp = null;
-      } else {
-        liveState.current_player_id = null;
-        liveState.player = null;
-        liveState.sold_timestamp = null;
-      }
-    }
-
     // If player object passed directly or current_player_id set, update player instantly in memory
     if (body.current_player_id === null) {
       liveState.player = null;

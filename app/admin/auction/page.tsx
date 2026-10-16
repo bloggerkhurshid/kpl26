@@ -562,21 +562,22 @@ export default function AuctionPage() {
       await setCurrentPlayer(nextPlayer.id);
       showToast(`⚡ Called next player: ${nextPlayer.player_name}`);
     } else {
-      await setCurrentPlayer(null);
-      showToast('All eligible players in current round completed!');
+      showToast('No more eligible players in current filtered round.');
     }
   }, [sortedPartEligible, auctionConfig.current_player_id, players, auctionConfig.is_active]);
 
-  // 1-minute countdown interval for sold display in admin (does NOT auto-advance; admin maintains explicit control)
+  // 1-minute countdown interval for sold display in admin (does NOT auto-advance or auto-complete; admin maintains explicit control)
   useEffect(() => {
     if (!soldTimer) return;
     const interval = setInterval(() => {
       setSoldTimer(prev => {
         if (!prev) return null;
         if (prev.secondsRemaining <= 1) {
-          // Timer expires: clear block so screen shows "Waiting for next player" (no auto-call)
-          setCurrentPlayer(null);
-          return null;
+          // Timer expires: Keep player and celebration summary visible; do NOT clear block automatically
+          return {
+            ...prev,
+            secondsRemaining: 0,
+          };
         }
         return {
           ...prev,

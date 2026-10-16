@@ -662,8 +662,8 @@ export default function AuctionViewerPage() {
       const isEnded = Boolean(data.is_ended);
       const newPlayerId = data.current_player_id || null;
 
-      // Redirect viewer to results page when auction is officially ended
-      if (isEnded) {
+      // Redirect viewer to results page only when auction is officially ended AND not live
+      if (isEnded && !isLive) {
         router.push('/auction/ended');
         return;
       }
@@ -794,23 +794,6 @@ export default function AuctionViewerPage() {
     if (zoomState === 0) return 'Cover';
     if (zoomState === 1) return 'Fit';
     return '1.55x';
-  };
-
-  const [advancingNext, setAdvancingNext] = useState(false);
-  const handleAdvanceNext = async () => {
-    try {
-      setAdvancingNext(true);
-      await fetch('/api/auction/live', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ advance_next: true }),
-      });
-      await syncLiveAuction();
-    } catch (e) {
-      console.warn('Failed to advance player:', e);
-    } finally {
-      setAdvancingNext(false);
-    }
   };
 
   /* ──────────────────────────────────────────────────────────
@@ -1088,17 +1071,13 @@ export default function AuctionViewerPage() {
 
       {viewState === 'changing' && <ChangingScreen />}
 
-      {viewState === 'player' && isSold && soldSecondsLeft > 0 && (
+      {viewState === 'player' && isSold && (
         <SoldCelebrationScreen
           player={player}
           team={assignedTeam}
           soldPrice={Number(player?.sold_price || 0)}
           secondsRemaining={soldSecondsLeft}
         />
-      )}
-
-      {viewState === 'player' && isSold && soldSecondsLeft <= 0 && (
-        <WaitingScreen stats={stats} notes={config.notes} recentSold={recentSold} />
       )}
 
       {viewState === 'player' && !isSold && (
@@ -1115,14 +1094,9 @@ export default function AuctionViewerPage() {
                     <strong>{player?.player_name}</strong> was passed without any bids. Placed back in pool.
                   </div>
                 </div>
-                <button
-                  className="unsold-next-btn"
-                  onClick={handleAdvanceNext}
-                  disabled={advancingNext}
-                >
-                  <Zap size={15} />
-                  <span>{advancingNext ? 'Calling Next Player...' : '⚡ NEXT PLAYER'}</span>
-                </button>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#fca5a5', fontFamily: 'Barlow Condensed', fontSize: 13.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', background: 'rgba(239,68,68,0.2)', padding: '6px 14px', borderRadius: 6, border: '1px solid rgba(239,68,68,0.4)' }}>
+                  <span>⏳ AWAITING NEXT CALL</span>
+                </div>
               </div>
             </div>
           )}
@@ -1422,17 +1396,8 @@ export default function AuctionViewerPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 8 }}>
                       <div className="unsold-result-status-pill">
-                        ROUND STATUS: PASSED
+                        ROUND STATUS: PASSED · AWAITING NEXT CALL
                       </div>
-                      <button
-                        className="unsold-next-btn"
-                        onClick={handleAdvanceNext}
-                        disabled={advancingNext}
-                        style={{ padding: '6px 14px', fontSize: 13 }}
-                      >
-                        <Zap size={14} />
-                        <span>{advancingNext ? 'Calling...' : '⚡ Call Next Player'}</span>
-                      </button>
                     </div>
                   </div>
                 )}
