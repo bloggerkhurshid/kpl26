@@ -495,13 +495,12 @@ export const kplApi = {
 
   // 7. Content Settings API
   async getContentSettings() {
-    return fetchFromPhpApi('api/content.php', { cache: 'no-store', forceFresh: true });
+    return fetchFromPhpApi('api/content.php', { forceFresh: true });
   },
 
   async saveContentSettings(settings: Record<string, any>) {
     return fetchFromPhpApi('api/content.php', {
       method: 'POST',
-      headers: { 'Cache-Control': 'no-cache' },
       body: JSON.stringify(settings),
     });
   },
