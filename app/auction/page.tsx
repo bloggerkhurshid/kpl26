@@ -569,7 +569,7 @@ function SoldCelebrationScreen({
                 <div
                   className="sold-timer-bar-fill"
                   style={{
-                    width: `${Math.min(100, Math.max(0, (secondsRemaining / 60) * 100))}%`,
+                    width: `${Math.min(100, Math.max(0, (secondsRemaining / 10) * 100))}%`,
                     background: `linear-gradient(90deg, #10b981 0%, ${teamColor} 100%)`,
                   }}
                 />
@@ -699,7 +699,7 @@ function UnsoldCelebrationScreen({
                 <div
                   className="unsold-timer-bar-fill"
                   style={{
-                    width: `${Math.min(100, Math.max(0, (secondsRemaining / 30) * 100))}%`,
+                    width: `${Math.min(100, Math.max(0, (secondsRemaining / 10) * 100))}%`,
                   }}
                 />
               </div>
@@ -851,21 +851,21 @@ export default function AuctionViewerPage() {
         }
       }
 
-      // Update sold countdown timestamp if active
+      // Update sold countdown timestamp if active (10s)
       if (data.sold_timestamp) {
         soldTimestampRef.current = Number(data.sold_timestamp);
         const elapsed = Math.floor((Date.now() - soldTimestampRef.current) / 1000);
-        setSoldSecondsLeft(Math.max(0, 60 - elapsed));
+        setSoldSecondsLeft(Math.max(0, 10 - elapsed));
       } else {
         soldTimestampRef.current = null;
         setSoldSecondsLeft(0);
       }
 
-      // Update unsold countdown timestamp if active
+      // Update unsold countdown timestamp if active (10s)
       if (data.unsold_timestamp) {
         unsoldTimestampRef.current = Number(data.unsold_timestamp);
         const elapsed = Math.floor((Date.now() - unsoldTimestampRef.current) / 1000);
-        setUnsoldSecondsLeft(Math.max(0, 30 - elapsed));
+        setUnsoldSecondsLeft(Math.max(0, 10 - elapsed));
       } else {
         unsoldTimestampRef.current = null;
         setUnsoldSecondsLeft(0);
@@ -882,11 +882,11 @@ export default function AuctionViewerPage() {
       hasInitializedRef.current = true;
 
       const isSoldCelebrationActive = data.status === 'CELEBRATION_SOLD' && Boolean(data.sold_timestamp) && (
-        Math.floor((Date.now() - Number(data.sold_timestamp)) / 1000) < 60
+        Math.floor((Date.now() - Number(data.sold_timestamp)) / 1000) < 10
       );
 
       const isUnsoldCelebrationActive = data.status === 'CELEBRATION_UNSOLD' && Boolean(data.unsold_timestamp) && (
-        Math.floor((Date.now() - Number(data.unsold_timestamp)) / 1000) < 30
+        Math.floor((Date.now() - Number(data.unsold_timestamp)) / 1000) < 10
       );
 
       if (!isLive) {
@@ -948,10 +948,10 @@ export default function AuctionViewerPage() {
   // Clean 1-second countdown ticker for sold & unsold celebrations
   useEffect(() => {
     const t = setInterval(() => {
-      // Sold celebration countdown (60s)
+      // Sold celebration countdown (10s)
       if (soldTimestampRef.current) {
         const elapsed = Math.floor((Date.now() - soldTimestampRef.current) / 1000);
-        const remaining = Math.max(0, 60 - elapsed);
+        const remaining = Math.max(0, 10 - elapsed);
         setSoldSecondsLeft(remaining);
         if (remaining <= 0) {
           setViewState(curr => (curr === 'celebration_sold' ? 'waiting' : curr));
@@ -960,10 +960,10 @@ export default function AuctionViewerPage() {
         setSoldSecondsLeft(0);
       }
 
-      // Unsold celebration countdown (30s)
+      // Unsold celebration countdown (10s)
       if (unsoldTimestampRef.current) {
         const elapsed = Math.floor((Date.now() - unsoldTimestampRef.current) / 1000);
-        const remaining = Math.max(0, 30 - elapsed);
+        const remaining = Math.max(0, 10 - elapsed);
         setUnsoldSecondsLeft(remaining);
         if (remaining <= 0) {
           setViewState(curr => (curr === 'celebration_unsold' ? 'waiting' : curr));

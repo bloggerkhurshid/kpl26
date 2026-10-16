@@ -320,9 +320,9 @@ export async function GET(req: Request) {
     syncFromDatabase();
   }
 
-  // Auto-clear celebrations when their time has elapsed
+  // Auto-clear celebrations when their time has elapsed (10 seconds)
   if (liveState.status === 'CELEBRATION_SOLD') {
-    const isExpired = !liveState.sold_timestamp || (Date.now() - Number(liveState.sold_timestamp) >= 60000);
+    const isExpired = !liveState.sold_timestamp || (Date.now() - Number(liveState.sold_timestamp) >= 10000);
     if (isExpired) {
       liveState.status = 'IDLE';
       liveState.current_player_id = null;
@@ -332,7 +332,7 @@ export async function GET(req: Request) {
       kplApi.saveContentSettings({ auction_current_player_id: '', auction_stage_status: 'IDLE' }).catch(() => {});
     }
   } else if (liveState.status === 'CELEBRATION_UNSOLD') {
-    const isExpired = !liveState.unsold_timestamp || (Date.now() - Number(liveState.unsold_timestamp) >= 30000);
+    const isExpired = !liveState.unsold_timestamp || (Date.now() - Number(liveState.unsold_timestamp) >= 10000);
     if (isExpired) {
       liveState.status = 'IDLE';
       liveState.current_player_id = null;

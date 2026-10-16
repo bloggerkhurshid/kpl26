@@ -402,7 +402,7 @@ export default function AuctionPage() {
       playerName: modalPlayer.player_name,
       teamName: assignedTeam?.name || 'Franchise Team',
       soldPrice: soldPrice,
-      secondsRemaining: 60,
+      secondsRemaining: 10,
     });
 
     // The player is now SOLD — clear the active bidding block immediately!
@@ -438,7 +438,7 @@ export default function AuctionPage() {
         }),
       ]);
 
-      showToast(`🎉 ${modalPlayer.player_name} sold for ₹${soldPrice.toLocaleString('en-IN')}! Showing sold screen for 1 minute.`);
+      showToast(`🎉 ${modalPlayer.player_name} sold for ₹${soldPrice.toLocaleString('en-IN')}! Showing sold screen for 10 seconds.`);
       loadData(true);
     } catch (err: any) {
       showToast(err.message || 'Failed to sell player', 'error');
@@ -481,7 +481,7 @@ export default function AuctionPage() {
     setUnsoldTimer({
       playerId: p.id,
       playerName: p.player_name,
-      secondsRemaining: 30,
+      secondsRemaining: 10,
     });
     setSoldTimer(null);
 
@@ -511,7 +511,7 @@ export default function AuctionPage() {
         }),
       ]);
       lastLocalActionRef.current = Date.now();
-      showToast(`📢 ${p.player_name} marked as UNSOLD & showing animated unsold celebration screen on live display for 30s.`);
+      showToast(`📢 ${p.player_name} marked as UNSOLD & showing animated unsold celebration screen on live display for 10s.`);
       kplApi.invalidatePlayersCache();
       loadData(true);
     } catch (err: any) {
@@ -1250,7 +1250,7 @@ export default function AuctionPage() {
                             {soldTimer?.secondsRemaining ? (
                               <>Auto-timer: <strong style={{ color: '#f5c842', fontSize: 13 }}>{soldTimer.secondsRemaining}s</strong></>
                             ) : (
-                              <strong style={{ color: '#4ade80' }}>60s celebration complete</strong>
+                              <strong style={{ color: '#4ade80' }}>10s celebration complete</strong>
                             )}
                           </span>
                         </div>
@@ -1338,7 +1338,7 @@ export default function AuctionPage() {
                         {unsoldTimer?.secondsRemaining ? (
                           <>Auto-timer: <strong style={{ color: '#f87171', fontSize: 13 }}>{unsoldTimer.secondsRemaining}s</strong></>
                         ) : (
-                          <strong style={{ color: '#fca5a5' }}>30s unsold display complete</strong>
+                          <strong style={{ color: '#fca5a5' }}>10s unsold display complete</strong>
                         )}
                       </span>
                     </div>
