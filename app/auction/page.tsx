@@ -626,15 +626,22 @@ export default function AuctionViewerPage() {
   const lastSoldIdRef = useRef<string | null>(null);
   const soldTimestampRef = useRef<number | null>(null);
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   /* Lock viewport scroll */
   useEffect(() => {
+    if (!mounted) return;
     document.documentElement.classList.add('auction-body-lock');
     document.body.classList.add('auction-body-lock');
     return () => {
       document.documentElement.classList.remove('auction-body-lock');
       document.body.classList.remove('auction-body-lock');
     };
-  }, []);
+  }, [mounted]);
 
   /* ──────────────────────────────────────────────────────────
      LIVE STATE SYNCHRONIZATION (Ultra-Lightweight < 5ms)
@@ -822,6 +829,10 @@ export default function AuctionViewerPage() {
     ? `KPL-PLY-${player.id.replace(/[^0-9]/g, '').slice(-3).padStart(3, '0') || '200'}`
     : 'KPL-PLY-200';
 
+  if (!mounted) {
+    return <InitialLoadScreen />;
+  }
+
   return (
     <div className="auction-viewer">
       {/* ──────────────────────────────────────────────────────
@@ -994,7 +1005,7 @@ export default function AuctionViewerPage() {
             ) : (
               (() => {
                 let displaySold = [...recentSold];
-                while (displaySold.length < 8) {
+                while (displaySold.length > 0 && displaySold.length < 8) {
                   displaySold = [...displaySold, ...recentSold];
                 }
                 return (

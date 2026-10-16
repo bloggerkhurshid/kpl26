@@ -161,20 +161,38 @@ export default function AuctionPage() {
         return p;
       });
 
-      setPlayers(enrichedPlayers);
+      // Keep optimistic sold/unsold state so delayed database reads never revert local admin actions
+      setPlayers(prev => {
+        if (prev.length === 0) return enrichedPlayers;
+        const prevMap = new Map(prev.map(p => [String(p.id), p]));
+        return enrichedPlayers.map(p => {
+          const localP = prevMap.get(String(p.id));
+          if (!localP) return p;
+          // If locally sold, preserve sold status unless remote has also assigned a team
+          if (localP.team_id && !p.team_id) {
+            return { ...p, team_id: localP.team_id, sold_price: localP.sold_price, auction_eligible: 0, teams: localP.teams };
+          }
+          // If locally marked unsold (auction_eligible: 0), preserve unsold status unless remote has assigned a team
+          if (localP.auction_eligible === 0 && (p.auction_eligible === 1 || p.auction_eligible === '1' || p.auction_eligible === true) && !p.team_id) {
+            return { ...p, auction_eligible: 0 };
+          }
+          return p;
+        });
+      });
       setTeams(loadedTeams);
 
       if (cRes) {
-        // Protect local admin action from being clobbered by an in-flight or stale background sync
-        const isRecentlyModifiedLocally = Date.now() - lastLocalActionRef.current < 15000;
-        setAuctionConfig(prev => ({
-          is_active: cRes.current_player_id ? true : Boolean(cRes.is_active),
-          is_ended: Boolean(cRes.is_ended),
-          current_player_id: isRecentlyModifiedLocally && prev.current_player_id
-            ? prev.current_player_id
-            : (cRes.current_player_id || null),
-          notes: cRes.notes || prev.notes || 'KPL Season 3 Live Auction',
-        }));
+        // Protect local admin action: NEVER overwrite active auction block if locally modified in last 60 seconds
+        const isRecentlyModifiedLocally = Date.now() - lastLocalActionRef.current < 60000;
+        setAuctionConfig(prev => {
+          const chosenPlayerId = isRecentlyModifiedLocally ? prev.current_player_id : (cRes.current_player_id || null);
+          return {
+            is_active: cRes.current_player_id ? true : Boolean(cRes.is_active),
+            is_ended: Boolean(cRes.is_ended),
+            current_player_id: chosenPlayerId,
+            notes: cRes.notes || prev.notes || 'KPL Season 3 Live Auction',
+          };
+        });
       }
       setLastSyncTime(new Date());
     } catch (err: any) {
@@ -413,10 +431,8 @@ export default function AuctionPage() {
       lastLocalActionRef.current = Date.now();
       showToast(`${p.player_name} marked as UNSOLD & cleared from auction block.`);
       kplApi.invalidatePlayersCache();
-      loadData(true);
     } catch (err: any) {
       showToast(err.message || 'Failed to mark as unsold', 'error');
-      loadData(true);
     } finally {
       setSaving(false);
     }

@@ -274,8 +274,11 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const clientVersion = Number(url.searchParams.get('v') || 0);
 
-  // Trigger non-blocking async background refresh if stale (> 5 seconds)
-  if (Date.now() - lastFullSync > 5000) {
+  // If this server instance has not bootstrapped from the database yet, await initial sync
+  if (!hasBootstrapped) {
+    await syncFromDatabase(true);
+  } else if (Date.now() - lastFullSync > 5000) {
+    // Non-blocking background sync if already bootstrapped
     syncFromDatabase();
   }
 
