@@ -41,7 +41,10 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    if (body.is_active !== undefined) {
+    if (body.current_player_id) {
+      memoryConfig.is_active = true;
+      memoryConfig.is_ended = false;
+    } else if (body.is_active !== undefined) {
       memoryConfig.is_active = Boolean(body.is_active);
       if (body.is_active) memoryConfig.is_ended = false;
     }

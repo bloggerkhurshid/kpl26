@@ -656,8 +656,8 @@ export default function AuctionViewerPage() {
 
       versionRef.current = data.version || versionRef.current + 1;
 
-      // Update config
-      const isLive = Boolean(data.is_active);
+      // Update config (session is live if is_active is true or a player is currently on the block)
+      const isLive = Boolean(data.is_active) || Boolean(data.current_player_id);
       const isEnded = Boolean(data.is_ended);
       const newPlayerId = data.current_player_id || null;
 

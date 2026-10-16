@@ -95,23 +95,27 @@ async function syncFromDatabase(force: boolean = false) {
     ]);
 
     const data = contentRes?.data || contentRes || {};
-    // Sync config from database if initial bootstrap OR if no local mutation occurred in last 8s
-    const timeSinceLocalMutation = now - lastLocalMutation;
-    if (!hasBootstrapped || timeSinceLocalMutation > 8000) {
+    // Only adopt remote database config if we haven't made a local change in last 15s
+    const timeSinceLocalMutation = Date.now() - lastLocalMutation;
+    if (timeSinceLocalMutation > 15000) {
       if (data.auction_is_active !== undefined) {
-        liveState.is_active = data.auction_is_active === 'true' || data.auction_is_active === true || data.auction_is_active === '1' || data.auction_is_active === 1;
+        const dbIsActive = data.auction_is_active === 'true' || data.auction_is_active === true || data.auction_is_active === '1' || data.auction_is_active === 1;
+        // Never deactivate if we currently have an active player on the auction block
+        if (!liveState.current_player_id || dbIsActive) {
+          liveState.is_active = dbIsActive;
+        }
       }
       if (data.auction_is_ended !== undefined) {
         liveState.is_ended = data.auction_is_ended === 'true' || data.auction_is_ended === true || data.auction_is_ended === '1' || data.auction_is_ended === 1;
       }
-      if (data.auction_current_player_id !== undefined) {
+      if (data.auction_current_player_id !== undefined && !liveState.current_player_id) {
         liveState.current_player_id = data.auction_current_player_id || null;
       }
       if (data.auction_notes !== undefined) {
         liveState.notes = data.auction_notes || '';
       }
-      hasBootstrapped = true;
     }
+    hasBootstrapped = true;
 
     const rawPlayers: any[] = Array.isArray(playersRes?.data) ? playersRes.data : (Array.isArray(playersRes) ? playersRes : []);
     const rawTeams: any[] = Array.isArray(teamsRes?.data) ? teamsRes.data : (Array.isArray(teamsRes) ? teamsRes : []);
@@ -309,7 +313,14 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    if (body.is_active !== undefined) {
+    hasBootstrapped = true;
+    lastLocalMutation = Date.now();
+
+    // When a player is selected on the block, the auction session MUST be active and not ended!
+    if (body.current_player_id) {
+      liveState.is_active = true;
+      liveState.is_ended = false;
+    } else if (body.is_active !== undefined) {
       liveState.is_active = Boolean(body.is_active);
       if (body.is_active) {
         liveState.is_ended = false;
@@ -401,9 +412,6 @@ export async function POST(req: Request) {
     liveState.version += 1;
     liveState.lastUpdated = Date.now();
 
-    // Trigger background sync with DB immediately without blocking response
-    syncFromDatabase(true);
-
     // Asynchronously persist to database in background without blocking response
     (async () => {
       try {
@@ -417,6 +425,9 @@ export async function POST(req: Request) {
         console.warn('Failed to persist auction state to database:', e);
       }
     })();
+
+    // Trigger background sync with DB to refresh player lists and team budgets
+    syncFromDatabase(true);
 
     return NextResponse.json({
       success: true,

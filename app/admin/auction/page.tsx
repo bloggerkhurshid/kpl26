@@ -154,12 +154,12 @@ export default function AuctionPage() {
       setTeams(loadedTeams);
 
       if (cRes) {
-        setAuctionConfig({
-          is_active: Boolean(cRes.is_active),
+        setAuctionConfig(prev => ({
+          is_active: cRes.current_player_id ? true : Boolean(cRes.is_active),
           is_ended: Boolean(cRes.is_ended),
           current_player_id: cRes.current_player_id || null,
-          notes: cRes.notes || 'KPL Season 3 Live Auction',
-        });
+          notes: cRes.notes || prev.notes || 'KPL Season 3 Live Auction',
+        }));
       }
       setLastSyncTime(new Date());
     } catch (err: any) {
@@ -207,19 +207,29 @@ export default function AuctionPage() {
     setSoldTimer(null);
     const p = players.find(x => String(x.id) === String(playerId)) || null;
 
+    // When selecting a player on the block, the auction MUST be LIVE!
+    // When clearing the block (null), maintain existing live session status.
+    const willBeActive = playerId ? true : auctionConfig.is_active;
+
     // Optimistic instant UI update
-    setAuctionConfig(c => ({ ...c, current_player_id: playerId }));
+    setAuctionConfig(c => ({
+      ...c,
+      current_player_id: playerId,
+      is_active: willBeActive,
+      is_ended: false,
+    }));
 
     try {
       await kplApi.updateAuctionConfig({
-        is_active: auctionConfig.is_active,
+        is_active: willBeActive,
+        is_ended: false,
         current_player_id: playerId,
         notes: auctionConfig.notes,
         player: p,
         sold_timestamp: null,
       });
       if (playerId && p) {
-        showToast(`${p.player_name} is now ON THE AUCTION BLOCK!`);
+        showToast(`🏏 ${p.player_name} is now ON THE AUCTION BLOCK (Live)!`);
       } else {
         showToast('Auction block cleared.');
       }
@@ -302,7 +312,8 @@ export default function AuctionPage() {
           auction_eligible: 0,
         }),
         kplApi.updateAuctionConfig({
-          is_active: auctionConfig.is_active,
+          is_active: true,
+          is_ended: false,
           current_player_id: modalPlayer.id,
           notes: auctionConfig.notes,
           sold_timestamp: soldTime,

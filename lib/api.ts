@@ -494,7 +494,7 @@ export const kplApi = {
       const res = await fetch('/api/auction/live', { cache: 'no-store' });
       if (res.ok) return await res.json();
     } catch (e) {}
-    return { is_active: false, is_ended: false, current_player_id: null, notes: '' };
+    return null;
   },
 
   async updateAuctionConfig(data: { is_active?: boolean; is_ended?: boolean; current_player_id?: string | null; notes?: string; player?: any; sold_timestamp?: number | null; unassign_player_id?: string }) {
