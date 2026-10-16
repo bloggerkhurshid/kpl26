@@ -41,6 +41,7 @@ interface Team {
   short_code: string;
   budget: number | string;
   spent: number | string;
+  remaining_budget?: number;
   squad_limit: number | string;
   squad_count?: number;
   accent_color: string;
@@ -89,12 +90,17 @@ interface AuctionStats {
 interface RecentSoldPlayer {
   id: string;
   player_name: string;
+  photo?: string | null;
+  role?: string;
+  player_category?: string;
+  registration_number?: string | null;
   sold_price: number | string;
   base_price?: number | string;
   team_id?: string;
   team_name: string;
   team_short_code: string;
   team_accent_color: string;
+  sold_at?: number | string | null;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -531,6 +537,12 @@ function SoldCelebrationScreen({
               <div className="sold-buyer-name" style={{ color: teamColor }}>
                 {teamName}
               </div>
+              {(team as any)?.remaining_budget !== undefined && (
+                <div style={{ fontSize: 12, color: '#f5c842', fontWeight: 800, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span>🪙 Team Purse Remaining:</span>
+                  <span>₹{Number((team as any).remaining_budget).toLocaleString('en-IN')}</span>
+                </div>
+              )}
             </div>
 
             <div className="sold-price-box" style={{ borderColor: teamColor }}>
@@ -599,6 +611,11 @@ export default function AuctionViewerPage() {
   const [connectionError, setConnectionError] = useState(false);
   const [zoomState, setZoomState] = useState<number>(0); // 0: cover, 1: contain, 2: scale(1.55)
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerTab, setDrawerTab] = useState<'sold' | 'teams'>('sold');
+  const [soldSearch, setSoldSearch] = useState<string>('');
+  const [selectedTeamForModal, setSelectedTeamForModal] = useState<Team | null>(null);
+  const [justSoldAlert, setJustSoldAlert] = useState<RecentSoldPlayer | null>(null);
+  const [recentBuyerTeamId, setRecentBuyerTeamId] = useState<string | null>(null);
 
   const router = useRouter();
   const prevPlayerIdRef = useRef<string | null>(null);
@@ -606,6 +623,7 @@ export default function AuctionViewerPage() {
   const hasInitializedRef = useRef<boolean>(false);
   const versionRef = useRef<number>(0);
   const configIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSoldIdRef = useRef<string | null>(null);
 
   /* Lock viewport scroll */
   useEffect(() => {
@@ -670,6 +688,21 @@ export default function AuctionViewerPage() {
       // Update recently sold
       if (Array.isArray(data.recent_sold)) {
         setRecentSold(data.recent_sold);
+      }
+
+      // Live Sold Event detection for instant broadcast celebration alert
+      if (data.last_sold_event) {
+        const evt = data.last_sold_event;
+        const key = `${evt.id}_${evt.sold_at || evt.sold_price}`;
+        if (lastSoldIdRef.current !== key) {
+          lastSoldIdRef.current = key;
+          if (hasInitializedRef.current) {
+            setJustSoldAlert(evt);
+            setRecentBuyerTeamId(String(evt.team_id));
+            setTimeout(() => setJustSoldAlert(null), 8000);
+            setTimeout(() => setRecentBuyerTeamId(null), 14000);
+          }
+        }
       }
 
       // Update sold countdown timestamp if active
@@ -851,8 +884,157 @@ export default function AuctionViewerPage() {
               </span>
             </div>
           </div>
+
+          {/* Quick Header Toggle Buttons */}
+          <button
+            className="auction-header-btn"
+            onClick={() => { setDrawerTab('sold'); setDrawerOpen(true); }}
+            title="View Live Sold Players Roster"
+          >
+            <Trophy size={13} color="#f5c842" />
+            <span>SOLD ({recentSold.length})</span>
+          </button>
+
+          <button
+            className="auction-header-btn"
+            onClick={() => { setDrawerTab('teams'); setDrawerOpen(true); }}
+            title="View Franchise Purse & Coins"
+          >
+            <span>🪙</span>
+            <span>COINS</span>
+          </button>
         </div>
       </header>
+
+      {/* ──────────────────────────────────────────────────────
+          1B. LIVE FRANCHISE COINS STRIP (ALL 6 TEAMS LIVE)
+          ────────────────────────────────────────────────────── */}
+      {teams.length > 0 && (
+        <section className="auction-coins-strip" aria-label="Franchise Live Coins and Purse">
+          {teams.map((t) => {
+            const budget = Number(t.budget) || 100000;
+            const spent = Number(t.spent) || 0;
+            const remaining = t.remaining_budget !== undefined ? Number(t.remaining_budget) : Math.max(0, budget - spent);
+            const pct = Math.min(100, Math.round((spent / budget) * 100));
+            const isRecentBuyer = String(t.id) === String(recentBuyerTeamId);
+
+            return (
+              <div
+                key={t.id}
+                className={`coin-team-card ${isRecentBuyer ? 'is-buyer' : ''}`}
+                style={{ borderLeft: `3.5px solid ${t.accent_color || '#e8192c'}` }}
+                onClick={() => setSelectedTeamForModal(t)}
+                title={`Click to inspect ${t.name}'s squad and coins`}
+              >
+                <div className="coin-team-top">
+                  <span className="coin-team-badge" style={{ background: t.accent_color || '#e8192c' }}>
+                    {t.short_code}
+                  </span>
+                  <span className="coin-team-name">{t.name}</span>
+                  {isRecentBuyer && <span className="coin-buyer-pill">🔥 BUYER</span>}
+                </div>
+
+                <div className="coin-balance-row">
+                  <div className="coin-balance-val">
+                    <span className="coin-balance-icon">🪙</span>
+                    <span>₹{remaining.toLocaleString('en-IN')}</span>
+                  </div>
+                  <span className="coin-balance-label">PURSE REM</span>
+                </div>
+
+                <div className="coin-progress-track">
+                  <div
+                    className="coin-progress-fill"
+                    style={{
+                      width: `${pct}%`,
+                      background: t.accent_color || '#e8192c',
+                    }}
+                  />
+                </div>
+
+                <div className="coin-meta-row">
+                  <span>₹{spent.toLocaleString('en-IN')} spent ({pct}%)</span>
+                  <span>👥 {t.squad_count || 0}/{t.squad_limit || 18}</span>
+                </div>
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      {/* ──────────────────────────────────────────────────────
+          1C. LIVE SOLD DEALS TICKER (STREAM OF SOLD PLAYERS)
+          ────────────────────────────────────────────────────── */}
+      <section className="auction-live-deals-ticker" aria-label="Live Sold Deals Ticker">
+        <div className="deals-ticker-tag">
+          <span className="deals-live-beacon" />
+          <span>LIVE DEALS</span>
+        </div>
+        <div className="deals-ticker-viewport">
+          <div className="deals-ticker-track">
+            {recentSold.length === 0 ? (
+              <div className="deals-ticker-chip">
+                <span>⚡ KPL SEASON 3 LIVE AUCTION · 6 FRANCHISES READY · AWAITING FIRST HAMMER DOWN</span>
+              </div>
+            ) : (
+              <>
+                {recentSold.map((p, idx) => (
+                  <div key={`deal-1-${p.id || idx}`} className="deals-ticker-chip">
+                    <span className="deals-chip-name">{p.player_name}</span>
+                    <span className="deals-chip-team" style={{ background: p.team_accent_color || '#e8192c' }}>
+                      {p.team_short_code || 'KPL'}
+                    </span>
+                    <span className="deals-chip-price">🪙 ₹{Number(p.sold_price || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                ))}
+                {/* Loop duplicate for infinite smooth marquee */}
+                {recentSold.map((p, idx) => (
+                  <div key={`deal-2-${p.id || idx}`} className="deals-ticker-chip">
+                    <span className="deals-chip-name">{p.player_name}</span>
+                    <span className="deals-chip-team" style={{ background: p.team_accent_color || '#e8192c' }}>
+                      {p.team_short_code || 'KPL'}
+                    </span>
+                    <span className="deals-chip-price">🪙 ₹{Number(p.sold_price || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ──────────────────────────────────────────────────────
+          1D. LIVE JUST SOLD BROADCAST ALERT TOAST
+          ────────────────────────────────────────────────────── */}
+      {justSoldAlert && (
+        <aside className="auction-just-sold-toast" role="alert">
+          <div className="toast-gavel-icon">
+            <Gavel size={20} />
+          </div>
+          <div className="toast-content">
+            <div className="toast-header-row">
+              <span className="toast-badge-sold">JUST SOLD!</span>
+              <span className="toast-player-title">{justSoldAlert.player_name}</span>
+            </div>
+            <div className="toast-details-row">
+              <span>Acquired by</span>
+              <span style={{ color: justSoldAlert.team_accent_color || '#34d399', fontWeight: 800 }}>
+                {justSoldAlert.team_name}
+              </span>
+              <span>for</span>
+              <span className="toast-price-gold">
+                🪙 ₹{Number(justSoldAlert.sold_price || 0).toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => setJustSoldAlert(null)}
+            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 4 }}
+          >
+            <X size={16} />
+          </button>
+        </aside>
+      )}
 
       {/* ──────────────────────────────────────────────────────
           2. CENTER STAGE (5 CONDITIONAL STATES + PLAYER CARD)
@@ -1090,6 +1272,42 @@ export default function AuctionViewerPage() {
                         <span className="auction-live-dots">BIDDING LIVE</span>
                       </div>
                     </div>
+
+                    {/* Live Franchise Purse Capacity for this Player */}
+                    {teams.length > 0 && (
+                      <div style={{ gridColumn: '1 / -1', marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <div style={{ fontSize: 11, color: 'var(--mute)', fontWeight: 700, letterSpacing: '0.8px', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span>🪙 LIVE FRANCHISE COINS (BIDDING):</span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {teams.map(t => {
+                            const budget = Number(t.budget) || 100000;
+                            const spent = Number(t.spent) || 0;
+                            const rem = t.remaining_budget !== undefined ? Number(t.remaining_budget) : Math.max(0, budget - spent);
+                            const canBid = rem >= Number(player?.base_price || 500);
+                            return (
+                              <div
+                                key={t.id}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  padding: '3px 8px',
+                                  borderRadius: 5,
+                                  background: canBid ? 'rgba(255, 255, 255, 0.05)' : 'rgba(239, 68, 68, 0.12)',
+                                  border: `1px solid ${canBid ? 'rgba(255, 255, 255, 0.12)' : 'rgba(239, 68, 68, 0.35)'}`,
+                                  fontSize: 11.5,
+                                  fontFamily: 'Barlow Condensed, sans-serif',
+                                }}
+                              >
+                                <span style={{ fontWeight: 900, color: t.accent_color || '#e8192c' }}>{t.short_code}</span>
+                                <span style={{ color: canBid ? '#f5c842' : '#f87171', fontWeight: 800 }}>🪙 ₹{rem.toLocaleString('en-IN')}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -1156,23 +1374,43 @@ export default function AuctionViewerPage() {
       )}
 
       {/* ──────────────────────────────────────────────────────
-          TEAMS BUDGET DRAWER (COLLAPSIBLE, RIGHT EDGE)
+          DRAWER TOGGLE BUTTON (RIGHT EDGE)
           ────────────────────────────────────────────────────── */}
       <button
         className="auction-drawer-toggle"
         onClick={() => setDrawerOpen((prev) => !prev)}
-        aria-label="Toggle Franchise Teams Drawer"
-        title="Toggle Team Purse Drawer"
+        aria-label="Toggle Live Auction Feed Drawer"
+        title="Toggle Live Sold Players & Coins"
       >
         <div className="auction-drawer-toggle-text">
-          <span>TEAMS</span>
+          <span>{drawerTab === 'sold' ? 'SOLD' : 'COINS'}</span>
           {drawerOpen ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
         </div>
       </button>
 
-      <aside className={`auction-teams-drawer ${drawerOpen ? 'open' : ''}`}>
-        <div className="auction-drawer-header">
-          <div className="auction-drawer-title">Franchise Purse & Squads</div>
+      {/* ──────────────────────────────────────────────────────
+          LIVE SOLD & FRANCHISE COINS DRAWER
+          ────────────────────────────────────────────────────── */}
+      <aside className={`auction-feed-drawer ${drawerOpen ? 'open' : ''}`}>
+        <div className="drawer-header">
+          <div className="drawer-tabs">
+            <button
+              className={`drawer-tab-btn ${drawerTab === 'sold' ? 'active' : ''}`}
+              onClick={() => setDrawerTab('sold')}
+            >
+              <Trophy size={13} />
+              <span>SOLD ROSTER</span>
+              <span className="drawer-tab-count">{recentSold.length}</span>
+            </button>
+            <button
+              className={`drawer-tab-btn ${drawerTab === 'teams' ? 'active' : ''}`}
+              onClick={() => setDrawerTab('teams')}
+            >
+              <span>🪙</span>
+              <span>COINS</span>
+              <span className="drawer-tab-count">{teams.length}</span>
+            </button>
+          </div>
           <button
             onClick={() => setDrawerOpen(false)}
             style={{
@@ -1183,57 +1421,284 @@ export default function AuctionViewerPage() {
               padding: 4,
             }}
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
 
-        <div className="auction-drawer-body">
-          {teams.length === 0 ? (
-            <div style={{ color: 'var(--mute)', fontSize: 13, textAlign: 'center', padding: 20 }}>
-              No teams loaded.
-            </div>
-          ) : (
-            teams.map((t) => {
-              const budget = Number(t.budget) || 100000;
-              const spent = Number(t.spent) || 0;
-              const pct = Math.min(100, Math.round((spent / budget) * 100));
+        <div className="drawer-body">
+          {drawerTab === 'sold' ? (
+            <>
+              {/* Search filter for sold players */}
+              <div className="drawer-search-wrap">
+                <Search size={14} className="drawer-search-icon" />
+                <input
+                  type="text"
+                  placeholder="Search sold players or teams..."
+                  value={soldSearch}
+                  onChange={(e) => setSoldSearch(e.target.value)}
+                  className="drawer-search-input"
+                />
+              </div>
 
-              return (
-                <div key={t.id} className="auction-team-row">
-                  <div className="auction-team-top">
-                    <span
-                      className="auction-team-badge"
-                      style={{ background: t.accent_color || '#22c55e' }}
-                    >
-                      {t.short_code}
-                    </span>
-                    <span className="auction-team-name">{t.name}</span>
-                  </div>
-
-                  <div className="auction-budget-bar-bg">
-                    <div
-                      className="auction-budget-bar-fill"
-                      style={{
-                        width: `${pct}%`,
-                        background: t.accent_color || '#22c55e',
-                      }}
-                    />
-                  </div>
-
-                  <div className="auction-team-meta">
-                    <span>
-                      ₹{spent.toLocaleString('en-IN')} / ₹{budget.toLocaleString('en-IN')} ({pct}%)
-                    </span>
-                    <span>
-                      {t.squad_count || 0} / {t.squad_limit || 18} Players
-                    </span>
-                  </div>
+              {recentSold.length === 0 ? (
+                <div style={{ color: 'var(--mute)', fontSize: 13, textAlign: 'center', padding: '30px 10px' }}>
+                  No players have been sold yet. Bidding updates will appear here live!
                 </div>
-              );
-            })
+              ) : (
+                (() => {
+                  const filtered = recentSold.filter((p) => {
+                    if (!soldSearch) return true;
+                    const q = soldSearch.toLowerCase();
+                    return (
+                      p.player_name.toLowerCase().includes(q) ||
+                      p.team_name.toLowerCase().includes(q) ||
+                      p.team_short_code.toLowerCase().includes(q) ||
+                      (p.role && p.role.toLowerCase().includes(q))
+                    );
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div style={{ color: 'var(--mute)', fontSize: 13, textAlign: 'center', padding: '30px 10px' }}>
+                        No sold players match &quot;{soldSearch}&quot;
+                      </div>
+                    );
+                  }
+
+                  return filtered.map((p, idx) => {
+                    const photo = p.photo ? getImageUrl(p.photo) : '/images/kpl-logo.jpg';
+                    return (
+                      <div key={p.id || idx} className="drawer-sold-card">
+                        <div
+                          className="drawer-player-avatar"
+                          style={{ borderColor: p.team_accent_color || '#e8192c' }}
+                        >
+                          <img
+                            src={photo}
+                            alt={p.player_name}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/images/kpl-logo.jpg';
+                            }}
+                          />
+                        </div>
+                        <div className="drawer-player-meta">
+                          <div className="drawer-player-name" title={p.player_name}>
+                            {p.player_name}
+                          </div>
+                          <div className="drawer-player-sub">
+                            <span>{p.role || 'Player'}</span>
+                            {p.registration_number && (
+                              <>
+                                <span>·</span>
+                                <span style={{ color: '#38bdf8', fontFamily: 'monospace' }}>
+                                  #{p.registration_number}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="drawer-sold-price-col">
+                          <div className="drawer-sold-price-val">
+                            ₹{Number(p.sold_price || 0).toLocaleString('en-IN')}
+                          </div>
+                          <span
+                            className="drawer-sold-team-pill"
+                            style={{ background: p.team_accent_color || '#e8192c' }}
+                          >
+                            {p.team_short_code}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()
+              )}
+            </>
+          ) : (
+            <>
+              {/* Franchise Purse & Coins Tab */}
+              {teams.length === 0 ? (
+                <div style={{ color: 'var(--mute)', fontSize: 13, textAlign: 'center', padding: 20 }}>
+                  No franchise teams loaded.
+                </div>
+              ) : (
+                teams.map((t) => {
+                  const budget = Number(t.budget) || 100000;
+                  const spent = Number(t.spent) || 0;
+                  const remaining = t.remaining_budget !== undefined ? Number(t.remaining_budget) : Math.max(0, budget - spent);
+                  const pct = Math.min(100, Math.round((spent / budget) * 100));
+
+                  return (
+                    <div
+                      key={t.id}
+                      className="auction-team-row"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => setSelectedTeamForModal(t)}
+                      title={`Click to inspect ${t.name}'s squad`}
+                    >
+                      <div className="auction-team-top">
+                        <span
+                          className="auction-team-badge"
+                          style={{ background: t.accent_color || '#22c55e' }}
+                        >
+                          {t.short_code}
+                        </span>
+                        <span className="auction-team-name">{t.name}</span>
+                        <span style={{ color: '#f5c842', fontWeight: 800, fontSize: 13 }}>
+                          🪙 ₹{remaining.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+
+                      <div className="auction-budget-bar-bg">
+                        <div
+                          className="auction-budget-bar-fill"
+                          style={{
+                            width: `${pct}%`,
+                            background: t.accent_color || '#22c55e',
+                          }}
+                        />
+                      </div>
+
+                      <div className="auction-team-meta">
+                        <span>
+                          ₹{spent.toLocaleString('en-IN')} / ₹{budget.toLocaleString('en-IN')} ({pct}% spent)
+                        </span>
+                        <span>
+                          {t.squad_count || 0} / {t.squad_limit || 18} Players
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </>
           )}
         </div>
       </aside>
+
+      {/* ──────────────────────────────────────────────────────
+          TEAM SQUAD & PURSE INSPECTOR MODAL
+          ────────────────────────────────────────────────────── */}
+      {selectedTeamForModal && (
+        <div className="auction-modal-overlay" onClick={() => setSelectedTeamForModal(null)}>
+          <div
+            className="auction-modal-card"
+            style={{ borderColor: selectedTeamForModal.accent_color || '#e8192c' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="auction-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span
+                  className="coin-team-badge"
+                  style={{
+                    background: selectedTeamForModal.accent_color || '#e8192c',
+                    fontSize: 14,
+                    padding: '3px 10px',
+                  }}
+                >
+                  {selectedTeamForModal.short_code}
+                </span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#ffffff' }}>
+                  {selectedTeamForModal.name}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedTeamForModal(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: 4,
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="auction-modal-body">
+              {/* Financial & Squad Stats Row */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: 10,
+                  marginBottom: 18,
+                  padding: 12,
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  borderRadius: 8,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 700 }}>REMAINING COINS</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: '#f5c842' }}>
+                    🪙 ₹{(selectedTeamForModal.remaining_budget !== undefined ? selectedTeamForModal.remaining_budget : Math.max(0, (Number(selectedTeamForModal.budget) || 100000) - (Number(selectedTeamForModal.spent) || 0))).toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 700 }}>TOTAL SPENT</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: '#ff4d5e' }}>
+                    ₹{Number(selectedTeamForModal.spent || 0).toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 700 }}>SQUAD SIZE</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: '#ffffff' }}>
+                    {selectedTeamForModal.squad_count || 0} / {selectedTeamForModal.squad_limit || 18}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#cbd5e1', marginBottom: 10, letterSpacing: '0.5px' }}>
+                PLAYERS ACQUIRED IN AUCTION:
+              </div>
+
+              {(() => {
+                const teamPlayers = recentSold.filter(
+                  (p) => String(p.team_id) === String(selectedTeamForModal.id)
+                );
+                if (teamPlayers.length === 0) {
+                  return (
+                    <div style={{ color: 'var(--mute)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>
+                      No players acquired yet in this auction.
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {teamPlayers.map((p, idx) => (
+                      <div
+                        key={p.id || idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 12px',
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          borderRadius: 6,
+                          border: '1px solid rgba(255, 255, 255, 0.06)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 12, fontWeight: 900, color: '#f5c842' }}>#{idx + 1}</span>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: '#ffffff' }}>{p.player_name}</div>
+                            <div style={{ fontSize: 11, color: '#94a3b8' }}>{p.role || 'Player'}</div>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 900, color: '#f5c842' }}>
+                          ₹{Number(p.sold_price || 0).toLocaleString('en-IN')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ──────────────────────────────────────────────────────
           3. SPONSOR TICKER (PERSISTENT FOOTER)

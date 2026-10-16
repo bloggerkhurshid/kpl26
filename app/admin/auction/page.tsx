@@ -387,6 +387,12 @@ export default function AuctionPage() {
           is_active: auctionConfig.is_active,
           current_player_id: auctionConfig.current_player_id,
           notes: auctionConfig.notes,
+          player: {
+            ...targetPlayer,
+            team_id: newTeamId,
+            sold_price: newPrice,
+            teams: assignedTeam || targetPlayer.teams,
+          },
         }),
       ]);
 
