@@ -230,13 +230,9 @@ export default function AuctionPage() {
     }
   }, []);
 
-  // Initial load once on component mount + background quiet sync every 6 seconds
+  // Initial load once on component mount (NO periodic background auto-refresh to prevent interrupting admin)
   useEffect(() => {
     loadData();
-    const syncInterval = setInterval(() => {
-      loadData(true);
-    }, 6000);
-    return () => clearInterval(syncInterval);
   }, [loadData]);
 
   // Toggle auction session state (Start / Stop)
@@ -410,6 +406,7 @@ export default function AuctionPage() {
       ]);
 
       showToast(`🎉 ${modalPlayer.player_name} sold for ₹${soldPrice.toLocaleString('en-IN')}! Showing sold screen for 1 minute.`);
+      loadData(true);
     } catch (err: any) {
       showToast(err.message || 'Failed to sell player', 'error');
       loadData(true);
@@ -481,6 +478,7 @@ export default function AuctionPage() {
       lastLocalActionRef.current = Date.now();
       showToast(`📢 ${p.player_name} marked as UNSOLD & showing animated unsold celebration screen on live display for 30s.`);
       kplApi.invalidatePlayersCache();
+      loadData(true);
     } catch (err: any) {
       showToast(err.message || 'Failed to mark as unsold', 'error');
     } finally {

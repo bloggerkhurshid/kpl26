@@ -97,6 +97,13 @@ async function syncFromDatabase(force: boolean = false) {
       kplApi.getTeams('active').catch(() => []),
     ]);
 
+    const snapshotPlayerId = liveState.current_player_id;
+    const snapshotPlayerTeamId = liveState.player?.team_id;
+    const snapshotSoldCount = liveState.stats.sold_count;
+    const snapshotPoolCount = liveState.stats.pool_count;
+    const snapshotIsActive = liveState.is_active;
+    const snapshotIsEnded = liveState.is_ended;
+
     const data = contentRes?.data || contentRes || {};
     // Only adopt remote database config if we haven't made a local change in last 15s
     const timeSinceLocalMutation = Date.now() - lastLocalMutation;
@@ -272,8 +279,18 @@ async function syncFromDatabase(force: boolean = false) {
       liveState.player = null;
     }
 
-    liveState.version += 1;
-    liveState.lastUpdated = Date.now();
+    const hasMeaningfulChange = !hasBootstrapped ||
+      snapshotPlayerId !== liveState.current_player_id ||
+      snapshotPlayerTeamId !== liveState.player?.team_id ||
+      snapshotSoldCount !== liveState.stats.sold_count ||
+      snapshotPoolCount !== liveState.stats.pool_count ||
+      snapshotIsActive !== liveState.is_active ||
+      snapshotIsEnded !== liveState.is_ended;
+
+    if (hasMeaningfulChange) {
+      liveState.version += 1;
+      liveState.lastUpdated = Date.now();
+    }
     lastFullSync = Date.now();
   } catch (err) {
     console.warn('Background sync error in /api/auction/live:', err);
