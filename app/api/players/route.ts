@@ -73,7 +73,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(players, {
       headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
+        'Cache-Control': forceRefresh ? 'no-store, no-cache, must-revalidate' : 'public, s-maxage=10, stale-while-revalidate=60',
       },
     });
   } catch (err: any) {

@@ -168,13 +168,30 @@ export default function AuctionPage() {
         return enrichedPlayers.map(p => {
           const localP = prevMap.get(String(p.id));
           if (!localP) return p;
+
+          const localIsSold = Boolean(localP.team_id);
+          const localIsUnsold = !localIsSold && (
+            localP.auction_eligible === 0 ||
+            localP.auction_eligible === '0' ||
+            localP.auction_eligible === false
+          );
+
           // If locally sold, preserve sold status unless remote has also assigned a team
-          if (localP.team_id && !p.team_id) {
-            return { ...p, team_id: localP.team_id, sold_price: localP.sold_price, auction_eligible: 0, teams: localP.teams };
+          if (localIsSold && !p.team_id) {
+            return {
+              ...p,
+              team_id: localP.team_id,
+              sold_price: localP.sold_price,
+              auction_eligible: 0,
+              teams: localP.teams || p.teams,
+            };
           }
           // If locally marked unsold (auction_eligible: 0), preserve unsold status unless remote has assigned a team
-          if (localP.auction_eligible === 0 && (p.auction_eligible === 1 || p.auction_eligible === '1' || p.auction_eligible === true) && !p.team_id) {
-            return { ...p, auction_eligible: 0 };
+          if (localIsUnsold && !p.team_id) {
+            return {
+              ...p,
+              auction_eligible: 0,
+            };
           }
           return p;
         });
@@ -401,10 +418,10 @@ export default function AuctionPage() {
       return item;
     }));
 
-    // Clear from auction block immediately so it does not keep showing on the auction page
+    // Keep player on admin block so the animated unsold banner and "Call Next Player" button are displayed
     setAuctionConfig(prev => ({
       ...prev,
-      current_player_id: null,
+      current_player_id: p.id,
     }));
 
     try {
@@ -617,14 +634,8 @@ export default function AuctionPage() {
 
   // Search filtered subsets across all columns (Reg ID, last 3 digits, name, phone)
   const filteredEligible = sortedPartEligible.filter(p => searchMatchesPlayer(p, playerSearch));
-  const filteredSold = sold.filter(p => {
-    if (selectedPart !== 'all' && getPlayerAuctionPart(p.player_category).key !== selectedPart) return false;
-    return searchMatchesPlayer(p, playerSearch);
-  });
-  const filteredDisabled = disabled.filter(p => {
-    if (selectedPart !== 'all' && getPlayerAuctionPart(p.player_category).key !== selectedPart) return false;
-    return searchMatchesPlayer(p, playerSearch);
-  });
+  const filteredSold = sold.filter(p => searchMatchesPlayer(p, playerSearch));
+  const filteredDisabled = disabled.filter(p => searchMatchesPlayer(p, playerSearch));
 
   return (
     <AdminLayout>
