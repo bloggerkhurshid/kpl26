@@ -125,9 +125,15 @@ const renderCategoryBadge = (category?: string | null) => {
 };
 
 export default function PlayersPage() {
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<Player[]>(() => {
+    const cached = kplApi.getCachedPlayers({ status: 'active', limit: 1000 });
+    return (cached as Player[]) || [];
+  });
   const [teams, setTeams] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(() => {
+    const cached = kplApi.getCachedPlayers({ status: 'active', limit: 1000 });
+    return !cached || cached.length === 0;
+  });
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'local-a' | 'local-b' | 'foreigner' | 'assigned'>('all');
   const [teamFilter, setTeamFilter] = useState<string>('all');

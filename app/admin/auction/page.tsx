@@ -55,7 +55,7 @@ interface AuctionConfig {
 }
 
 export default function AuctionPage() {
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<Player[]>(() => (kplApi.getCachedPlayers({ status: 'active', limit: 1000 }) as Player[]) || []);
   const [teams, setTeams] = useState<Team[]>([]);
   const [auctionConfig, setAuctionConfig] = useState<AuctionConfig>({
     is_active: false,
@@ -63,7 +63,7 @@ export default function AuctionPage() {
     current_player_id: null,
     notes: 'KPL Season 3 Live Auction',
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !kplApi.getCachedPlayers({ status: 'active', limit: 1000 })?.length);
   const [saving, setSaving] = useState(false);
   const [sellModal, setSellModal] = useState<Player | null>(null);
   const [sellForm, setSellForm] = useState({ team_id: '', sold_price: '' });
@@ -127,7 +127,7 @@ export default function AuctionPage() {
 
   // Load both roster and current live auction configuration
   const loadData = useCallback(async (quiet: boolean = false) => {
-    if (!quiet) setLoading(true);
+    if (!quiet && players.length === 0) setLoading(true);
     setIsSyncing(true);
     try {
       const [pRes, tRes, cRes] = await Promise.all([

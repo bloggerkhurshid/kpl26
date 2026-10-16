@@ -90,7 +90,7 @@ async function syncFromDatabase(force: boolean = false) {
   try {
     const [contentRes, playersRes, teamsRes] = await Promise.all([
       kplApi.getContentSettings().catch(() => null),
-      kplApi.getPlayers({ status: 'active', limit: 2000 }).catch(() => []),
+      kplApi.getPlayers({ status: 'active', limit: 2000 }, { forceRefresh: force }).catch(() => []),
       kplApi.getTeams('active').catch(() => []),
     ]);
 

@@ -99,15 +99,117 @@ export interface GalleryPhoto {
   created_at?: string;
 }
 
+// High-speed In-Memory & LocalStorage Cache for Players List
+interface PlayersCacheEntry {
+  data: any[];
+  timestamp: number;
+}
+const playersMemoryCache = new Map<string, PlayersCacheEntry>();
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds fresh in memory
+const LOCAL_STORAGE_PREFIX = 'kpl_players_cache_v2_';
+
+function getPlayersFromStorage(key: string): any[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${key}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.data) && Date.now() - (parsed.timestamp || 0) < 3600000) {
+      return parsed.data;
+    }
+  } catch {}
+  return null;
+}
+
+function savePlayersToStorage(key: string, data: any[]) {
+  if (typeof window === 'undefined' || !Array.isArray(data)) return;
+  try {
+    // Strip overly large base64 proof strings to keep localStorage fast and compact
+    const lean = data.map((item: any) => ({
+      ...item,
+      address_proof: item.address_proof && item.address_proof.length > 500 ? '' : item.address_proof,
+      player_signature: item.player_signature && item.player_signature.length > 500 ? '' : item.player_signature,
+    }));
+    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${key}`, JSON.stringify({
+      data: lean,
+      timestamp: Date.now(),
+    }));
+  } catch {}
+}
+
 export const kplApi = {
-  // 1. Players API
-  async getPlayers(params: { status?: string; limit?: number; team_id?: string; count_only?: boolean; approval?: string; registered_by?: string; include_documents?: boolean } = {}) {
+  // Synchronous cache reader for 0ms initial component rendering
+  getCachedPlayers(params: { status?: string; limit?: number; team_id?: string; count_only?: boolean; approval?: string; registered_by?: string; include_documents?: boolean } = {}): any[] | null {
+    const cacheKey = JSON.stringify(params);
+    const inMem = playersMemoryCache.get(cacheKey);
+    if (inMem && Array.isArray(inMem.data) && inMem.data.length > 0) {
+      return inMem.data;
+    }
+    return getPlayersFromStorage(cacheKey);
+  },
+
+  // Invalidate player cache across memory and localStorage
+  invalidatePlayersCache() {
+    playersMemoryCache.clear();
+    if (typeof window !== 'undefined') {
+      try {
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith(LOCAL_STORAGE_PREFIX) || k.startsWith('kpl_public_players_cache')) {
+            localStorage.removeItem(k);
+          }
+        });
+      } catch {}
+    }
+  },
+
+  // 1. Players API (with SWR Instant-Return Caching)
+  async getPlayers(
+    params: { status?: string; limit?: number; team_id?: string; count_only?: boolean; approval?: string; registered_by?: string; include_documents?: boolean } = {},
+    options: { forceRefresh?: boolean } = {}
+  ) {
     if (params.count_only) {
       return fetchFromPhpApi(`api/players.php?count_only=true&status=${params.status || 'active'}`);
     }
+    const cacheKey = JSON.stringify(params);
+    const now = Date.now();
+
+    // 1. In-memory cache hit
+    const cached = playersMemoryCache.get(cacheKey);
+    if (!options.forceRefresh && cached && (now - cached.timestamp < CACHE_TTL_MS)) {
+      return cached.data;
+    }
+
+    // 2. LocalStorage cache hit for instant browser render
+    if (!options.forceRefresh && !cached) {
+      const stored = getPlayersFromStorage(cacheKey);
+      if (stored && stored.length > 0) {
+        playersMemoryCache.set(cacheKey, { data: stored, timestamp: now });
+        // Background revalidation
+        (async () => {
+          try {
+            const query = new URLSearchParams(params as any).toString();
+            const res = await fetchFromPhpApi(`api/players.php?${query}`);
+            const fresh = Array.isArray(res) ? res : (res?.data || []);
+            if (Array.isArray(fresh) && fresh.length > 0) {
+              playersMemoryCache.set(cacheKey, { data: fresh, timestamp: Date.now() });
+              savePlayersToStorage(cacheKey, fresh);
+            }
+          } catch {}
+        })();
+        return stored;
+      }
+    }
+
+    // 3. Network fetch with caching
     const query = new URLSearchParams(params as any).toString();
     const res = await fetchFromPhpApi(`api/players.php?${query}`);
-    return Array.isArray(res) ? res : (res?.data || []);
+    const data = Array.isArray(res) ? res : (res?.data || []);
+
+    if (Array.isArray(data) && data.length > 0) {
+      playersMemoryCache.set(cacheKey, { data, timestamp: Date.now() });
+      savePlayersToStorage(cacheKey, data);
+    }
+    return data;
   },
 
   async getPlayer(id: string) {
@@ -115,6 +217,7 @@ export const kplApi = {
   },
 
   async createPlayer(playerData: any) {
+    kplApi.invalidatePlayersCache();
     return fetchFromPhpApi('api/players.php', {
       method: 'POST',
       body: JSON.stringify(playerData),
@@ -122,6 +225,7 @@ export const kplApi = {
   },
 
   async updatePlayer(id: string, playerData: any) {
+    kplApi.invalidatePlayersCache();
     return fetchFromPhpApi(`api/players.php?id=${id}`, {
       method: 'PUT',
       body: JSON.stringify(playerData),
@@ -129,6 +233,7 @@ export const kplApi = {
   },
 
   async approvePlayer(id: string) {
+    kplApi.invalidatePlayersCache();
     return fetchFromPhpApi(`api/players.php?id=${id}`, {
       method: 'PUT',
       body: JSON.stringify({
@@ -140,6 +245,7 @@ export const kplApi = {
   },
 
   async rejectPlayer(id: string, notes?: string) {
+    kplApi.invalidatePlayersCache();
     return fetchFromPhpApi(`api/players.php?id=${id}`, {
       method: 'PUT',
       body: JSON.stringify({
@@ -152,6 +258,7 @@ export const kplApi = {
   },
 
   async deletePlayer(id: string) {
+    kplApi.invalidatePlayersCache();
     return fetchFromPhpApi(`api/players.php?id=${id}`, {
       method: 'DELETE',
     });
