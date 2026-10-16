@@ -11,6 +11,9 @@ export async function GET(req: Request) {
     const auctionEligibleParam = searchParams.get('auction_eligible');
     const teamIdParam = searchParams.get('team_id');
     const notTeamIdParam = searchParams.get('team_id[not]');
+    const statusParam = searchParams.get('status');
+    const approvalParam = searchParams.get('approval');
+    const limitParam = searchParams.get('limit');
     const forceRefresh = searchParams.get('fresh') === 'true';
 
     const now = Date.now();
@@ -19,14 +22,29 @@ export async function GET(req: Request) {
     if (!forceRefresh && serverPlayersCache && (now - serverPlayersCache.timestamp < SERVER_CACHE_TTL_MS)) {
       rawPlayers = serverPlayersCache.data;
     } else {
-      const res = await kplApi.getPlayers({ status: 'active', limit: 2000 }, { forceRefresh });
+      const res = await kplApi.getPlayers({ status: 'all', limit: 2000 }, { forceRefresh });
       rawPlayers = Array.isArray(res) ? res : (res?.data || []);
       if (rawPlayers.length > 0) {
-        serverPlayersCache = { data: rawPlayers, timestamp: now };
+        // Strip heavy document base64 from server cache list to keep response lightweight
+        const sanitized = rawPlayers.map((p: any) => ({
+          ...p,
+          address_proof: p.address_proof && p.address_proof.length > 500 ? '' : p.address_proof,
+          player_signature: p.player_signature && p.player_signature.length > 500 ? '' : p.player_signature,
+        }));
+        serverPlayersCache = { data: sanitized, timestamp: now };
+        rawPlayers = sanitized;
       }
     }
 
     let players = rawPlayers;
+
+    if (statusParam && statusParam !== 'all') {
+      players = players.filter((p: any) => String(p.status || '').toLowerCase() === statusParam.toLowerCase());
+    }
+
+    if (approvalParam && approvalParam !== 'all') {
+      players = players.filter((p: any) => String(p.approval || '').toLowerCase() === approvalParam.toLowerCase());
+    }
 
     if (auctionEligibleParam !== null) {
       const isEligible = auctionEligibleParam === '1' || auctionEligibleParam === 'true';
@@ -43,6 +61,13 @@ export async function GET(req: Request) {
         players = players.filter((p: any) => !p.team_id);
       } else {
         players = players.filter((p: any) => String(p.team_id) === String(teamIdParam));
+      }
+    }
+
+    if (limitParam) {
+      const limit = parseInt(limitParam, 10);
+      if (!isNaN(limit) && limit > 0) {
+        players = players.slice(0, limit);
       }
     }
 

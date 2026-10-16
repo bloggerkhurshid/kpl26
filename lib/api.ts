@@ -57,10 +57,10 @@ export function getImageUrl(path?: string | null): string {
   return '';
 }
 
-export async function fetchFromPhpApi(endpoint: string, options: RequestInit = {}) {
+export async function fetchFromPhpApi(endpoint: string, options: RequestInit & { forceFresh?: boolean } = {}) {
   let cleanEndpoint = endpoint.replace(/^\//, '');
-  // Cache busting via query string for GET requests without triggering CORS preflight headers
-  if (!options.method || options.method.toUpperCase() === 'GET') {
+  // Only add cache-busting timestamp when explicitly requested to enable HTTP caching
+  if (options.forceFresh && (!options.method || options.method.toUpperCase() === 'GET')) {
     const separator = cleanEndpoint.includes('?') ? '&' : '?';
     cleanEndpoint = `${cleanEndpoint}${separator}_t=${Date.now()}`;
   }
@@ -124,11 +124,14 @@ function getPlayersFromStorage(key: string): any[] | null {
 function savePlayersToStorage(key: string, data: any[]) {
   if (typeof window === 'undefined' || !Array.isArray(data)) return;
   try {
-    // Strip overly large base64 proof strings to keep localStorage fast and compact
+    // Strip overly large base64 photos & proofs so localStorage stays ultra-lean (<100KB) and NEVER exceeds quota
     const lean = data.map((item: any) => ({
       ...item,
-      address_proof: item.address_proof && item.address_proof.length > 500 ? '' : item.address_proof,
-      player_signature: item.player_signature && item.player_signature.length > 500 ? '' : item.player_signature,
+      // If photo is a massive inline base64 string (>500 chars), omit from localStorage.
+      // Clean URLs are kept intact. When network/memory SWR loads, full photo is rendered.
+      photo: item.photo && item.photo.length > 500 ? '' : item.photo,
+      address_proof: '',
+      player_signature: '',
     }));
     localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${key}`, JSON.stringify({
       data: lean,
@@ -200,10 +203,27 @@ export const kplApi = {
       }
     }
 
-    // 3. Network fetch with caching
-    const query = new URLSearchParams(params as any).toString();
-    const res = await fetchFromPhpApi(`api/players.php?${query}`);
-    const data = Array.isArray(res) ? res : (res?.data || []);
+    // 3. Network fetch (prefer Next.js cached API in browser, fallback to PHP API)
+    let data: any[] = [];
+    if (typeof window !== 'undefined' && !params.count_only && !params.include_documents) {
+      try {
+        const query = new URLSearchParams(params as any).toString();
+        const localRes = await fetch(`/api/players?${query}${options.forceRefresh ? '&fresh=true' : ''}`);
+        if (localRes.ok) {
+          const json = await localRes.json();
+          if (Array.isArray(json) && json.length > 0) {
+            data = json;
+          }
+        }
+      } catch {}
+    }
+
+    // Fallback to direct PHP API if local route returned empty
+    if (!data || data.length === 0) {
+      const query = new URLSearchParams(params as any).toString();
+      const res = await fetchFromPhpApi(`api/players.php?${query}`, { forceFresh: options.forceRefresh });
+      data = Array.isArray(res) ? res : (res?.data || []);
+    }
 
     if (Array.isArray(data) && data.length > 0) {
       playersMemoryCache.set(cacheKey, { data, timestamp: Date.now() });

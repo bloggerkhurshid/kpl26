@@ -35,7 +35,6 @@ class Player {
     }
 
     public static function findById(string $id): ?array {
-        self::ensureSchema();
         $stmt = self::getDb()->prepare("
             SELECT p.*, t.name as team_name, t.short_code as team_short_code, t.accent_color as team_accent_color
             FROM players p
@@ -55,7 +54,6 @@ class Player {
     }
 
     public static function all(array $filters = [], int $limit = 500, bool $includeDocuments = false): array {
-        self::ensureSchema();
         $fields = $includeDocuments 
             ? "p.*" 
             : "p.id, p.player_name, p.father_name, p.date_of_birth, p.age, p.present_address, 
