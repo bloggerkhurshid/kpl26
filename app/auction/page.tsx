@@ -19,6 +19,8 @@ import {
   Star,
   Users,
   Flame,
+  Clock,
+  UserX,
 } from 'lucide-react';
 
 /* ──────────────────────────────────────────────────────────
@@ -587,6 +589,135 @@ function SoldCelebrationScreen({
 }
 
 /* ──────────────────────────────────────────────────────────
+   STATE 5 — UNSOLD ANIMATED SCREEN (UP TO 30s CELEBRATION / BANNER)
+   ────────────────────────────────────────────────────────── */
+function UnsoldCelebrationScreen({
+  player,
+  secondsRemaining,
+}: {
+  player: Player | null;
+  secondsRemaining: number;
+}) {
+  if (!player) return null;
+
+  const photoUrl = player.photo ? getImageUrl(player.photo) : '/images/kpl-logo.jpg';
+  const displayRegNo = player.registration_number
+    ? player.registration_number
+    : player?.id
+    ? `KPL-PLY-${player.id.replace(/[^0-9]/g, '').slice(-3).padStart(3, '0') || '200'}`
+    : 'KPL-PLY-200';
+  const partMeta = getPlayerAuctionPart(player.player_category);
+
+  return (
+    <div className="auction-unsold-celebration-screen">
+      <div className="unsold-celebration-bg-glow" />
+
+      <div className="unsold-celebration-content">
+        {/* Grand UNSOLD Header Stamp */}
+        <div className="unsold-stamp-banner">
+          <X size={34} color="#ffffff" strokeWidth={3} />
+          <span>UNSOLD</span>
+        </div>
+
+        {/* Centerpiece Showcase Card */}
+        <div className="unsold-showcase-card">
+          {/* Left: Player Avatar & Meta */}
+          <div className="unsold-player-left">
+            <div className="unsold-player-avatar-frame">
+              <img
+                src={photoUrl}
+                alt={player.player_name}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/kpl-logo.jpg';
+                }}
+              />
+            </div>
+            <div className="unsold-player-details">
+              <div className="unsold-player-name">{player.player_name}</div>
+              <div className="unsold-player-meta">
+                <span style={{ color: '#ffffff', fontWeight: 700 }}>{player.role || 'Player'}</span>
+                <span>·</span>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    color: partMeta.color,
+                    fontWeight: 700,
+                  }}
+                >
+                  {partMeta.icon} {partMeta.label}
+                </span>
+                <span>·</span>
+                <span
+                  style={{
+                    fontFamily: 'monospace',
+                    color: '#38bdf8',
+                    fontWeight: 800,
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    padding: '2px 8px',
+                    borderRadius: 4,
+                  }}
+                >
+                  #{displayRegNo}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Section: Status Box & Base Price */}
+          <div className="unsold-status-right">
+            <div className="unsold-status-box">
+              <span className="unsold-status-tag">AUCTION OUTCOME</span>
+              <div className="unsold-status-main">
+                PASSED / NO BIDS
+              </div>
+              <span style={{ fontSize: 12, color: '#fca5a5', marginTop: 4, fontWeight: 600 }}>
+                Moved to Unsold Pool for subsequent rounds
+              </span>
+            </div>
+
+            <div className="unsold-base-price-line">
+              <span>Base Price:</span>
+              <span className="unsold-base-price-val">
+                ₹{Number(player.base_price || 500).toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Countdown Timer or Status Strip */}
+        <div className="unsold-timer-strip">
+          {secondsRemaining > 0 ? (
+            <>
+              <div className="unsold-timer-badge">
+                <Clock size={16} color="#f87171" />
+                <span>Next Player In</span>
+                <span className="unsold-timer-seconds">{secondsRemaining}s</span>
+              </div>
+              <div className="unsold-timer-bar-track">
+                <div
+                  className="unsold-timer-bar-fill"
+                  style={{
+                    width: `${Math.min(100, Math.max(0, (secondsRemaining / 30) * 100))}%`,
+                  }}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="unsold-timer-badge" style={{ borderColor: 'rgba(239, 68, 68, 0.4)', padding: '6px 18px' }}>
+              <Clock size={16} color="#f87171" />
+              <span style={{ color: '#f87171', fontWeight: 800 }}>HAMMER DOWN · OFFICIALLY UNSOLD</span>
+              <span style={{ color: '#cbd5e1', fontSize: 13, fontWeight: 600 }}>· Awaiting next player call from auctioneer</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────
    MAIN AUCTION VIEWER PAGE COMPONENT
    ────────────────────────────────────────────────────────── */
 export default function AuctionViewerPage() {
@@ -607,6 +738,7 @@ export default function AuctionViewerPage() {
   const [recentSold, setRecentSold] = useState<RecentSoldPlayer[]>([]);
   const [viewState, setViewState] = useState<'loading' | 'not_live' | 'waiting' | 'changing' | 'player'>('loading');
   const [soldSecondsLeft, setSoldSecondsLeft] = useState<number>(0);
+  const [unsoldSecondsLeft, setUnsoldSecondsLeft] = useState<number>(0);
 
   const [connectionError, setConnectionError] = useState(false);
   const [zoomState, setZoomState] = useState<number>(0); // 0: cover, 1: contain, 2: scale(1.55)
@@ -625,6 +757,7 @@ export default function AuctionViewerPage() {
   const configIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastSoldIdRef = useRef<string | null>(null);
   const soldTimestampRef = useRef<number | null>(null);
+  const unsoldTimestampRef = useRef<number | null>(null);
 
   const [mounted, setMounted] = useState(false);
 
@@ -727,6 +860,16 @@ export default function AuctionViewerPage() {
         setSoldSecondsLeft(0);
       }
 
+      // Update unsold countdown timestamp if active
+      if (data.unsold_timestamp) {
+        unsoldTimestampRef.current = Number(data.unsold_timestamp);
+        const elapsed = Math.floor((Date.now() - unsoldTimestampRef.current) / 1000);
+        setUnsoldSecondsLeft(Math.max(0, 30 - elapsed));
+      } else {
+        unsoldTimestampRef.current = null;
+        setUnsoldSecondsLeft(0);
+      }
+
       // ────────────────────────────────────────────────────────
       // TRANSITION STATE MACHINE
       // ────────────────────────────────────────────────────────
@@ -737,13 +880,22 @@ export default function AuctionViewerPage() {
         !data.sold_timestamp || Math.floor((Date.now() - Number(data.sold_timestamp)) / 1000) >= 60
       );
 
+      const isUnsoldCandidate = Boolean(
+        data.player &&
+        !data.player.team_id &&
+        (!data.player.auction_eligible || data.player.auction_eligible === 0 || data.player.auction_eligible === '0')
+      );
+      const isUnsoldExpired = isUnsoldCandidate && (
+        !data.unsold_timestamp || Math.floor((Date.now() - Number(data.unsold_timestamp)) / 1000) >= 30
+      );
+
       if (!isLive) {
         // Auction is not live / stopped -> SHOW NOT LIVE SCREEN
         prevPlayerIdRef.current = null;
         setPlayer(null);
         setViewState('not_live');
-      } else if (!newPlayerId || isSoldExpired) {
-        // Auction is live, but no player on the block (or sold celebration expired) -> SHOW WAITING SCREEN
+      } else if (!newPlayerId || isSoldExpired || isUnsoldExpired) {
+        // Auction is live, but no player on the block (or sold/unsold celebration expired) -> SHOW WAITING SCREEN
         prevPlayerIdRef.current = null;
         setPlayer(null);
         setViewState('waiting');
@@ -784,19 +936,31 @@ export default function AuctionViewerPage() {
     };
   }, [syncLiveAuction]);
 
-  // Single clean 1-second countdown ticker based on server sold_timestamp (no timer conflict)
+  // Clean 1-second countdown ticker for sold & unsold celebrations
   useEffect(() => {
     const t = setInterval(() => {
+      // Sold celebration countdown (60s)
       if (soldTimestampRef.current) {
         const elapsed = Math.floor((Date.now() - soldTimestampRef.current) / 1000);
         const remaining = Math.max(0, 60 - elapsed);
         setSoldSecondsLeft(remaining);
         if (remaining <= 0) {
-          // 60-second sold celebration complete: transition to waiting screen
           setViewState(curr => (curr === 'player' ? 'waiting' : curr));
         }
       } else {
         setSoldSecondsLeft(0);
+      }
+
+      // Unsold celebration countdown (30s)
+      if (unsoldTimestampRef.current) {
+        const elapsed = Math.floor((Date.now() - unsoldTimestampRef.current) / 1000);
+        const remaining = Math.max(0, 30 - elapsed);
+        setUnsoldSecondsLeft(remaining);
+        if (remaining <= 0) {
+          setViewState(curr => (curr === 'player' ? 'waiting' : curr));
+        }
+      } else {
+        setUnsoldSecondsLeft(0);
       }
     }, 1000);
     return () => clearInterval(t);
@@ -1107,7 +1271,18 @@ export default function AuctionViewerPage() {
         <WaitingScreen stats={stats} notes={config.notes} recentSold={recentSold} />
       )}
 
-      {viewState === 'player' && !isSold && (
+      {viewState === 'player' && isUnsold && unsoldSecondsLeft > 0 && (
+        <UnsoldCelebrationScreen
+          player={player}
+          secondsRemaining={unsoldSecondsLeft}
+        />
+      )}
+
+      {viewState === 'player' && isUnsold && unsoldSecondsLeft <= 0 && (
+        <WaitingScreen stats={stats} notes={config.notes} recentSold={recentSold} />
+      )}
+
+      {viewState === 'player' && !isSold && !isUnsold && (
         <main className="auction-stage">
           {/* ── LEFT HALF — PHOTO & REGISTRATION STRIP ── */}
           <section className="photo-side">

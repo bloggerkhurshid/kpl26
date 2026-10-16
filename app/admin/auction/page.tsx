@@ -20,6 +20,12 @@ interface SoldTimerState {
   secondsRemaining: number;
 }
 
+interface UnsoldTimerState {
+  playerId: string;
+  playerName: string;
+  secondsRemaining: number;
+}
+
 interface Team {
   id: string;
   name: string;
@@ -77,6 +83,7 @@ export default function AuctionPage() {
   const [mounted, setMounted] = useState(false);
   const [selectedPrintTeamId, setSelectedPrintTeamId] = useState<string>('all');
   const [soldTimer, setSoldTimer] = useState<SoldTimerState | null>(null);
+  const [unsoldTimer, setUnsoldTimer] = useState<UnsoldTimerState | null>(null);
   const [autoAdvance, setAutoAdvance] = useState<boolean>(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [endingAuction, setEndingAuction] = useState(false);
@@ -268,6 +275,7 @@ export default function AuctionPage() {
   // Set current player on the auction block
   async function setCurrentPlayer(playerId: string | null) {
     setSoldTimer(null);
+    setUnsoldTimer(null);
     lastLocalActionRef.current = Date.now();
     const p = players.find(x => String(x.id) === String(playerId)) || null;
 
@@ -417,14 +425,17 @@ export default function AuctionPage() {
     lastLocalActionRef.current = Date.now();
 
     // Optimistically update player in local state
+    // Optimistically update player in local state as unsold
+    const unsoldPlayer: Player = {
+      ...p,
+      team_id: null,
+      sold_price: null,
+      auction_eligible: 0,
+    };
+
     setPlayers(prev => prev.map(item => {
       if (String(item.id) === String(p.id)) {
-        return {
-          ...item,
-          team_id: null,
-          sold_price: null,
-          auction_eligible: 0,
-        };
+        return unsoldPlayer;
       }
       return item;
     }));
@@ -435,6 +446,15 @@ export default function AuctionPage() {
       current_player_id: p.id,
     }));
 
+    const unsoldTime = Date.now();
+    lastLocalActionRef.current = Date.now();
+    setUnsoldTimer({
+      playerId: p.id,
+      playerName: p.player_name,
+      secondsRemaining: 30,
+    });
+    setSoldTimer(null);
+
     try {
       await Promise.all([
         kplApi.updatePlayer(p.id, {
@@ -444,10 +464,12 @@ export default function AuctionPage() {
         }),
         kplApi.updateAuctionConfig({
           is_active: true,
-          current_player_id: null,
+          is_ended: false,
+          current_player_id: p.id,
           notes: auctionConfig.notes,
           sold_timestamp: null,
-          player: null,
+          unsold_timestamp: unsoldTime,
+          player: unsoldPlayer,
         }),
         kplApi.saveContentSettings({
           auction_is_active: 'true',
@@ -457,7 +479,7 @@ export default function AuctionPage() {
         }),
       ]);
       lastLocalActionRef.current = Date.now();
-      showToast(`${p.player_name} marked as UNSOLD & cleared from auction block.`);
+      showToast(`📢 ${p.player_name} marked as UNSOLD & showing animated unsold celebration screen on live display for 30s.`);
       kplApi.invalidatePlayersCache();
     } catch (err: any) {
       showToast(err.message || 'Failed to mark as unsold', 'error');
@@ -620,14 +642,13 @@ export default function AuctionPage() {
     }
   }, [sortedPartEligible, auctionConfig.current_player_id, players, auctionConfig.is_active]);
 
-  // 1-minute countdown interval for sold display in admin (does NOT auto-advance or auto-complete; admin maintains explicit control)
+  // 1-minute countdown interval for sold display in admin
   useEffect(() => {
     if (!soldTimer) return;
     const interval = setInterval(() => {
       setSoldTimer(prev => {
         if (!prev) return null;
         if (prev.secondsRemaining <= 1) {
-          // Timer expires: Keep player and celebration summary visible; do NOT clear block automatically
           return {
             ...prev,
             secondsRemaining: 0,
@@ -642,6 +663,28 @@ export default function AuctionPage() {
 
     return () => clearInterval(interval);
   }, [soldTimer?.playerId]);
+
+  // 30-second countdown interval for unsold celebration display in admin
+  useEffect(() => {
+    if (!unsoldTimer) return;
+    const interval = setInterval(() => {
+      setUnsoldTimer(prev => {
+        if (!prev) return null;
+        if (prev.secondsRemaining <= 1) {
+          return {
+            ...prev,
+            secondsRemaining: 0,
+          };
+        }
+        return {
+          ...prev,
+          secondsRemaining: prev.secondsRemaining - 1,
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [unsoldTimer?.playerId]);
 
   // Search filtered subsets across all columns (Reg ID, last 3 digits, name, phone)
   const filteredEligible = sortedPartEligible.filter(p => searchMatchesPlayer(p, playerSearch));
@@ -1178,6 +1221,17 @@ export default function AuctionPage() {
                     </div>
                     <div className="admin-unsold-title">
                       <strong>{currentPlayer.player_name}</strong> was marked as UNSOLD and moved to the pass pool.
+                    </div>
+                    <div style={{ fontSize: 12.5, color: '#fca5a5', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Clock size={13} color="#f87171" />
+                      <span>
+                        Broadcasting celebratory UNSOLD screen on live display ·{' '}
+                        {unsoldTimer?.secondsRemaining ? (
+                          <>Auto-timer: <strong style={{ color: '#f87171', fontSize: 13 }}>{unsoldTimer.secondsRemaining}s</strong></>
+                        ) : (
+                          <strong style={{ color: '#fca5a5' }}>30s unsold display complete</strong>
+                        )}
+                      </span>
                     </div>
                     <div className="admin-unsold-actions">
                       {nextCandidatePlayer ? (

@@ -2541,25 +2541,297 @@ body.auction-body-lock {
   box-shadow: 0 0 10px rgba(245, 200, 66, 0.6);
 }
 
+/* ──────────────────────────────────────────────────────────
+   FULL-SCREEN UNSOLD ANIMATED CELEBRATION SCREEN
+   ────────────────────────────────────────────────────────── */
+
+.auction-unsold-celebration-screen {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  bottom: 44px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 40%, rgba(185, 28, 28, 0.45) 0%, rgba(18, 4, 4, 0.98) 70%, #080000 100%);
+  overflow: hidden;
+  padding: clamp(16px, 3vw, 36px);
+  animation: unsoldFadeIn 0.4s ease-out forwards;
+}
+
+@keyframes unsoldFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.unsold-celebration-bg-glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  opacity: 0.6;
+  background: radial-gradient(circle, #dc2626 0%, rgba(239, 68, 68, 0.3) 45%, transparent 70%);
+  animation: unsoldGlowPulse 3.5s ease-in-out infinite alternate;
+}
+
+@keyframes unsoldGlowPulse {
+  0% { transform: scale(0.85); opacity: 0.4; }
+  100% { transform: scale(1.18); opacity: 0.75; }
+}
+
+.unsold-celebration-content {
+  position: relative;
+  z-index: 5;
+  max-width: 980px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Grand UNSOLD Header Stamp */
+.unsold-stamp-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 36px;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 50%, #ef4444 100%);
+  color: #ffffff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  box-shadow: 0 0 40px rgba(220, 38, 38, 0.8), 0 4px 20px rgba(0, 0, 0, 0.6);
+  animation: unsoldStampBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  margin-bottom: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+@keyframes unsoldStampBounce {
+  0% { transform: scale(0.4) rotate(4deg); opacity: 0; }
+  70% { transform: scale(1.08) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Centerpiece Showcase Card */
+.unsold-showcase-card {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(28, 5, 5, 0.9) 0%, rgba(35, 8, 8, 0.94) 100%);
+  border: 2px solid rgba(239, 68, 68, 0.5);
+  border-radius: 20px;
+  padding: clamp(20px, 3vw, 36px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 40px rgba(220, 38, 38, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.unsold-showcase-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ef4444, #f5c842, #ef4444);
+}
+
+.unsold-player-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex: 1 1 50%;
+  text-align: left;
+}
+
+.unsold-player-avatar-frame {
+  width: clamp(100px, 12vw, 150px);
+  height: clamp(100px, 12vw, 150px);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #111;
+  border: 3px solid #ef4444;
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.4), 0 0 16px rgba(0, 0, 0, 0.6);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.unsold-player-avatar-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(25%);
+}
+
+.unsold-player-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.unsold-player-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(26px, 3.2vw, 40px);
+  font-weight: 900;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unsold-player-meta {
+  font-size: 14px;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Right Section: Status Box & Base Price */
+.unsold-status-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  flex: 1 1 50%;
+  text-align: right;
+}
+
+.unsold-status-box {
+  background: rgba(239, 68, 68, 0.14);
+  border: 2px solid #ef4444;
+  border-radius: 12px;
+  padding: 10px 24px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.35);
+}
+
+.unsold-status-tag {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #fca5a5;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.unsold-status-main {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(22px, 2.8vw, 32px);
+  font-weight: 900;
+  color: #ff4d5e;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.unsold-base-price-line {
+  font-size: 13.5px;
+  color: #94a3b8;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.unsold-base-price-val {
+  color: #f5c842;
+  font-weight: 900;
+  font-size: 16px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+/* 30s Countdown Timer Bar */
+.unsold-timer-strip {
+  width: 100%;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.unsold-timer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 7px 20px;
+  border-radius: 30px;
+  color: #cbd5e1;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.unsold-timer-seconds {
+  color: #f87171;
+  font-weight: 900;
+  font-size: 16px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+.unsold-timer-bar-track {
+  width: 100%;
+  max-width: 650px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.unsold-timer-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ef4444 0%, #f5c842 100%);
+  border-radius: 6px;
+  transition: width 1s linear;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
 @media (max-width: 768px) {
-  .sold-showcase-card {
+  .sold-showcase-card,
+  .unsold-showcase-card {
     flex-direction: column;
     align-items: center;
     text-align: center;
   }
-  .sold-player-left {
+  .sold-player-left,
+  .unsold-player-left {
     flex-direction: column;
     align-items: center;
     text-align: center;
   }
-  .sold-buyer-right {
+  .sold-buyer-right,
+  .unsold-status-right {
     align-items: center;
     text-align: center;
   }
   .sold-buyer-team-box {
     align-items: center;
   }
-  .sold-price-box {
+  .sold-price-box,
+  .unsold-status-box {
     align-items: center;
   }
 }

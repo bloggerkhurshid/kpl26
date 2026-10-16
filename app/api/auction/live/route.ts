@@ -37,6 +37,7 @@ interface LiveState {
   notes: string;
   player: any | null;
   sold_timestamp: number | null;
+  unsold_timestamp: number | null;
   stats: {
     pool_count: number;
     sold_count: number;
@@ -61,6 +62,7 @@ let liveState: LiveState = {
   notes: 'KPL Season 3 Live Auction',
   player: null,
   sold_timestamp: null,
+  unsold_timestamp: null,
   stats: {
     pool_count: 0,
     sold_count: 0,
@@ -305,6 +307,18 @@ export async function GET(req: Request) {
     }
   }
 
+  // Auto-clear block if the player is unsold and celebration has elapsed (>30s or no unsold_timestamp on reload)
+  if (liveState.player && !liveState.player.team_id && (liveState.player.auction_eligible === 0 || liveState.player.auction_eligible === '0')) {
+    const isExpired = !liveState.unsold_timestamp || (Date.now() - Number(liveState.unsold_timestamp) >= 30000);
+    if (isExpired) {
+      liveState.current_player_id = null;
+      liveState.player = null;
+      liveState.unsold_timestamp = null;
+      liveState.version += 1;
+      kplApi.saveContentSettings({ auction_current_player_id: '' }).catch(() => {});
+    }
+  }
+
   // If client already has the current version, return light payload
   if (clientVersion && clientVersion === liveState.version) {
     return NextResponse.json({
@@ -330,6 +344,7 @@ export async function GET(req: Request) {
     recent_sold: liveState.recent_sold || [],
     last_sold_event: liveState.last_sold_event,
     sold_timestamp: liveState.sold_timestamp,
+    unsold_timestamp: liveState.unsold_timestamp,
   }, {
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -365,11 +380,19 @@ export async function POST(req: Request) {
       }
     }
     if (body.notes !== undefined) liveState.notes = String(body.notes);
-    if (body.sold_timestamp !== undefined) liveState.sold_timestamp = body.sold_timestamp;
+    if (body.sold_timestamp !== undefined) {
+      liveState.sold_timestamp = body.sold_timestamp;
+      liveState.unsold_timestamp = null;
+    }
+    if (body.unsold_timestamp !== undefined) {
+      liveState.unsold_timestamp = body.unsold_timestamp;
+      liveState.sold_timestamp = null;
+    }
 
     if (body.current_player_id !== undefined) {
-      if (body.current_player_id !== liveState.current_player_id && body.sold_timestamp === undefined) {
+      if (body.current_player_id !== liveState.current_player_id && body.sold_timestamp === undefined && body.unsold_timestamp === undefined) {
         liveState.sold_timestamp = null;
+        liveState.unsold_timestamp = null;
       }
       liveState.current_player_id = body.current_player_id;
     }
@@ -378,6 +401,7 @@ export async function POST(req: Request) {
     if (body.current_player_id === null) {
       liveState.player = null;
       liveState.sold_timestamp = null;
+      liveState.unsold_timestamp = null;
     } else if (body.player) {
       liveState.player = body.player;
     }
@@ -447,10 +471,13 @@ export async function POST(req: Request) {
     liveState.lastUpdated = Date.now();
 
     // Persist to database so across all workers, lambdas, and refreshes, state is saved
-    // CRITICAL: If the player on block is already sold (has team_id), NEVER persist their ID as auction_current_player_id in MySQL!
-    // This guarantees that any page reload or server restart immediately shows "NEXT PLAYER COMING SOON", not an old sold player!
-    const isSoldPlayer = Boolean(liveState.player && liveState.player.team_id);
-    const dbPlayerIdToSave = isSoldPlayer ? '' : (liveState.current_player_id || '');
+    // CRITICAL: If the player on block is already sold (has team_id) or unsold, NEVER persist their ID as auction_current_player_id in MySQL!
+    // This guarantees that any page reload or server restart immediately shows "NEXT PLAYER COMING SOON", not an old sold or unsold player!
+    const isSoldOrUnsold = Boolean(
+      (liveState.player && liveState.player.team_id) ||
+      (liveState.player && (liveState.player.auction_eligible === 0 || liveState.player.auction_eligible === '0'))
+    );
+    const dbPlayerIdToSave = isSoldOrUnsold ? '' : (liveState.current_player_id || '');
 
     try {
       await kplApi.saveContentSettings({
@@ -475,6 +502,7 @@ export async function POST(req: Request) {
       notes: liveState.notes,
       player: liveState.player,
       sold_timestamp: liveState.sold_timestamp,
+      unsold_timestamp: liveState.unsold_timestamp,
       stats: liveState.stats,
       teams: liveState.teams,
       recent_sold: liveState.recent_sold,

@@ -608,7 +608,7 @@ export const kplApi = {
     return null;
   },
 
-  async updateAuctionConfig(data: { is_active?: boolean; is_ended?: boolean; current_player_id?: string | null; notes?: string; player?: any; sold_timestamp?: number | null; unassign_player_id?: string }) {
+  async updateAuctionConfig(data: { is_active?: boolean; is_ended?: boolean; current_player_id?: string | null; notes?: string; player?: any; sold_timestamp?: number | null; unsold_timestamp?: number | null; unassign_player_id?: string }) {
     // Post to fast live endpoint
     const res = await fetch('/api/auction/live', {
       method: 'POST',
