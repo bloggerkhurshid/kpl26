@@ -624,6 +624,7 @@ export default function AuctionViewerPage() {
   const versionRef = useRef<number>(0);
   const configIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastSoldIdRef = useRef<string | null>(null);
+  const soldTimestampRef = useRef<number | null>(null);
 
   /* Lock viewport scroll */
   useEffect(() => {
@@ -707,10 +708,11 @@ export default function AuctionViewerPage() {
 
       // Update sold countdown timestamp if active
       if (data.sold_timestamp) {
-        const elapsed = Math.floor((Date.now() - Number(data.sold_timestamp)) / 1000);
-        const rem = Math.max(0, 60 - elapsed);
-        setSoldSecondsLeft(rem);
+        soldTimestampRef.current = Number(data.sold_timestamp);
+        const elapsed = Math.floor((Date.now() - soldTimestampRef.current) / 1000);
+        setSoldSecondsLeft(Math.max(0, 60 - elapsed));
       } else {
+        soldTimestampRef.current = null;
         setSoldSecondsLeft(0);
       }
 
@@ -767,20 +769,18 @@ export default function AuctionViewerPage() {
     };
   }, [syncLiveAuction]);
 
-  // 1-second countdown interval for sold celebration
+  // Single clean 1-second countdown ticker based on server sold_timestamp (no timer conflict)
   useEffect(() => {
-    if (soldSecondsLeft <= 0) return;
     const t = setInterval(() => {
-      setSoldSecondsLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(t);
-          return 0;
-        }
-        return prev - 1;
-      });
+      if (soldTimestampRef.current) {
+        const elapsed = Math.floor((Date.now() - soldTimestampRef.current) / 1000);
+        setSoldSecondsLeft(Math.max(0, 60 - elapsed));
+      } else {
+        setSoldSecondsLeft(0);
+      }
     }, 1000);
     return () => clearInterval(t);
-  }, [soldSecondsLeft > 0]);
+  }, []);
 
   /* ──────────────────────────────────────────────────────────
      PHOTO ZOOM HANDLER
@@ -809,7 +809,7 @@ export default function AuctionViewerPage() {
 
   const photoUrl = player?.photo ? getImageUrl(player.photo) : '/images/kpl-logo.jpg';
   const assignedTeam = isSold
-    ? player?.teams || teams.find((t) => String(t.id) === String(player?.team_id))
+    ? teams.find((t) => String(t.id) === String(player?.team_id)) || player?.teams
     : null;
 
   const displayRegNo = player?.registration_number
@@ -973,31 +973,50 @@ export default function AuctionViewerPage() {
         <div className="deals-ticker-viewport">
           <div className="deals-ticker-track">
             {recentSold.length === 0 ? (
-              <div className="deals-ticker-chip">
-                <span>⚡ KPL SEASON 3 LIVE AUCTION · 6 FRANCHISES READY · AWAITING FIRST HAMMER DOWN</span>
-              </div>
-            ) : (
               <>
-                {recentSold.map((p, idx) => (
-                  <div key={`deal-1-${p.id || idx}`} className="deals-ticker-chip">
-                    <span className="deals-chip-name">{p.player_name}</span>
-                    <span className="deals-chip-team" style={{ background: p.team_accent_color || '#e8192c' }}>
-                      {p.team_short_code || 'KPL'}
-                    </span>
-                    <span className="deals-chip-price">🪙 ₹{Number(p.sold_price || 0).toLocaleString('en-IN')}</span>
-                  </div>
-                ))}
-                {/* Loop duplicate for infinite smooth marquee */}
-                {recentSold.map((p, idx) => (
-                  <div key={`deal-2-${p.id || idx}`} className="deals-ticker-chip">
-                    <span className="deals-chip-name">{p.player_name}</span>
-                    <span className="deals-chip-team" style={{ background: p.team_accent_color || '#e8192c' }}>
-                      {p.team_short_code || 'KPL'}
-                    </span>
-                    <span className="deals-chip-price">🪙 ₹{Number(p.sold_price || 0).toLocaleString('en-IN')}</span>
-                  </div>
-                ))}
+                <div className="deals-ticker-chip">
+                  <span>⚡ KPL SEASON 3 LIVE AUCTION · 6 FRANCHISES READY · AWAITING FIRST HAMMER DOWN</span>
+                </div>
+                <div className="deals-ticker-chip">
+                  <span>🏏 KHORAGHAT PREMIER LEAGUE · OFFICIAL LIVE BROADCAST</span>
+                </div>
+                <div className="deals-ticker-chip">
+                  <span>⚡ KPL SEASON 3 LIVE AUCTION · 6 FRANCHISES READY · AWAITING FIRST HAMMER DOWN</span>
+                </div>
+                <div className="deals-ticker-chip">
+                  <span>🏏 KHORAGHAT PREMIER LEAGUE · OFFICIAL LIVE BROADCAST</span>
+                </div>
               </>
+            ) : (
+              (() => {
+                let displaySold = [...recentSold];
+                while (displaySold.length < 8) {
+                  displaySold = [...displaySold, ...recentSold];
+                }
+                return (
+                  <>
+                    {displaySold.map((p, idx) => (
+                      <div key={`deal-1-${p.id || idx}-${idx}`} className="deals-ticker-chip">
+                        <span className="deals-chip-name">{p.player_name}</span>
+                        <span className="deals-chip-team" style={{ background: p.team_accent_color || '#e8192c' }}>
+                          {p.team_short_code || 'KPL'}
+                        </span>
+                        <span className="deals-chip-price">🪙 ₹{Number(p.sold_price || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                    ))}
+                    {/* Loop duplicate for infinite smooth marquee */}
+                    {displaySold.map((p, idx) => (
+                      <div key={`deal-2-${p.id || idx}-${idx}`} className="deals-ticker-chip">
+                        <span className="deals-chip-name">{p.player_name}</span>
+                        <span className="deals-chip-team" style={{ background: p.team_accent_color || '#e8192c' }}>
+                          {p.team_short_code || 'KPL'}
+                        </span>
+                        <span className="deals-chip-price">🪙 ₹{Number(p.sold_price || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                    ))}
+                  </>
+                );
+              })()
             )}
           </div>
         </div>

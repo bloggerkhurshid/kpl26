@@ -76,12 +76,13 @@ let liveState: LiveState = {
 let lastFullSync = 0;
 let isSyncing = false;
 let hasBootstrapped = false;
+let lastLocalMutation = 0;
 
 // Background sync from remote PHP DB
 async function syncFromDatabase(force: boolean = false) {
   const now = Date.now();
-  // Don't refetch heavy database queries more often than every 6 seconds unless forced
-  if (!force && (now - lastFullSync < 6000 || isSyncing)) {
+  // Don't refetch heavy database queries more often than every 5 seconds unless forced
+  if (!force && (now - lastFullSync < 5000 || isSyncing)) {
     return;
   }
 
@@ -94,7 +95,9 @@ async function syncFromDatabase(force: boolean = false) {
     ]);
 
     const data = contentRes?.data || contentRes || {};
-    if (!hasBootstrapped) {
+    // Sync config from database if initial bootstrap OR if no local mutation occurred in last 8s
+    const timeSinceLocalMutation = now - lastLocalMutation;
+    if (!hasBootstrapped || timeSinceLocalMutation > 8000) {
       if (data.auction_is_active !== undefined) {
         liveState.is_active = data.auction_is_active === 'true' || data.auction_is_active === true || data.auction_is_active === '1' || data.auction_is_active === 1;
       }
@@ -225,13 +228,25 @@ async function syncFromDatabase(force: boolean = false) {
     if (liveState.current_player_id) {
       const curr = rawPlayers.find((p: any) => String(p.id) === String(liveState.current_player_id));
       if (curr) {
-        const assignedTeam = liveState.teams.find((t: any) => String(t.id) === String(curr.team_id));
+        // If we recently marked this player as sold in memory, preserve their sold status
+        // even if the remote DB query hasn't updated its team_id yet!
+        const existingPlayer = liveState.player;
+        const isOptimisticallySold = existingPlayer && String(existingPlayer.id) === String(curr.id) && Boolean(existingPlayer.team_id);
+        const teamId = isOptimisticallySold ? existingPlayer.team_id : curr.team_id;
+        const soldPrice = isOptimisticallySold ? existingPlayer.sold_price : curr.sold_price;
+
+        const assignedTeam = liveState.teams.find((t: any) => String(t.id) === String(teamId));
         liveState.player = {
           ...curr,
+          team_id: teamId || null,
+          sold_price: soldPrice !== undefined ? soldPrice : null,
           teams: assignedTeam || curr.teams || null,
         };
       } else {
-        liveState.player = null;
+        // If not in rawPlayers yet, keep existing optimistic player if id matches
+        if (!liveState.player || String(liveState.player.id) !== String(liveState.current_player_id)) {
+          liveState.player = null;
+        }
       }
     } else {
       liveState.player = null;
@@ -372,10 +387,21 @@ export async function POST(req: Request) {
       liveState.stats.total_purse_spent = (Number(liveState.stats.total_purse_spent) || 0) + soldPrice;
     }
 
+    // Handle explicit player unassignment cleanup
+    if (body.unassign_player_id) {
+      const unassignId = String(body.unassign_player_id);
+      inMemorySoldOrder.delete(unassignId);
+      liveState.recent_sold = (liveState.recent_sold || []).filter(x => String(x.id) !== unassignId);
+      if (liveState.last_sold_event && String(liveState.last_sold_event.id) === unassignId) {
+        liveState.last_sold_event = null;
+      }
+    }
+
+    lastLocalMutation = Date.now();
     liveState.version += 1;
     liveState.lastUpdated = Date.now();
 
-    // Trigger full background sync with DB immediately without blocking response
+    // Trigger background sync with DB immediately without blocking response
     syncFromDatabase(true);
 
     // Asynchronously persist to database in background without blocking response

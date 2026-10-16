@@ -92,11 +92,11 @@ export default function AuctionEndedPage() {
             const res = await kplApi.getTeams('active');
             return Array.isArray(res) ? res : (res?.data || []);
           }),
-          fetch('/api/players?auction_eligible=0&team_id[not]=null').then(r => r.json()).catch(async () => {
+          fetch('/api/players?team_id[not]=null').then(r => r.json()).catch(async () => {
             const res = await kplApi.getPlayers({ status: 'active', limit: 1500 });
             return Array.isArray(res) ? res : (res?.data || []);
           }),
-          fetch('/api/players?auction_eligible=0&team_id=null').then(r => r.json()).catch(() => []),
+          fetch('/api/players?team_id=null').then(r => r.json()).catch(() => []),
         ]);
 
         const rawTeams: Team[] = Array.isArray(teamsData) ? teamsData : (teamsData?.data || []);
@@ -164,8 +164,6 @@ export default function AuctionEndedPage() {
 
   // Unsold players in pass pool
   const unsoldPlayers = useMemo(() => {
-    const passed = players.filter(p => !p.team_id && !isRetainedOrOwner(p) && (p.auction_eligible === 0 || p.auction_eligible === '0'));
-    if (passed.length > 0) return passed;
     return players.filter(p => !p.team_id && !isRetainedOrOwner(p));
   }, [players]);
 

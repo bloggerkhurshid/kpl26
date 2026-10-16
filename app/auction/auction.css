@@ -498,11 +498,23 @@ body.auction-body-lock {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   border-left: 1px solid var(--line);
   background: linear-gradient(160deg, #120404 0%, #1a0606 50%, #0e0404 100%);
   position: relative;
   transition: opacity 0.3s ease;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(232, 25, 44, 0.4) transparent;
+}
+
+.details-side::-webkit-scrollbar {
+  width: 5px;
+}
+
+.details-side::-webkit-scrollbar-thumb {
+  background: rgba(232, 25, 44, 0.4);
+  border-radius: 4px;
 }
 
 .details-fade-exit {
@@ -570,8 +582,8 @@ body.auction-body-lock {
 
 /* Detail Body */
 .auction-detail-body {
-  flex: 1;
-  overflow: hidden;
+  flex: 1 0 auto;
+  overflow: visible;
   padding: clamp(10px, 1.5vh, 20px) clamp(18px, 2.6vw, 44px);
   display: flex;
   flex-direction: column;
@@ -1312,19 +1324,20 @@ body.auction-body-lock {
     gap: 10px;
   }
 
-  .auction-teams-drawer {
+  .auction-feed-drawer {
     top: auto;
     bottom: 44px;
     left: 0;
     right: 0;
     width: 100%;
+    max-width: 100vw;
     height: 60vh;
     transform: translateY(100%);
     border-top: 2px solid var(--red);
     border-left: none;
   }
 
-  .auction-teams-drawer.open {
+  .auction-feed-drawer.open {
     transform: translateY(0);
   }
 
@@ -2814,7 +2827,7 @@ body.auction-body-lock {
 /* 3. Live Just Sold Broadcast Toast */
 .auction-just-sold-toast {
   position: fixed;
-  top: 76px;
+  top: 142px;
   left: 50%;
   transform: translateX(-50%);
   background: linear-gradient(135deg, rgba(20, 4, 4, 0.96) 0%, rgba(38, 8, 8, 0.96) 100%);

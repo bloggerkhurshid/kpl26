@@ -173,9 +173,13 @@ export default function AuctionPage() {
     }
   }, []);
 
-  // Initial load once on component mount
+  // Initial load once on component mount + background quiet sync every 6 seconds
   useEffect(() => {
     loadData();
+    const syncInterval = setInterval(() => {
+      loadData(true);
+    }, 6000);
+    return () => clearInterval(syncInterval);
   }, [loadData]);
 
   // Toggle auction session state (Start / Stop)
@@ -337,8 +341,20 @@ export default function AuctionPage() {
         sold_price: null,
         auction_eligible: 0,
       });
+      // Broadcast UNSOLD status for the current player on block so viewers clearly see UNSOLD
       if (auctionConfig.current_player_id === p.id) {
-        await setCurrentPlayer(null);
+        await kplApi.updateAuctionConfig({
+          is_active: auctionConfig.is_active,
+          current_player_id: p.id,
+          notes: auctionConfig.notes,
+          sold_timestamp: null,
+          player: {
+            ...p,
+            team_id: null,
+            sold_price: null,
+            auction_eligible: 0,
+          },
+        });
       }
       showToast(`${p.player_name} marked as UNSOLD (moved to pass pool).`);
     } catch (err: any) {
@@ -428,6 +444,7 @@ export default function AuctionPage() {
           is_active: auctionConfig.is_active,
           current_player_id: auctionConfig.current_player_id === p.id ? null : auctionConfig.current_player_id,
           notes: auctionConfig.notes,
+          unassign_player_id: p.id,
         }),
       ]);
       showToast(`${p.player_name} unassigned and returned to auction pool.`);
@@ -503,17 +520,14 @@ export default function AuctionPage() {
     }
   }, [sortedPartEligible, auctionConfig.current_player_id, players, auctionConfig.is_active]);
 
-  // 1-minute countdown interval for sold display in admin
+  // 1-minute countdown interval for sold display in admin (does NOT auto-advance; admin maintains explicit control)
   useEffect(() => {
     if (!soldTimer) return;
     const interval = setInterval(() => {
       setSoldTimer(prev => {
         if (!prev) return null;
         if (prev.secondsRemaining <= 1) {
-          // If autoAdvance is enabled by admin, advance to next player; otherwise just end the timer
-          if (autoAdvance) {
-            advanceToNextPlayer();
-          }
+          // Timer expires gracefully; player stays on block until admin calls next player
           return null;
         }
         return {
@@ -524,7 +538,7 @@ export default function AuctionPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [soldTimer?.playerId, autoAdvance, advanceToNextPlayer]);
+  }, [soldTimer?.playerId]);
 
   // Search filtered subsets across all columns (Reg ID, last 3 digits, name, phone)
   const filteredEligible = sortedPartEligible.filter(p => searchMatchesPlayer(p, playerSearch));
@@ -1043,28 +1057,20 @@ export default function AuctionPage() {
                       </button>
                     </div>
 
-                    {/* Optional Auto-Advance Toggle Checkbox */}
-                    <label
+                    {/* Manual Advance Note */}
+                    <div
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: 7,
+                        gap: 6,
                         fontSize: 12,
                         color: '#94a3b8',
-                        cursor: 'pointer',
-                        userSelect: 'none',
                         marginTop: 2,
                       }}
-                      title="If checked, automatically calls next player when 1 minute expires"
                     >
-                      <input
-                        type="checkbox"
-                        checked={autoAdvance}
-                        onChange={(e) => setAutoAdvance(e.target.checked)}
-                        style={{ accentColor: '#10b981', cursor: 'pointer', width: 14, height: 14 }}
-                      />
-                      <span>Auto-call next player when 60s timer expires</span>
-                    </label>
+                      <span style={{ color: '#10b981', fontWeight: 800 }}>✓</span>
+                      <span>Next player will be called only when you click &quot;Call Next Player&quot;.</span>
+                    </div>
                   </div>
                 ) : (
                   <>
