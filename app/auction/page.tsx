@@ -734,9 +734,10 @@ export default function AuctionViewerPage() {
     total_purse_spent: 0,
   });
   const [player, setPlayer] = useState<Player | null>(null);
+  const [celebrationPlayer, setCelebrationPlayer] = useState<Player | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [recentSold, setRecentSold] = useState<RecentSoldPlayer[]>([]);
-  const [viewState, setViewState] = useState<'loading' | 'not_live' | 'waiting' | 'changing' | 'player'>('loading');
+  const [viewState, setViewState] = useState<'loading' | 'not_live' | 'waiting' | 'changing' | 'player' | 'celebration_sold' | 'celebration_unsold'>('loading');
   const [soldSecondsLeft, setSoldSecondsLeft] = useState<number>(0);
   const [unsoldSecondsLeft, setUnsoldSecondsLeft] = useState<number>(0);
 
@@ -871,22 +872,21 @@ export default function AuctionViewerPage() {
       }
 
       // ────────────────────────────────────────────────────────
-      // TRANSITION STATE MACHINE
+      // DETERMINISTIC STATE MACHINE
       // ────────────────────────────────────────────────────────
+      if (data.celebration_player) {
+        setCelebrationPlayer(data.celebration_player);
+      }
+
       const isInitialFetch = !hasInitializedRef.current;
       hasInitializedRef.current = true;
 
-      const isSoldExpired = Boolean(data.player?.team_id) && (
-        !data.sold_timestamp || Math.floor((Date.now() - Number(data.sold_timestamp)) / 1000) >= 60
+      const isSoldCelebrationActive = data.status === 'CELEBRATION_SOLD' && Boolean(data.sold_timestamp) && (
+        Math.floor((Date.now() - Number(data.sold_timestamp)) / 1000) < 60
       );
 
-      const isUnsoldCandidate = Boolean(
-        data.player &&
-        !data.player.team_id &&
-        (!data.player.auction_eligible || data.player.auction_eligible === 0 || data.player.auction_eligible === '0')
-      );
-      const isUnsoldExpired = isUnsoldCandidate && (
-        !data.unsold_timestamp || Math.floor((Date.now() - Number(data.unsold_timestamp)) / 1000) >= 30
+      const isUnsoldCelebrationActive = data.status === 'CELEBRATION_UNSOLD' && Boolean(data.unsold_timestamp) && (
+        Math.floor((Date.now() - Number(data.unsold_timestamp)) / 1000) < 30
       );
 
       if (!isLive) {
@@ -894,31 +894,39 @@ export default function AuctionViewerPage() {
         prevPlayerIdRef.current = null;
         setPlayer(null);
         setViewState('not_live');
-      } else if (!newPlayerId || isSoldExpired || isUnsoldExpired) {
-        // Auction is live, but no player on the block (or sold/unsold celebration expired) -> SHOW WAITING SCREEN
+      } else if (isSoldCelebrationActive) {
+        // Active 60s broadcast celebration for sold player
+        prevPlayerIdRef.current = null;
+        setPlayer(null);
+        setViewState('celebration_sold');
+      } else if (isUnsoldCelebrationActive) {
+        // Active 30s broadcast celebration for unsold player
+        prevPlayerIdRef.current = null;
+        setPlayer(null);
+        setViewState('celebration_unsold');
+      } else if (data.status === 'BIDDING' && newPlayerId && data.player) {
+        // Active player on block for BIDDING
+        if (newPlayerId !== prevPlayerIdRef.current) {
+          prevPlayerIdRef.current = newPlayerId;
+          if (isInitialFetch) {
+            setPlayer(data.player);
+            setViewState('player');
+          } else {
+            setViewState('changing');
+            setTimeout(() => {
+              setPlayer(data.player);
+              setViewState('player');
+            }, 350);
+          }
+        } else {
+          setPlayer(data.player);
+          setViewState('player');
+        }
+      } else {
+        // IDLE: No active player, no celebration -> CLEAN WAITING SCREEN
         prevPlayerIdRef.current = null;
         setPlayer(null);
         setViewState('waiting');
-      } else if (newPlayerId !== prevPlayerIdRef.current) {
-        // Player changed!
-        prevPlayerIdRef.current = newPlayerId;
-
-        if (isInitialFetch) {
-          // Direct load if first page open
-          setPlayer(data.player || null);
-          setViewState('player');
-        } else {
-          // Cinematic 350ms transition
-          setViewState('changing');
-          setTimeout(() => {
-            setPlayer(data.player || null);
-            setViewState('player');
-          }, 350);
-        }
-      } else {
-        // Same player: keep state updated (e.g. marked sold/bids)
-        setPlayer(data.player || null);
-        setViewState('player');
       }
     } catch (err) {
       console.warn('Live sync fallback:', err);
@@ -945,7 +953,7 @@ export default function AuctionViewerPage() {
         const remaining = Math.max(0, 60 - elapsed);
         setSoldSecondsLeft(remaining);
         if (remaining <= 0) {
-          setViewState(curr => (curr === 'player' ? 'waiting' : curr));
+          setViewState(curr => (curr === 'celebration_sold' ? 'waiting' : curr));
         }
       } else {
         setSoldSecondsLeft(0);
@@ -957,7 +965,7 @@ export default function AuctionViewerPage() {
         const remaining = Math.max(0, 30 - elapsed);
         setUnsoldSecondsLeft(remaining);
         if (remaining <= 0) {
-          setViewState(curr => (curr === 'player' ? 'waiting' : curr));
+          setViewState(curr => (curr === 'celebration_unsold' ? 'waiting' : curr));
         }
       } else {
         setUnsoldSecondsLeft(0);
@@ -1258,31 +1266,23 @@ export default function AuctionViewerPage() {
 
       {viewState === 'changing' && <ChangingScreen />}
 
-      {viewState === 'player' && isSold && soldSecondsLeft > 0 && (
+      {viewState === 'celebration_sold' && (
         <SoldCelebrationScreen
-          player={player}
-          team={assignedTeam}
-          soldPrice={Number(player?.sold_price || 0)}
+          player={celebrationPlayer || player}
+          team={assignedTeam || (celebrationPlayer?.team_id ? teams.find(t => String(t.id) === String(celebrationPlayer.team_id)) : null)}
+          soldPrice={Number(celebrationPlayer?.sold_price || player?.sold_price || 0)}
           secondsRemaining={soldSecondsLeft}
         />
       )}
 
-      {viewState === 'player' && isSold && soldSecondsLeft <= 0 && (
-        <WaitingScreen stats={stats} notes={config.notes} recentSold={recentSold} />
-      )}
-
-      {viewState === 'player' && isUnsold && unsoldSecondsLeft > 0 && (
+      {viewState === 'celebration_unsold' && (
         <UnsoldCelebrationScreen
-          player={player}
+          player={celebrationPlayer || player}
           secondsRemaining={unsoldSecondsLeft}
         />
       )}
 
-      {viewState === 'player' && isUnsold && unsoldSecondsLeft <= 0 && (
-        <WaitingScreen stats={stats} notes={config.notes} recentSold={recentSold} />
-      )}
-
-      {viewState === 'player' && !isSold && !isUnsold && (
+      {viewState === 'player' && player && (
         <main className="auction-stage">
           {/* ── LEFT HALF — PHOTO & REGISTRATION STRIP ── */}
           <section className="photo-side">

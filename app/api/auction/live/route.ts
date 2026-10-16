@@ -38,6 +38,7 @@ interface LiveState {
   current_player_id: string | null;
   notes: string;
   player: any | null;
+  celebration_player: any | null;
   sold_timestamp: number | null;
   unsold_timestamp: number | null;
   stats: {
@@ -64,6 +65,7 @@ let liveState: LiveState = {
   current_player_id: null,
   notes: 'KPL Season 3 Live Auction',
   player: null,
+  celebration_player: null,
   sold_timestamp: null,
   unsold_timestamp: null,
   stats: {
@@ -360,6 +362,7 @@ export async function GET(req: Request) {
     notes: liveState.notes,
     stats: liveState.stats,
     player: liveState.player,
+    celebration_player: liveState.celebration_player,
     teams: liveState.teams,
     recent_sold: liveState.recent_sold || [],
     last_sold_event: liveState.last_sold_event,
@@ -392,45 +395,48 @@ export async function POST(req: Request) {
         liveState.status = 'IDLE';
         liveState.current_player_id = null;
         liveState.player = null;
+        liveState.celebration_player = null;
         liveState.sold_timestamp = null;
         liveState.unsold_timestamp = null;
       }
     }
     if (body.notes !== undefined) liveState.notes = String(body.notes);
 
-    // 2. Player and Stage Status transition
-    if (body.current_player_id === null) {
+    // 2. Stage Status & Block transition
+    if (body.status === 'CELEBRATION_SOLD' || body.sold_timestamp) {
+      // Player was SOLD: clear block so reload or next bidder never conflicts
+      liveState.status = 'CELEBRATION_SOLD';
+      liveState.sold_timestamp = Number(body.sold_timestamp || Date.now());
+      liveState.unsold_timestamp = null;
+      liveState.current_player_id = null;
+      liveState.player = null;
+      liveState.celebration_player = body.player || null;
+    } else if (body.status === 'CELEBRATION_UNSOLD' || body.unsold_timestamp) {
+      // Player was marked UNSOLD: clear block
+      liveState.status = 'CELEBRATION_UNSOLD';
+      liveState.unsold_timestamp = Number(body.unsold_timestamp || Date.now());
+      liveState.sold_timestamp = null;
+      liveState.current_player_id = null;
+      liveState.player = null;
+      liveState.celebration_player = body.player || null;
+    } else if (body.current_player_id === null || body.status === 'IDLE') {
       // Clear block completely
       liveState.status = 'IDLE';
       liveState.current_player_id = null;
       liveState.player = null;
+      liveState.celebration_player = null;
       liveState.sold_timestamp = null;
       liveState.unsold_timestamp = null;
     } else if (body.current_player_id) {
+      // Player placed on the block for BIDDING
+      liveState.status = 'BIDDING';
       liveState.is_active = true;
       liveState.is_ended = false;
       liveState.current_player_id = String(body.current_player_id);
-
-      if (body.sold_timestamp) {
-        // Player was SOLD
-        liveState.status = 'CELEBRATION_SOLD';
-        liveState.sold_timestamp = Number(body.sold_timestamp);
-        liveState.unsold_timestamp = null;
-      } else if (body.unsold_timestamp) {
-        // Player was marked UNSOLD
-        liveState.status = 'CELEBRATION_UNSOLD';
-        liveState.unsold_timestamp = Number(body.unsold_timestamp);
-        liveState.sold_timestamp = null;
-      } else {
-        // Player placed on the block for BIDDING
-        liveState.status = 'BIDDING';
-        liveState.sold_timestamp = null;
-        liveState.unsold_timestamp = null;
-      }
-
-      if (body.player) {
-        liveState.player = body.player;
-      }
+      liveState.player = body.player || null;
+      liveState.celebration_player = null;
+      liveState.sold_timestamp = null;
+      liveState.unsold_timestamp = null;
     }
 
     // 3. If a player was SOLD, update sold history, team budget & stats immediately

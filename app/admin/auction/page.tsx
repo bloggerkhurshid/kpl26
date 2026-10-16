@@ -275,9 +275,10 @@ export default function AuctionPage() {
     lastLocalActionRef.current = Date.now();
     const p = players.find(x => String(x.id) === String(playerId)) || null;
 
-    // If player was previously passed/unsold, re-enable them in the database so they are fresh for auction
+    // If player was previously passed/unsold, re-enable them in the database and local state so they are fresh for auction
     if (p && (!p.auction_eligible || p.auction_eligible === 0 || p.auction_eligible === '0')) {
       p.auction_eligible = 1;
+      setPlayers(prev => prev.map(item => String(item.id) === String(playerId) ? { ...item, auction_eligible: 1 } : item));
       kplApi.updatePlayer(p.id, { auction_eligible: 1 }).catch(() => {});
     }
 
@@ -387,8 +388,11 @@ export default function AuctionPage() {
       secondsRemaining: 60,
     });
 
-    setSellModal(null);
-    setSellForm({ team_id: '', sold_price: '' });
+    // The player is now SOLD — clear the active bidding block immediately!
+    setAuctionConfig(prev => ({
+      ...prev,
+      current_player_id: null,
+    }));
 
     try {
       await Promise.all([
@@ -401,7 +405,7 @@ export default function AuctionPage() {
           is_active: true,
           is_ended: false,
           status: 'CELEBRATION_SOLD',
-          current_player_id: modalPlayer.id,
+          current_player_id: null,
           notes: auctionConfig.notes,
           sold_timestamp: soldTime,
           unsold_timestamp: null,
@@ -449,10 +453,10 @@ export default function AuctionPage() {
       return item;
     }));
 
-    // Keep player on admin block so the animated unsold banner and "Call Next Player" button are displayed
+    // The player is now PASSED / UNSOLD — clear the active bidding block immediately!
     setAuctionConfig(prev => ({
       ...prev,
-      current_player_id: p.id,
+      current_player_id: null,
     }));
 
     const unsoldTime = Date.now();
@@ -475,7 +479,7 @@ export default function AuctionPage() {
           is_active: true,
           is_ended: false,
           status: 'CELEBRATION_UNSOLD',
-          current_player_id: p.id,
+          current_player_id: null,
           notes: auctionConfig.notes,
           sold_timestamp: null,
           unsold_timestamp: unsoldTime,
