@@ -242,13 +242,22 @@ async function syncFromDatabase(force: boolean = false) {
         const teamId = isOptimisticallySold ? existingPlayer.team_id : curr.team_id;
         const soldPrice = isOptimisticallySold ? existingPlayer.sold_price : curr.sold_price;
 
-        const assignedTeam = liveState.teams.find((t: any) => String(t.id) === String(teamId));
-        liveState.player = {
-          ...curr,
-          team_id: teamId || null,
-          sold_price: soldPrice !== undefined ? soldPrice : null,
-          teams: assignedTeam || curr.teams || null,
-        };
+        const isCelebrationActive = liveState.sold_timestamp && (Date.now() - Number(liveState.sold_timestamp) < 60000);
+
+        if (teamId && !isCelebrationActive) {
+          // Player is already sold and 60s celebration has ended (or on reload) - do NOT show sold player on block!
+          liveState.current_player_id = null;
+          liveState.player = null;
+          liveState.sold_timestamp = null;
+        } else {
+          const assignedTeam = liveState.teams.find((t: any) => String(t.id) === String(teamId));
+          liveState.player = {
+            ...curr,
+            team_id: teamId || null,
+            sold_price: soldPrice !== undefined ? soldPrice : null,
+            teams: assignedTeam || curr.teams || null,
+          };
+        }
       } else {
         // If not in rawPlayers yet, keep existing optimistic player if id matches
         if (!liveState.player || String(liveState.player.id) !== String(liveState.current_player_id)) {
@@ -280,6 +289,17 @@ export async function GET(req: Request) {
   } else if (Date.now() - lastFullSync > 5000) {
     // Non-blocking background sync if already bootstrapped
     syncFromDatabase();
+  }
+
+  // Auto-clear block if the player is sold and celebration has elapsed (>60s or no sold_timestamp on reload)
+  if (liveState.player && liveState.player.team_id) {
+    const isExpired = !liveState.sold_timestamp || (Date.now() - Number(liveState.sold_timestamp) >= 60000);
+    if (isExpired) {
+      liveState.current_player_id = null;
+      liveState.player = null;
+      liveState.sold_timestamp = null;
+      liveState.version += 1;
+    }
   }
 
   // If client already has the current version, return light payload

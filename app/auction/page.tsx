@@ -733,13 +733,17 @@ export default function AuctionViewerPage() {
       const isInitialFetch = !hasInitializedRef.current;
       hasInitializedRef.current = true;
 
+      const isSoldExpired = Boolean(data.player?.team_id) && (
+        !data.sold_timestamp || Math.floor((Date.now() - Number(data.sold_timestamp)) / 1000) >= 60
+      );
+
       if (!isLive) {
         // Auction is not live / stopped -> SHOW NOT LIVE SCREEN
         prevPlayerIdRef.current = null;
         setPlayer(null);
         setViewState('not_live');
-      } else if (!newPlayerId) {
-        // Auction is live, but no player on the block -> SHOW WAITING SCREEN
+      } else if (!newPlayerId || isSoldExpired) {
+        // Auction is live, but no player on the block (or sold celebration expired) -> SHOW WAITING SCREEN
         prevPlayerIdRef.current = null;
         setPlayer(null);
         setViewState('waiting');
@@ -785,7 +789,12 @@ export default function AuctionViewerPage() {
     const t = setInterval(() => {
       if (soldTimestampRef.current) {
         const elapsed = Math.floor((Date.now() - soldTimestampRef.current) / 1000);
-        setSoldSecondsLeft(Math.max(0, 60 - elapsed));
+        const remaining = Math.max(0, 60 - elapsed);
+        setSoldSecondsLeft(remaining);
+        if (remaining <= 0) {
+          // 60-second sold celebration complete: transition to waiting screen
+          setViewState(curr => (curr === 'player' ? 'waiting' : curr));
+        }
       } else {
         setSoldSecondsLeft(0);
       }
@@ -1085,13 +1094,17 @@ export default function AuctionViewerPage() {
 
       {viewState === 'changing' && <ChangingScreen />}
 
-      {viewState === 'player' && isSold && (
+      {viewState === 'player' && isSold && soldSecondsLeft > 0 && (
         <SoldCelebrationScreen
           player={player}
           team={assignedTeam}
           soldPrice={Number(player?.sold_price || 0)}
           secondsRemaining={soldSecondsLeft}
         />
+      )}
+
+      {viewState === 'player' && isSold && soldSecondsLeft <= 0 && (
+        <WaitingScreen stats={stats} notes={config.notes} recentSold={recentSold} />
       )}
 
       {viewState === 'player' && !isSold && (
