@@ -15,7 +15,6 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
-  XCircle,
   Award,
   Star,
   Users,
@@ -1082,24 +1081,6 @@ export default function AuctionViewerPage() {
 
       {viewState === 'player' && !isSold && (
         <main className="auction-stage">
-          {isUnsold && (
-            <div className="auction-unsold-banner-strip" style={{ gridColumn: '1 / -1' }}>
-              <div className="unsold-strip-inner">
-                <div className="unsold-strip-left">
-                  <div className="unsold-strip-badge">
-                    <span>⚠️</span>
-                    <span>UNSOLD · PASSED</span>
-                  </div>
-                  <div className="unsold-strip-title">
-                    <strong>{player?.player_name}</strong> was passed without any bids. Placed back in pool.
-                  </div>
-                </div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#fca5a5', fontFamily: 'Barlow Condensed', fontSize: 13.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', background: 'rgba(239,68,68,0.2)', padding: '6px 14px', borderRadius: 6, border: '1px solid rgba(239,68,68,0.4)' }}>
-                  <span>⏳ AWAITING NEXT CALL</span>
-                </div>
-              </div>
-            </div>
-          )}
           {/* ── LEFT HALF — PHOTO & REGISTRATION STRIP ── */}
           <section className="photo-side">
             <div className="auction-reg-strip">
@@ -1386,20 +1367,16 @@ export default function AuctionViewerPage() {
                 )}
 
                 {isUnsold && (
-                  <div className="auction-unsold-result-card" style={{ gridColumn: '1 / -1' }}>
-                    <div className="unsold-result-header">
-                      <XCircle size={18} color="#ef4444" />
-                      <span>PLAYER UNSOLD IN THIS ROUND</span>
+                  <>
+                    <div className="auction-val-col">
+                      <span className="auction-val-sub">Outcome</span>
+                      <div className="auction-val-main" style={{ color: '#f87171' }}>UNSOLD</div>
                     </div>
-                    <div className="unsold-result-desc">
-                      Base price of ₹{Number(player?.base_price || 500).toLocaleString('en-IN')} was not met. The player is eligible to re-enter future rounds.
+                    <div className="auction-val-col">
+                      <span className="auction-val-sub">Final Price</span>
+                      <div className="auction-val-main" style={{ color: 'var(--mute)' }}>—</div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 8 }}>
-                      <div className="unsold-result-status-pill">
-                        ROUND STATUS: PASSED · AWAITING NEXT CALL
-                      </div>
-                    </div>
-                  </div>
+                  </>
                 )}
 
                 {!isOnBlock && !isSold && !isUnsold && (
