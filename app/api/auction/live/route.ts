@@ -129,8 +129,8 @@ async function syncFromDatabase(force: boolean = false) {
       if (data.auction_notes !== undefined) {
         liveState.notes = data.auction_notes || '';
       }
-      // Only adopt player from database if status was explicitly BIDDING in DB and player has no team_id
-      if (data.auction_stage_status === 'BIDDING' && data.auction_current_player_id) {
+      // Adopt player from database if current_player_id exists and not ended
+      if (data.auction_current_player_id && !liveState.is_ended) {
         liveState.current_player_id = String(data.auction_current_player_id);
         liveState.status = 'BIDDING';
       }
@@ -247,14 +247,7 @@ async function syncFromDatabase(force: boolean = false) {
     if (liveState.current_player_id) {
       const curr = rawPlayers.find((p: any) => String(p.id) === String(liveState.current_player_id));
       if (curr) {
-        if (liveState.status === 'BIDDING') {
-          // Player is actively on the block for bidding: NEVER CLOBBER!
-          const assignedTeam = curr.team_id ? liveState.teams.find((t: any) => String(t.id) === String(curr.team_id)) : null;
-          liveState.player = {
-            ...curr,
-            teams: assignedTeam || curr.teams || null,
-          };
-        } else if (liveState.status === 'CELEBRATION_SOLD') {
+        if (liveState.status === 'CELEBRATION_SOLD') {
           const existingPlayer = liveState.player;
           const teamId = existingPlayer?.team_id || curr.team_id;
           const soldPrice = existingPlayer?.sold_price !== undefined ? existingPlayer.sold_price : curr.sold_price;
@@ -272,6 +265,16 @@ async function syncFromDatabase(force: boolean = false) {
             sold_price: null,
             auction_eligible: 0,
           };
+        } else {
+          // Active bidding player on block: ensure player is populated and status is BIDDING
+          const assignedTeam = curr.team_id ? liveState.teams.find((t: any) => String(t.id) === String(curr.team_id)) : null;
+          liveState.player = {
+            ...curr,
+            teams: assignedTeam || curr.teams || null,
+          };
+          if (!curr.team_id && liveState.is_active) {
+            liveState.status = 'BIDDING';
+          }
         }
       } else {
         // If not in rawPlayers yet, keep existing optimistic player if id matches
@@ -433,7 +436,12 @@ export async function POST(req: Request) {
       liveState.is_active = true;
       liveState.is_ended = false;
       liveState.current_player_id = String(body.current_player_id);
-      liveState.player = body.player || null;
+      if (body.player) {
+        liveState.player = body.player;
+      } else if (!liveState.player || String(liveState.player.id) !== String(body.current_player_id)) {
+        const found = inMemoryPool.find((p: any) => String(p.id) === String(body.current_player_id));
+        liveState.player = found || null;
+      }
       liveState.celebration_player = null;
       liveState.sold_timestamp = null;
       liveState.unsold_timestamp = null;

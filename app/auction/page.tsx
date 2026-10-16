@@ -904,22 +904,23 @@ export default function AuctionViewerPage() {
         prevPlayerIdRef.current = null;
         setPlayer(null);
         setViewState('celebration_unsold');
-      } else if (data.status === 'BIDDING' && newPlayerId && data.player) {
+      } else if (newPlayerId && (data.player || (player && String(player.id) === String(newPlayerId)))) {
         // Active player on block for BIDDING
+        const activeP = (data.player || player) as Player;
         if (newPlayerId !== prevPlayerIdRef.current) {
           prevPlayerIdRef.current = newPlayerId;
           if (isInitialFetch) {
-            setPlayer(data.player);
+            setPlayer(activeP);
             setViewState('player');
           } else {
             setViewState('changing');
             setTimeout(() => {
-              setPlayer(data.player);
+              setPlayer(activeP);
               setViewState('player');
             }, 350);
           }
         } else {
-          setPlayer(data.player);
+          setPlayer(activeP);
           setViewState('player');
         }
       } else {

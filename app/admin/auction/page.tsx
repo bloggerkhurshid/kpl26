@@ -240,26 +240,43 @@ export default function AuctionPage() {
     setSaving(true);
     lastLocalActionRef.current = Date.now();
     const newActive = !auctionConfig.is_active;
-    const curP = players.find(x => String(x.id) === String(auctionConfig.current_player_id));
+    let curP = players.find(x => String(x.id) === String(auctionConfig.current_player_id));
     const curIsSold = Boolean(curP && curP.team_id);
-    const validCurPlayerId = curIsSold ? '' : (auctionConfig.current_player_id || '');
+    let validCurPlayerId = curIsSold ? '' : (auctionConfig.current_player_id || '');
+
+    // If starting auction and no player is currently on the block, auto-select the first eligible candidate
+    if (newActive && !validCurPlayerId && sortedPartEligible.length > 0) {
+      const firstCandidate = sortedPartEligible.find(p => !p.team_id);
+      if (firstCandidate) {
+        validCurPlayerId = String(firstCandidate.id);
+        curP = firstCandidate;
+      }
+    }
 
     try {
       await Promise.all([
         kplApi.updateAuctionConfig({
           is_active: newActive,
           is_ended: false,
+          status: newActive && validCurPlayerId ? 'BIDDING' : 'IDLE',
           current_player_id: validCurPlayerId || null,
+          player: curP || null,
           notes: auctionConfig.notes,
         }),
         kplApi.saveContentSettings({
           auction_is_active: String(newActive),
           auction_is_ended: 'false',
           auction_current_player_id: validCurPlayerId,
+          auction_stage_status: newActive && validCurPlayerId ? 'BIDDING' : 'IDLE',
           auction_notes: auctionConfig.notes,
         }),
       ]);
-      setAuctionConfig(c => ({ ...c, is_active: newActive, is_ended: false }));
+      setAuctionConfig(c => ({
+        ...c,
+        is_active: newActive,
+        is_ended: false,
+        current_player_id: validCurPlayerId || null,
+      }));
       showToast(`Auction session ${newActive ? 'is now LIVE!' : 'is now STOPPED / STANDBY.'}`);
     } catch (err: any) {
       showToast(err.message || 'Failed to update auction state', 'error');
