@@ -268,12 +268,18 @@ export default function AuctionPage() {
     }
   }
 
-  // Set current player on the auction block
+    // Set current player on the auction block
   async function setCurrentPlayer(playerId: string | null) {
     setSoldTimer(null);
     setUnsoldTimer(null);
     lastLocalActionRef.current = Date.now();
     const p = players.find(x => String(x.id) === String(playerId)) || null;
+
+    // If player was previously passed/unsold, re-enable them in the database so they are fresh for auction
+    if (p && (!p.auction_eligible || p.auction_eligible === 0 || p.auction_eligible === '0')) {
+      p.auction_eligible = 1;
+      kplApi.updatePlayer(p.id, { auction_eligible: 1 }).catch(() => {});
+    }
 
     // The auction session MUST remain LIVE whether putting a player on block or clearing the block!
     const willBeActive = true;
@@ -291,15 +297,18 @@ export default function AuctionPage() {
         kplApi.updateAuctionConfig({
           is_active: willBeActive,
           is_ended: false,
+          status: playerId ? 'BIDDING' : 'IDLE',
           current_player_id: playerId,
           notes: auctionConfig.notes,
           player: p,
           sold_timestamp: null,
+          unsold_timestamp: null,
         }),
         kplApi.saveContentSettings({
           auction_is_active: 'true',
           auction_is_ended: 'false',
           auction_current_player_id: playerId || '',
+          auction_stage_status: playerId ? 'BIDDING' : 'IDLE',
           auction_notes: auctionConfig.notes,
         }),
       ]);
@@ -391,9 +400,11 @@ export default function AuctionPage() {
         kplApi.updateAuctionConfig({
           is_active: true,
           is_ended: false,
+          status: 'CELEBRATION_SOLD',
           current_player_id: modalPlayer.id,
           notes: auctionConfig.notes,
           sold_timestamp: soldTime,
+          unsold_timestamp: null,
           player: updatedPlayer,
         }),
         // Explicitly clear auction_current_player_id from MySQL database immediately so page reloads never load a sold player!
@@ -401,6 +412,7 @@ export default function AuctionPage() {
           auction_is_active: 'true',
           auction_is_ended: 'false',
           auction_current_player_id: '',
+          auction_stage_status: 'IDLE',
           auction_notes: auctionConfig.notes,
         }),
       ]);
@@ -462,6 +474,7 @@ export default function AuctionPage() {
         kplApi.updateAuctionConfig({
           is_active: true,
           is_ended: false,
+          status: 'CELEBRATION_UNSOLD',
           current_player_id: p.id,
           notes: auctionConfig.notes,
           sold_timestamp: null,
@@ -472,6 +485,7 @@ export default function AuctionPage() {
           auction_is_active: 'true',
           auction_is_ended: 'false',
           auction_current_player_id: '',
+          auction_stage_status: 'IDLE',
           auction_notes: auctionConfig.notes,
         }),
       ]);

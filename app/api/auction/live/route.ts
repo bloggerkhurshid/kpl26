@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { kplApi } from '@/lib/api';
 
-// Cached state in Node.js process memory
+export type AuctionStageStatus = 'IDLE' | 'BIDDING' | 'CELEBRATION_SOLD' | 'CELEBRATION_UNSOLD';
+
 interface SoldPlayerItem {
   id: string;
   player_name: string;
@@ -33,6 +34,7 @@ interface TeamState {
 interface LiveState {
   is_active: boolean;
   is_ended: boolean;
+  status: AuctionStageStatus;
   current_player_id: string | null;
   notes: string;
   player: any | null;
@@ -51,13 +53,14 @@ interface LiveState {
   lastUpdated: number;
 }
 
-// In-memory persistent sold history tracking
+// In-memory persistent state across requests
 const inMemorySoldOrder: Map<string, SoldPlayerItem> = new Map();
 let inMemoryPool: any[] = [];
 
 let liveState: LiveState = {
   is_active: true,
   is_ended: false,
+  status: 'IDLE',
   current_player_id: null,
   notes: 'KPL Season 3 Live Auction',
   player: null,
@@ -103,11 +106,13 @@ async function syncFromDatabase(force: boolean = false) {
     const snapshotPoolCount = liveState.stats.pool_count;
     const snapshotIsActive = liveState.is_active;
     const snapshotIsEnded = liveState.is_ended;
+    const snapshotStatus = liveState.status;
 
     const data = contentRes?.data || contentRes || {};
-    // Only adopt remote database config if we haven't made a local change in last 15s
+    
+    // Only adopt remote database config if we are IDLE or during cold start
     const timeSinceLocalMutation = Date.now() - lastLocalMutation;
-    if (timeSinceLocalMutation > 15000) {
+    if (!hasBootstrapped || (liveState.status === 'IDLE' && timeSinceLocalMutation > 10000)) {
       if (data.auction_is_ended !== undefined) {
         liveState.is_ended = data.auction_is_ended === 'true' || data.auction_is_ended === true || data.auction_is_ended === '1' || data.auction_is_ended === 1;
       }
@@ -119,11 +124,13 @@ async function syncFromDatabase(force: boolean = false) {
           liveState.is_active = false;
         }
       }
-      if (data.auction_current_player_id !== undefined) {
-        liveState.current_player_id = data.auction_current_player_id ? String(data.auction_current_player_id) : null;
-      }
       if (data.auction_notes !== undefined) {
         liveState.notes = data.auction_notes || '';
+      }
+      // Only adopt player from database if status was explicitly BIDDING in DB and player has no team_id
+      if (data.auction_stage_status === 'BIDDING' && data.auction_current_player_id) {
+        liveState.current_player_id = String(data.auction_current_player_id);
+        liveState.status = 'BIDDING';
       }
     }
     hasBootstrapped = true;
@@ -186,8 +193,6 @@ async function syncFromDatabase(force: boolean = false) {
     const teamMap = new Map<string, any>();
     liveState.teams.forEach(t => teamMap.set(String(t.id), t));
 
-    // Seed any DB sold players not already in inMemorySoldOrder
-    // Sort sold players: players with higher ID or updated recently come first
     const dbSoldSorted = [...sold].sort((a: any, b: any) => {
       const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
       const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
@@ -217,17 +222,13 @@ async function syncFromDatabase(force: boolean = false) {
       }
     });
 
-    // Build ordered recent sold array (up to 50 players)
-    // Filter out any player that was unassigned or is no longer in sold list
     const validSoldIds = new Set(sold.map((p: any) => String(p.id)));
     const mergedRecentSold: SoldPlayerItem[] = [];
 
-    // Most recent are at the beginning
     Array.from(inMemorySoldOrder.values())
       .reverse()
       .forEach(item => {
         if (validSoldIds.has(String(item.id))) {
-          // Refresh team name/color from latest liveState.teams
           const t = teamMap.get(String(item.team_id));
           if (t) {
             item.team_name = t.name;
@@ -244,29 +245,30 @@ async function syncFromDatabase(force: boolean = false) {
     if (liveState.current_player_id) {
       const curr = rawPlayers.find((p: any) => String(p.id) === String(liveState.current_player_id));
       if (curr) {
-        // If we recently marked this player as sold in memory, preserve their sold status
-        // even if the remote DB query hasn't updated its team_id yet!
-        const existingPlayer = liveState.player;
-        const isOptimisticallySold = existingPlayer && String(existingPlayer.id) === String(curr.id) && Boolean(existingPlayer.team_id);
-        const teamId = isOptimisticallySold ? existingPlayer.team_id : curr.team_id;
-        const soldPrice = isOptimisticallySold ? existingPlayer.sold_price : curr.sold_price;
-
-        const isCelebrationActive = liveState.sold_timestamp && (Date.now() - Number(liveState.sold_timestamp) < 60000);
-
-        if (teamId && !isCelebrationActive) {
-          // Player is already sold and 60s celebration has ended (or on reload) - do NOT show sold player on block!
-          liveState.current_player_id = null;
-          liveState.player = null;
-          liveState.sold_timestamp = null;
-          // Clear from database so page reloads never reload this sold player
-          kplApi.saveContentSettings({ auction_current_player_id: '' }).catch(() => {});
-        } else {
+        if (liveState.status === 'BIDDING') {
+          // Player is actively on the block for bidding: NEVER CLOBBER!
+          const assignedTeam = curr.team_id ? liveState.teams.find((t: any) => String(t.id) === String(curr.team_id)) : null;
+          liveState.player = {
+            ...curr,
+            teams: assignedTeam || curr.teams || null,
+          };
+        } else if (liveState.status === 'CELEBRATION_SOLD') {
+          const existingPlayer = liveState.player;
+          const teamId = existingPlayer?.team_id || curr.team_id;
+          const soldPrice = existingPlayer?.sold_price !== undefined ? existingPlayer.sold_price : curr.sold_price;
           const assignedTeam = liveState.teams.find((t: any) => String(t.id) === String(teamId));
           liveState.player = {
             ...curr,
             team_id: teamId || null,
             sold_price: soldPrice !== undefined ? soldPrice : null,
             teams: assignedTeam || curr.teams || null,
+          };
+        } else if (liveState.status === 'CELEBRATION_UNSOLD') {
+          liveState.player = {
+            ...curr,
+            team_id: null,
+            sold_price: null,
+            auction_eligible: 0,
           };
         }
       } else {
@@ -285,7 +287,8 @@ async function syncFromDatabase(force: boolean = false) {
       snapshotSoldCount !== liveState.stats.sold_count ||
       snapshotPoolCount !== liveState.stats.pool_count ||
       snapshotIsActive !== liveState.is_active ||
-      snapshotIsEnded !== liveState.is_ended;
+      snapshotIsEnded !== liveState.is_ended ||
+      snapshotStatus !== liveState.status;
 
     if (hasMeaningfulChange) {
       liveState.version += 1;
@@ -312,27 +315,26 @@ export async function GET(req: Request) {
     syncFromDatabase();
   }
 
-  // Auto-clear block if the player is sold and celebration has elapsed (>60s or no sold_timestamp on reload)
-  if (liveState.player && liveState.player.team_id) {
+  // Auto-clear celebrations when their time has elapsed
+  if (liveState.status === 'CELEBRATION_SOLD') {
     const isExpired = !liveState.sold_timestamp || (Date.now() - Number(liveState.sold_timestamp) >= 60000);
     if (isExpired) {
+      liveState.status = 'IDLE';
       liveState.current_player_id = null;
       liveState.player = null;
       liveState.sold_timestamp = null;
       liveState.version += 1;
-      kplApi.saveContentSettings({ auction_current_player_id: '' }).catch(() => {});
+      kplApi.saveContentSettings({ auction_current_player_id: '', auction_stage_status: 'IDLE' }).catch(() => {});
     }
-  }
-
-  // Auto-clear block if the player is unsold and celebration has elapsed (>30s or no unsold_timestamp on reload)
-  if (liveState.player && !liveState.player.team_id && (liveState.player.auction_eligible === 0 || liveState.player.auction_eligible === '0')) {
+  } else if (liveState.status === 'CELEBRATION_UNSOLD') {
     const isExpired = !liveState.unsold_timestamp || (Date.now() - Number(liveState.unsold_timestamp) >= 30000);
     if (isExpired) {
+      liveState.status = 'IDLE';
       liveState.current_player_id = null;
       liveState.player = null;
       liveState.unsold_timestamp = null;
       liveState.version += 1;
-      kplApi.saveContentSettings({ auction_current_player_id: '' }).catch(() => {});
+      kplApi.saveContentSettings({ auction_current_player_id: '', auction_stage_status: 'IDLE' }).catch(() => {});
     }
   }
 
@@ -351,6 +353,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     changed: true,
     version: liveState.version,
+    status: liveState.status,
     is_active: liveState.is_active,
     is_ended: Boolean(liveState.is_ended),
     current_player_id: liveState.current_player_id,
@@ -377,59 +380,61 @@ export async function POST(req: Request) {
     hasBootstrapped = true;
     lastLocalMutation = Date.now();
 
-    // When a player is selected on the block, the auction session MUST be active and not ended!
-    if (body.current_player_id) {
-      liveState.is_active = true;
-      liveState.is_ended = false;
-    } else if (body.is_active !== undefined) {
+    // 1. Session Active / Ended state
+    if (body.is_active !== undefined) {
       liveState.is_active = Boolean(body.is_active);
-      if (body.is_active) {
-        liveState.is_ended = false;
-      }
+      if (body.is_active) liveState.is_ended = false;
     }
     if (body.is_ended !== undefined) {
       liveState.is_ended = Boolean(body.is_ended);
       if (body.is_ended) {
         liveState.is_active = false;
+        liveState.status = 'IDLE';
         liveState.current_player_id = null;
         liveState.player = null;
         liveState.sold_timestamp = null;
+        liveState.unsold_timestamp = null;
       }
     }
     if (body.notes !== undefined) liveState.notes = String(body.notes);
-    if (body.sold_timestamp !== undefined) {
-      liveState.sold_timestamp = body.sold_timestamp;
-      liveState.unsold_timestamp = null;
-    }
-    if (body.unsold_timestamp !== undefined) {
-      liveState.unsold_timestamp = body.unsold_timestamp;
-      liveState.sold_timestamp = null;
-    }
 
-    if (body.current_player_id !== undefined) {
-      if (body.current_player_id !== liveState.current_player_id && body.sold_timestamp === undefined && body.unsold_timestamp === undefined) {
-        liveState.sold_timestamp = null;
-        liveState.unsold_timestamp = null;
-      }
-      liveState.current_player_id = body.current_player_id;
-    }
-
-    // If player object passed directly or current_player_id set, update player instantly in memory
+    // 2. Player and Stage Status transition
     if (body.current_player_id === null) {
+      // Clear block completely
+      liveState.status = 'IDLE';
+      liveState.current_player_id = null;
       liveState.player = null;
       liveState.sold_timestamp = null;
       liveState.unsold_timestamp = null;
-    } else if (body.player) {
-      liveState.player = body.player;
+    } else if (body.current_player_id) {
+      liveState.is_active = true;
+      liveState.is_ended = false;
+      liveState.current_player_id = String(body.current_player_id);
+
+      if (body.sold_timestamp) {
+        // Player was SOLD
+        liveState.status = 'CELEBRATION_SOLD';
+        liveState.sold_timestamp = Number(body.sold_timestamp);
+        liveState.unsold_timestamp = null;
+      } else if (body.unsold_timestamp) {
+        // Player was marked UNSOLD
+        liveState.status = 'CELEBRATION_UNSOLD';
+        liveState.unsold_timestamp = Number(body.unsold_timestamp);
+        liveState.sold_timestamp = null;
+      } else {
+        // Player placed on the block for BIDDING
+        liveState.status = 'BIDDING';
+        liveState.sold_timestamp = null;
+        liveState.unsold_timestamp = null;
+      }
+
+      if (body.player) {
+        liveState.player = body.player;
+      }
     }
 
-    // Filter sold or unsold/disabled players from inMemoryPool immediately
-    if (body.player && (body.player.team_id || body.player.auction_eligible === 0 || body.player.auction_eligible === '0')) {
-      inMemoryPool = inMemoryPool.filter((p: any) => String(p.id) !== String(body.player.id));
-    }
-
-    // INSTANT LIVE SOLD UPDATE: If a player was sold, update teams' coins, stats, and recent_sold immediately!
-    if (body.player && body.player.team_id && body.player.sold_price !== undefined && body.player.sold_price !== null) {
+    // 3. If a player was SOLD, update sold history, team budget & stats immediately
+    if (liveState.status === 'CELEBRATION_SOLD' && body.player && body.player.team_id) {
       const soldPrice = Number(body.player.sold_price) || 0;
       const teamId = String(body.player.team_id);
       const buyerTeam = liveState.teams.find(t => String(t.id) === teamId);
@@ -450,22 +455,17 @@ export async function POST(req: Request) {
         sold_at: Date.now(),
       };
 
-      // Add to in-memory order map
       inMemorySoldOrder.set(String(body.player.id), soldItem);
-
-      // Prepend to recent_sold
       const prevSold = (liveState.recent_sold || []).filter(x => String(x.id) !== String(body.player.id));
       liveState.recent_sold = [soldItem, ...prevSold].slice(0, 50);
       liveState.last_sold_event = soldItem;
 
-      // Update team's live coins and squad count in memory
       if (buyerTeam) {
         buyerTeam.spent = (Number(buyerTeam.spent) || 0) + soldPrice;
         buyerTeam.remaining_budget = Math.max(0, (Number(buyerTeam.budget) || 100000) - buyerTeam.spent);
         buyerTeam.squad_count = (Number(buyerTeam.squad_count) || 0) + 1;
       }
 
-      // Update live stats in memory
       liveState.stats.sold_count = (liveState.stats.sold_count || 0) + 1;
       if (liveState.stats.pool_count > 0) {
         liveState.stats.pool_count -= 1;
@@ -473,7 +473,7 @@ export async function POST(req: Request) {
       liveState.stats.total_purse_spent = (Number(liveState.stats.total_purse_spent) || 0) + soldPrice;
     }
 
-    // Handle explicit player unassignment cleanup
+    // 4. Handle player unassignment
     if (body.unassign_player_id) {
       const unassignId = String(body.unassign_player_id);
       inMemorySoldOrder.delete(unassignId);
@@ -487,20 +487,18 @@ export async function POST(req: Request) {
     liveState.version += 1;
     liveState.lastUpdated = Date.now();
 
-    // Persist to database so across all workers, lambdas, and refreshes, state is saved
-    // CRITICAL: If the player on block is already sold (has team_id) or unsold, NEVER persist their ID as auction_current_player_id in MySQL!
-    // This guarantees that any page reload or server restart immediately shows "NEXT PLAYER COMING SOON", not an old sold or unsold player!
-    const isSoldOrUnsold = Boolean(
-      (liveState.player && liveState.player.team_id) ||
-      (liveState.player && (liveState.player.auction_eligible === 0 || liveState.player.auction_eligible === '0'))
-    );
-    const dbPlayerIdToSave = isSoldOrUnsold ? '' : (liveState.current_player_id || '');
+    // 5. Persist to MySQL database
+    // If BIDDING: save the current player ID so page reloads/cold restarts keep this player on the block
+    // If CELEBRATION_SOLD, CELEBRATION_UNSOLD, or IDLE: save empty '' so reloads after round never resurrect the player
+    const dbPlayerIdToSave = liveState.status === 'BIDDING' ? (liveState.current_player_id || '') : '';
+    const dbStatusToSave = liveState.status === 'BIDDING' ? 'BIDDING' : 'IDLE';
 
     try {
       await kplApi.saveContentSettings({
         auction_is_active: String(liveState.is_active),
         auction_is_ended: String(Boolean(liveState.is_ended)),
         auction_current_player_id: dbPlayerIdToSave,
+        auction_stage_status: dbStatusToSave,
         auction_notes: liveState.notes,
       });
     } catch (e) {
@@ -513,6 +511,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       version: liveState.version,
+      status: liveState.status,
       is_active: liveState.is_active,
       is_ended: liveState.is_ended,
       current_player_id: liveState.current_player_id,
@@ -529,4 +528,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
 }
-
