@@ -1619,6 +1619,15 @@ export default function AuctionViewerPage() {
         </div>
       </button>
 
+      {/* Drawer Backdrop Overlay for Mobile / Tap-outside */}
+      {drawerOpen && (
+        <div
+          className="auction-drawer-backdrop"
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* ──────────────────────────────────────────────────────
           LIVE SOLD & FRANCHISE COINS DRAWER
           ────────────────────────────────────────────────────── */}
