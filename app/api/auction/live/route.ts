@@ -430,21 +430,19 @@ export async function POST(req: Request) {
     liveState.version += 1;
     liveState.lastUpdated = Date.now();
 
-    // Asynchronously persist to database in background without blocking response
-    (async () => {
-      try {
-        await kplApi.saveContentSettings({
-          auction_is_active: String(liveState.is_active),
-          auction_is_ended: String(Boolean(liveState.is_ended)),
-          auction_current_player_id: liveState.current_player_id || '',
-          auction_notes: liveState.notes,
-        });
-      } catch (e) {
-        console.warn('Failed to persist auction state to database:', e);
-      }
-    })();
+    // Persist to database so across all workers, lambdas, and refreshes, the new player is saved
+    try {
+      await kplApi.saveContentSettings({
+        auction_is_active: String(liveState.is_active),
+        auction_is_ended: String(Boolean(liveState.is_ended)),
+        auction_current_player_id: liveState.current_player_id || '',
+        auction_notes: liveState.notes,
+      });
+    } catch (e) {
+      console.warn('Failed to persist auction state to database:', e);
+    }
 
-    // Trigger background sync with DB to refresh player lists and team budgets
+    // Refresh memory cache in background (non-blocking)
     syncFromDatabase(true);
 
     return NextResponse.json({

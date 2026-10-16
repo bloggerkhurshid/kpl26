@@ -602,7 +602,7 @@ export const kplApi = {
 
   async getAuctionConfig() {
     try {
-      const res = await fetch('/api/auction/live', { cache: 'no-store' });
+      const res = await fetch(`/api/auction/live?_t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) return await res.json();
     } catch (e) {}
     return null;

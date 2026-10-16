@@ -80,6 +80,7 @@ export default function AuctionPage() {
   const [autoAdvance, setAutoAdvance] = useState<boolean>(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [endingAuction, setEndingAuction] = useState(false);
+  const lastLocalActionRef = useRef<number>(0);
 
   useEffect(() => {
     setMounted(true);
@@ -164,10 +165,14 @@ export default function AuctionPage() {
       setTeams(loadedTeams);
 
       if (cRes) {
+        // Protect local admin action from being clobbered by an in-flight or stale background sync
+        const isRecentlyModifiedLocally = Date.now() - lastLocalActionRef.current < 15000;
         setAuctionConfig(prev => ({
           is_active: cRes.current_player_id ? true : Boolean(cRes.is_active),
           is_ended: Boolean(cRes.is_ended),
-          current_player_id: cRes.current_player_id || null,
+          current_player_id: isRecentlyModifiedLocally && prev.current_player_id
+            ? prev.current_player_id
+            : (cRes.current_player_id || null),
           notes: cRes.notes || prev.notes || 'KPL Season 3 Live Auction',
         }));
       }
@@ -215,6 +220,7 @@ export default function AuctionPage() {
   // Set current player on the auction block
   async function setCurrentPlayer(playerId: string | null) {
     setSoldTimer(null);
+    lastLocalActionRef.current = Date.now();
     const p = players.find(x => String(x.id) === String(playerId)) || null;
 
     // When selecting a player on the block, the auction MUST be LIVE!
@@ -230,14 +236,23 @@ export default function AuctionPage() {
     }));
 
     try {
-      await kplApi.updateAuctionConfig({
-        is_active: willBeActive,
-        is_ended: false,
-        current_player_id: playerId,
-        notes: auctionConfig.notes,
-        player: p,
-        sold_timestamp: null,
-      });
+      await Promise.all([
+        kplApi.updateAuctionConfig({
+          is_active: willBeActive,
+          is_ended: false,
+          current_player_id: playerId,
+          notes: auctionConfig.notes,
+          player: p,
+          sold_timestamp: null,
+        }),
+        kplApi.saveContentSettings({
+          auction_is_active: String(willBeActive),
+          auction_is_ended: 'false',
+          auction_current_player_id: playerId || '',
+          auction_notes: auctionConfig.notes,
+        }),
+      ]);
+      lastLocalActionRef.current = Date.now();
       if (playerId && p) {
         showToast(`🏏 ${p.player_name} is now ON THE AUCTION BLOCK (Live)!`);
       } else {
@@ -303,6 +318,7 @@ export default function AuctionPage() {
 
     // Keep on the block with 60s sold countdown
     const soldTime = Date.now();
+    lastLocalActionRef.current = Date.now();
     setSoldTimer({
       playerId: modalPlayer.id,
       playerName: modalPlayer.player_name,
@@ -364,18 +380,28 @@ export default function AuctionPage() {
       });
       // Broadcast UNSOLD status for the current player on block so viewers clearly see UNSOLD
       if (auctionConfig.current_player_id === p.id) {
-        await kplApi.updateAuctionConfig({
-          is_active: auctionConfig.is_active,
-          current_player_id: p.id,
-          notes: auctionConfig.notes,
-          sold_timestamp: null,
-          player: {
-            ...p,
-            team_id: null,
-            sold_price: null,
-            auction_eligible: 0,
-          },
-        });
+        lastLocalActionRef.current = Date.now();
+        await Promise.all([
+          kplApi.updateAuctionConfig({
+            is_active: auctionConfig.is_active,
+            current_player_id: p.id,
+            notes: auctionConfig.notes,
+            sold_timestamp: null,
+            player: {
+              ...p,
+              team_id: null,
+              sold_price: null,
+              auction_eligible: 0,
+            },
+          }),
+          kplApi.saveContentSettings({
+            auction_is_active: String(auctionConfig.is_active),
+            auction_is_ended: 'false',
+            auction_current_player_id: p.id,
+            auction_notes: auctionConfig.notes,
+          }),
+        ]);
+        lastLocalActionRef.current = Date.now();
       }
       showToast(`${p.player_name} marked as UNSOLD (moved to pass pool).`);
     } catch (err: any) {
